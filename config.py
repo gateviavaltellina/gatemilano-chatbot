@@ -1,0 +1,31 @@
+from pydantic_settings import BaseSettings
+from pathlib import Path
+
+class Settings(BaseSettings):
+    # Anthropic
+    anthropic_api_key: str
+    model: str = "claude-haiku-4-5-20251001"
+
+    # WhatsApp
+    wa_phone_number_id: str = "1021019861105099"
+    wa_access_token: str
+    wa_verify_token: str = "gate_whatsapp_verify_2025"
+    wa_business_account_id: str = "959741779797746"
+    wa_api_url: str = "https://graph.facebook.com/v25.0"
+
+    # Xceed
+    xceed_api_key: str = ""
+
+    # RAG
+    embedding_model: str = "paraphrase-multilingual-MiniLM-L12-v2"
+    rag_top_k: int = 5
+    chroma_db_path: str = str(Path(__file__).parent / "data" / "chroma_db")
+
+    # App
+    max_history: int = 8
+    port: int = 8000
+
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+
+settings = Settings()
+KNOWLEDGE_DIR = Path(__file__).parent / "rag" / "knowledge"
