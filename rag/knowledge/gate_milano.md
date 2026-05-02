@@ -17,7 +17,7 @@ Gate Milano è uno dei club più importanti di Milano, attivo dal 2017, con prog
 - Orario consigliato per arrivare: prima dell'1:00 di notte
 
 ## Come Arrivare
-**Metro:** Linea Verde (M2) — fermata Garibaldi (10 min a piedi) o Isola
+**Metro:** Linea Gialla (M3) — fermata Maciachini (~7 min a piedi)
 **Tram:** Linea 2, fermata Monumentale
 **Bus:** Linee 82, 83, fermata Monumentale
 **Taxi/Rideshare:** consigliato
@@ -27,7 +27,7 @@ Gate Milano è uno dei club più importanti di Milano, attivo dal 2017, con prog
 **Parcheggio su strada:** disponibile nelle vicinanze
 
 ## Biglietti
-- Acquisto online su Xceed (xceed.me) e Dice (dice.fm)
+- Acquisto online su Xceed (xceed.me)
 - Acquisto consigliato in anticipo per prezzi migliori
 - eTicket digitale da mostrare su smartphone
 - Rimborsi: entro 48 ore tramite piattaforma di acquisto; supporto su support@xceed.com
@@ -50,43 +50,62 @@ Gate Milano è uno dei club più importanti di Milano, attivo dal 2017, con prog
 - Borse grandi e zaini **devono** essere lasciati al guardaroba
 - Borsette piccole ammesse in sala
 
-## Tavoli VIP — Perreo e Perreo XL
+## Tavoli VIP — Perreo XL
 
-I tavoli VIP sono disponibili per le serate Perreo e Perreo XL (Main Room).
+I tavoli VIP sono disponibili per le serate Perreo XL (Main Room).
 Il biglietto d'ingresso è INCLUSO nel tavolo — nessun costo aggiuntivo.
-Per prenotare scrivere a info@gatemilano.com specificando data, numero persone e zona preferita.
+Il minimo è consumazione (bottiglie e drink dalla drinklist VIP). Mixers inclusi.
 
 ### Zone e prezzi minimi
 
-F standard (F5–F21, F17bis) — Face Area, floor principale: minimo €300, 8 persone. Supplemento per persona extra: €35.
-F premium (F1–F4) — Face Area, prima fila: minimo €500, 10 persone. Supplemento per persona extra: €50.
-B — Balcony Area (B1–B5) — vista palco: minimo €300, 8 persone. Supplemento per persona extra: €35.
-C — Console Area (C1–C3) — vicino al DJ: minimo €500, 10 persone. Supplemento per persona extra: €50.
+| Zona | Tavoli | Descrizione | Minimo | Min. persone | Extra pax |
+|------|--------|-------------|--------|--------------|-----------|
+| F standard | F5–F21, F17bis | Face Area, floor principale | €300 | 8 | €35/persona |
+| F premium | F1–F4 | Face Area, prima fila | €500 | 10 | €50/persona |
+| B — Balcony | B1–B5 | Vista palco | €300 | 8 | €35/persona |
+| C — Console | C1–C3 | Vicino al DJ | €500 | 10 | €50/persona |
 
-Il minimo è consumazione (bottiglie e drink dalla drinklist VIP). Mixers inclusi.
-Esempio: tavolo F standard per 11 persone = €300 + (3 × €35) = €405.
+**Calcolo persone extra:**
+Tavolo F standard per 11 persone = €300 + (3 × €35) = **€405**
+Tavolo Console per 13 persone = €500 + (3 × €50) = **€650**
+
+### Flusso prenotazione
+Il bot raccoglie: data, zona preferita, numero persone → quota il minimo totale → risponde con "A breve ti arriverà il link per la tua prenotazione."
+
+### Piantina tavoli
+[Mappa zone VIP](https://www.dropbox.com/scl/fi/jtkg8b8d1ygkje8qe5s5u/25_FlooPlanTables_PerreoXceed.JPG?rlkey=cn6kpwhffpjeoxf2gnocw3mo8&st=av36u8bl&dl=0)
+Inviare come allegato quando l'utente chiede la mappa o sta scegliendo la zona.
 
 ### Pagamento e conferma
-Pagamento 100% anticipato tramite link Xceed dedicato al tavolo specifico.
-Senza pagamento la prenotazione non è confermata.
-Cancellazioni: nessun rimborso. Il credito si sposta su un'altra data entro fine stagione (giugno).
+- 100% anticipato tramite link Xceed dedicato al tavolo
+- Senza pagamento la prenotazione non è confermata
+- Cancellazioni: nessun rimborso. Il credito si sposta su un'altra data entro fine stagione (giugno)
 
 ### Regole
-Età minima 18 anni, documento obbligatorio.
-Orario massimo di arrivo: 03:30.
-Il tavolo non garantisce l'ingresso immediato — stesse regole dress code di tutti.
+- Età minima 18 anni, documento obbligatorio
+- Orario massimo di arrivo: 03:30
+- Il tavolo non garantisce l'ingresso immediato — stesse regole dress code di tutti
+- Area VIP condivisa (non esclusiva)
 
 ### Drinklist VIP
-Link drinklist: https://www.dropbox.com/scl/fi/0tqz6wyfrbbzk86ekv0hb/25Drinklist.pdf?rlkey=awprh5u5bsub197d1556mmz1s&st=vlm8wdo5&dl=0
-Inviare SEMPRE questo link quando si parla di tavoli VIP.
+[Drinklist completa (PDF)](https://www.dropbox.com/scl/fi/0tqz6wyfrbbzk86ekv0hb/25Drinklist.pdf?rlkey=awprh5u5bsub197d1556mmz1s&st=vlm8wdo5&dl=0)
+Inviare il link solo dopo aver spiegato prezzi e condizioni.
 
-### Drinklist VIP (selezione)
-Vodka: Grey Goose .7l €300, Grey Goose 1.5l €650, Grey Goose 3l €1.300, 42 Below .7l €300
-Tequila: Cazadores €300, Patron Silver 1.5l €350, Patron Reposado €400, Patron Añejo €450, Clase Azul €1.200, Don Julio 1942 €1.200
-Gin: Bombay €300, Bombay Cru Premium €350, Nordes/Roku/Hendrick's/Gin Mare €350, Monkey €400
-Whisky: Jim Beam €300, Hennessy €400
-Prosecco: Valdobbiadene €100, Ferrari Brut €150
-Champagne: Moët .7l €300, Moët 1.5l €600, Moët Rosè €350, Veuve Clicquot .7l €300, Veuve 1.5l €600, Dom Perignon €700, Armand de Brignac €1.000, Cristal €1.200, Cristal 1.5l €3.000
+**Vodka:** Grey Goose .7l €300 · Grey Goose 1.5l €650 · Grey Goose 3l €1.300 · 42 Below .7l €300
+**Tequila:** Cazadores .7l €300 · Patron Silver 1.5l €350 · Patron Reposado .7l €400 · Patron Añejo .7l €450 · Clase Azul .7l €1.200 · Don Julio 1942 .7l €1.200
+**Gin:** Bombay .7l €300 · Bombay Cru Premium .7l €350 · Nordes .7l €350 · Roku .7l €350 · Hendrick's .7l €350 · Gin Mare .7l €350 · Monkey .7l €400
+**Whisky:** Jim Beam .7l €300 · Hennessy .7l €400
+**Prosecco:** Valdobbiadene .7l €100 · Ferrari Maximum Brut .7l €150
+**Champagne:** Moët & Chandon .7l €300 · Moët & Chandon 1.5l €600 · Moët Rosè .7l €350 · Veuve Clicquot .7l €300 · Veuve Clicquot 1.5l €600 · Dom Perignon .7l €700 · Armand de Brignac .7l €1.000 · Cristal .7l €1.200 · Cristal 1.5l €3.000
+
+### FAQ Tavoli
+**Possiamo pagare la sera stessa?** → No. Serve pagamento 100% via link Xceed per confermare.
+**Possiamo essere in meno del minimo?** → No. Il minimo persone garantisce la consumazione minima.
+**Possiamo aggiungere persone?** → Sì, ogni extra paga il supplemento (€35 o €50). Va concordato prima.
+**Possiamo cancellare?** → Nessun rimborso. Si può spostare il credito su un'altra data entro giugno.
+**L'ingresso è incluso?** → Sì, il biglietto è incluso nel minimo di spesa.
+**Entro che ora arrivare?** → Entro le 03:30. Dopo non si garantisce la disponibilità del posto.
+**I prezzi sono trattabili?** → No. Se il budget non basta → guestlist.
 
 ### Se il gruppo è troppo piccolo
 Per gruppi sotto 8 persone suggerire la guestlist invece del tavolo.
