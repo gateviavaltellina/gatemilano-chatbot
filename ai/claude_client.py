@@ -1,3 +1,4 @@
+import re
 import logging
 from datetime import datetime, timezone
 from anthropic import AsyncAnthropic
@@ -39,6 +40,13 @@ REGOLE FONDAMENTALI:
 - Rispondi prima alla domanda specifica, poi aggiungi info utili se necessario.
 """
 
+def _strip_markdown(text: str) -> str:
+    """Remove WhatsApp markdown markers (*bold*, _italic_) that Claude inserts despite instructions."""
+    text = re.sub(r'\*{1,3}([^*\n]+)\*{1,3}', r'\1', text)
+    text = re.sub(r'_{1,2}([^_\n]+)_{1,2}', r'\1', text)
+    return text.strip()
+
+
 async def generate_response(
     venue: str,
     user_message: str,
@@ -60,7 +68,7 @@ async def generate_response(
             system=system,
             messages=messages,
         )
-        return response.content[0].text.strip()
+        return _strip_markdown(response.content[0].text)
     except Exception as e:
         logger.error("Errore Claude API: %s", e)
         return (

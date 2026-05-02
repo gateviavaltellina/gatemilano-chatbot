@@ -97,12 +97,17 @@ def _build_document(event: dict, venue_label: str) -> tuple[str, dict]:
         f"{ticket_str}"
     ).strip()
 
-    # date_ts: Unix timestamp del giorno (mezzanotte UTC) per filtraggio numerico ChromaDB
+    # date_ts: midnight UTC del giorno locale Europe/Rome — per filtraggio ChromaDB
+    # Es: "2026-05-08T22:00Z" = "2026-05-09 00:00 CEST" → date_ts = May 9 midnight UTC
     date_ts = 0
     try:
         from datetime import datetime, timezone as tz
-        date_ts = int(datetime.strptime(date_str[:10], "%Y-%m-%d")
-                      .replace(tzinfo=tz.utc).timestamp())
+        if "T" in date_str:
+            dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+            dt_rome = dt.astimezone(_ROME)
+            date_ts = int(datetime(dt_rome.year, dt_rome.month, dt_rome.day, tzinfo=tz.utc).timestamp())
+        else:
+            date_ts = int(datetime.strptime(date_str[:10], "%Y-%m-%d").replace(tzinfo=tz.utc).timestamp())
     except Exception:
         pass
 
