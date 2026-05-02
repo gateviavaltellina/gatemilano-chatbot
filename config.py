@@ -18,6 +18,8 @@ class Settings(BaseSettings):
 
     # Notifications
     discord_webhook_url: str = ""
+    discord_bot_token: str = ""
+    discord_channel_id: int = 0
 
     # RAG
     embedding_model: str = "paraphrase-multilingual-MiniLM-L12-v2"

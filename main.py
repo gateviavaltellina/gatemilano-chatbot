@@ -11,6 +11,7 @@ from config import settings
 from whatsapp.webhook import router as webhook_router
 from rag.chromadb_manager import chromadb_manager
 from sync.sanity_sync import sync_all_venues
+from notifications.discord_bot import start as start_discord_bot
 
 logging.basicConfig(
     level=logging.INFO,
@@ -39,6 +40,7 @@ async def _init_background():
         id="sanity_sync_startup",
     )
     scheduler.start()
+    asyncio.create_task(start_discord_bot())
     _ready = True
     logger.info("Bot pronto. In ascolto su porta %d", settings.port)
 

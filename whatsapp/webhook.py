@@ -7,7 +7,8 @@ from whatsapp.client import send_message, mark_as_read
 from venue.detector import VenueDetector
 from rag.chromadb_manager import chromadb_manager
 from ai.claude_client import generate_response
-from notifications.discord import notify_conversation
+from notifications.discord import notify_conversation, notify_human_message
+from notifications.discord_bot import is_human_takeover
 
 _TODAY_TERMS = ["stasera", "stanotte", "oggi", "questa sera", "questa notte", "tonight"]
 _TOMORROW_TERMS = ["domani", "domani sera", "domani notte", "tomorrow"]
@@ -111,6 +112,12 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
 async def process_message(phone: str, msg_id: str, text: str):
     await mark_as_read(msg_id)
     conv = _get_conversation(phone)
+
+    # Human takeover attivo: notifica Discord, non rispondere automaticamente
+    if is_human_takeover(phone):
+        venue = conv.get("venue") or "gate_milano"
+        await notify_human_message(phone, venue, text)
+        return
 
     # Rileva venue dal messaggio + storia conversazione
     venue = _venue_detector.detect(text, conv.get("venue"), conv.get("history", []))
