@@ -95,12 +95,8 @@ async def process_message(phone: str, msg_id: str, text: str):
     venue = _venue_detector.detect(text, conv.get("venue"), conv.get("history", []))
 
     if venue is None:
-        # Ambiguo: chiedi conferma
-        reply = "Ciao! 👋 Stai cercando info su *Gate Milano* o *Gate Sardinia*?"
-        await send_message(phone, reply)
-        _add_to_history(conv, "user", text, settings.max_history)
-        _add_to_history(conv, "assistant", reply, settings.max_history)
-        return
+        # Default a Gate Milano (Gate Sardinia stagionale, apre luglio 2026)
+        venue = "gate_milano"
 
     conv["venue"] = venue
 
