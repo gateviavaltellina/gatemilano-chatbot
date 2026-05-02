@@ -72,17 +72,20 @@ class ChromaDBManager:
         return "\n\n---\n\n".join(docs)
 
     def get_events_for_date(self, venue: str, date_str: str) -> str:
-        """Fetch events on a specific date (YYYY-MM-DD) via metadata filter."""
+        """Fetch events on a specific date (YYYY-MM-DD) via numeric timestamp filter."""
         col = self._collections.get(venue)
         if col is None:
             return ""
         try:
-            next_day = _next_day_str(date_str)
+            from datetime import datetime, timezone as tz
+            day_start = int(datetime.strptime(date_str[:10], "%Y-%m-%d")
+                            .replace(tzinfo=tz.utc).timestamp())
+            day_end = day_start + 86400
             results = col.get(
                 where={"$and": [
                     {"type": {"$eq": "event"}},
-                    {"date": {"$gte": date_str}},
-                    {"date": {"$lt": next_day}},
+                    {"date_ts": {"$gte": day_start}},
+                    {"date_ts": {"$lt": day_end}},
                 ]}
             )
             docs = results.get("documents", [])

@@ -97,10 +97,20 @@ def _build_document(event: dict, venue_label: str) -> tuple[str, dict]:
         f"{ticket_str}"
     ).strip()
 
+    # date_ts: Unix timestamp del giorno (mezzanotte UTC) per filtraggio numerico ChromaDB
+    date_ts = 0
+    try:
+        from datetime import datetime, timezone as tz
+        date_ts = int(datetime.strptime(date_str[:10], "%Y-%m-%d")
+                      .replace(tzinfo=tz.utc).timestamp())
+    except Exception:
+        pass
+
     metadata = {
         "type": "event",
         "event_name": title,
         "date": date_str,
+        "date_ts": date_ts,
         "venue": venue_label,
         "sanity_id": event.get("_id", ""),
     }
