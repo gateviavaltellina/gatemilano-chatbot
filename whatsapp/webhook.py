@@ -3,7 +3,10 @@ import asyncio
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
 from config import settings
-from whatsapp.client import send_message, mark_as_read
+from whatsapp.client import send_message, send_document, mark_as_read
+
+_DRINKLIST_URL = "https://gatemilano-chatbot-production.up.railway.app/static/drinklist_perreo.pdf"
+_DRINKLIST_TRIGGERS = ["tavolo", "tavoli", "vip", "drinklist", "bottle", "bottiglia", "minimo", "perreo xl"]
 from venue.detector import VenueDetector
 from rag.chromadb_manager import chromadb_manager
 from ai.claude_client import generate_response
@@ -157,4 +160,15 @@ async def process_message(phone: str, msg_id: str, text: str):
     _add_to_history(conv, "assistant", reply, settings.max_history)
 
     await send_message(phone, reply)
+
+    # Allega drinklist PDF se la conversazione riguarda i tavoli VIP
+    lower_text = text.lower()
+    lower_reply = reply.lower()
+    if any(t in lower_text or t in lower_reply for t in _DRINKLIST_TRIGGERS):
+        await send_document(
+            phone,
+            _DRINKLIST_URL,
+            "Drinklist VIP Perreo.pdf",
+        )
+
     await notify_conversation(phone, venue, text, reply)

@@ -32,6 +32,32 @@ async def send_message(to: str, text: str) -> bool:
             logger.error("Errore invio WhatsApp: %s", e)
             return False
 
+async def send_document(to: str, url: str, filename: str, caption: str = "") -> bool:
+    headers = {
+        "Authorization": f"Bearer {settings.wa_access_token}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": to,
+        "type": "document",
+        "document": {"link": url, "filename": filename, "caption": caption},
+    }
+    async with httpx.AsyncClient(timeout=15) as client:
+        try:
+            r = await client.post(f"{_wa_base()}/messages", headers=headers, json=payload)
+            r.raise_for_status()
+            logger.info("Documento inviato a %s: %s", to, filename)
+            return True
+        except httpx.HTTPStatusError as e:
+            logger.error("Errore invio documento a %s: %s — %s", to, e, e.response.text)
+            return False
+        except Exception as e:
+            logger.error("Errore invio documento: %s", e)
+            return False
+
+
 async def mark_as_read(message_id: str) -> None:
     headers = {
         "Authorization": f"Bearer {settings.wa_access_token}",

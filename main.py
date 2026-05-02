@@ -4,6 +4,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
@@ -54,6 +55,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Gate Milano WhatsApp Bot", version="1.0.0", lifespan=lifespan)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(webhook_router, prefix="/webhook")
 
 
