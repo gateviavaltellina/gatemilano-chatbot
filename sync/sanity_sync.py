@@ -2,7 +2,10 @@ import httpx
 import logging
 import time
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from rag.chromadb_manager import chromadb_manager
+
+_ROME = ZoneInfo("Europe/Rome")
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +57,8 @@ def _format_date(date_str: str) -> str:
         # Handle both "2026-05-02T21:00:00.000Z" and "2026-05-02"
         if "T" in date_str:
             dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-            return dt.strftime("%-d %B %Y, ore %H:%M")
+            dt_rome = dt.astimezone(_ROME)
+            return dt_rome.strftime("%-d %B %Y, ore %H:%M")
         else:
             dt = datetime.strptime(date_str, "%Y-%m-%d")
             return dt.strftime("%-d %B %Y")
