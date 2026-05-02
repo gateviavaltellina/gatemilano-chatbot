@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     # Xceed
     xceed_api_key: str = ""
 
+    # Notifications
+    discord_webhook_url: str = ""
+
     # RAG
     embedding_model: str = "paraphrase-multilingual-MiniLM-L12-v2"
     rag_top_k: int = 5

@@ -6,6 +6,7 @@ from whatsapp.client import send_message, mark_as_read
 from venue.detector import VenueDetector
 from rag.chromadb_manager import chromadb_manager
 from ai.claude_client import generate_response
+from notifications.discord import notify_conversation
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -103,3 +104,4 @@ async def process_message(phone: str, msg_id: str, text: str):
     _add_to_history(conv, "assistant", reply, settings.max_history)
 
     await send_message(phone, reply)
+    await notify_conversation(phone, venue, text, reply)
