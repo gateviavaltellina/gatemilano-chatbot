@@ -50,11 +50,42 @@ Gate Milano è uno dei club più importanti di Milano, attivo dal 2017, con prog
 - Borse grandi e zaini **devono** essere lasciati al guardaroba
 - Borsette piccole ammesse in sala
 
-## Tavoli VIP
-- Disponibili per eventi selezionati
-- **Ingresso VIP:** lato sinistro dell'entrata principale
-- Prenotazioni: info@gatemilano.com oppure +39 391 487 6443
-- Minimo di consumazione variabile per evento
+## Tavoli VIP — Perreo e Perreo XL
+
+I tavoli VIP sono disponibili per le serate Perreo e Perreo XL (Main Room).
+Il biglietto d'ingresso è INCLUSO nel tavolo — nessun costo aggiuntivo.
+Per prenotare scrivere a info@gatemilano.com specificando data, numero persone e zona preferita.
+
+### Zone e prezzi minimi
+
+F standard (F5–F21, F17bis) — Face Area, floor principale: minimo €300, 8 persone. Supplemento per persona extra: €35.
+F premium (F1–F4) — Face Area, prima fila: minimo €500, 10 persone. Supplemento per persona extra: €50.
+B — Balcony Area (B1–B5) — vista palco: minimo €300, 8 persone. Supplemento per persona extra: €35.
+C — Console Area (C1–C3) — vicino al DJ: minimo €500, 10 persone. Supplemento per persona extra: €50.
+
+Il minimo è consumazione (bottiglie e drink dalla drinklist VIP). Mixers inclusi.
+Esempio: tavolo F standard per 11 persone = €300 + (3 × €35) = €405.
+
+### Pagamento e conferma
+Pagamento 100% anticipato tramite link Xceed dedicato al tavolo specifico.
+Senza pagamento la prenotazione non è confermata.
+Cancellazioni: nessun rimborso. Il credito si sposta su un'altra data entro fine stagione (giugno).
+
+### Regole
+Età minima 18 anni, documento obbligatorio.
+Orario massimo di arrivo: 03:30.
+Il tavolo non garantisce l'ingresso immediato — stesse regole dress code di tutti.
+
+### Drinklist VIP (selezione)
+Vodka: Grey Goose .7l €300, Grey Goose 1.5l €650, Grey Goose 3l €1.300, 42 Below .7l €300
+Tequila: Cazadores €300, Patron Silver 1.5l €350, Patron Reposado €400, Patron Añejo €450, Clase Azul €1.200, Don Julio 1942 €1.200
+Gin: Bombay €300, Bombay Cru Premium €350, Nordes/Roku/Hendrick's/Gin Mare €350, Monkey €400
+Whisky: Jim Beam €300, Hennessy €400
+Prosecco: Valdobbiadene €100, Ferrari Brut €150
+Champagne: Moët .7l €300, Moët 1.5l €600, Moët Rosè €350, Veuve Clicquot .7l €300, Veuve 1.5l €600, Dom Perignon €700, Armand de Brignac €1.000, Cristal €1.200, Cristal 1.5l €3.000
+
+### Se il gruppo è troppo piccolo
+Per gruppi sotto 8 persone suggerire la guestlist invece del tavolo.
 
 ## Pagamenti
 Accettati: **Contactless, Mastercard, Visa, Maestro, American Express, contanti**
