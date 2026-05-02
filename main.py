@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uvicorn
 from contextlib import asynccontextmanager
@@ -18,41 +19,52 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 scheduler = AsyncIOScheduler(timezone="Europe/Rome")
+_ready = False
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    logger.info("Avvio Gate Milano WhatsApp Bot...")
+
+async def _init_background():
+    global _ready
+    logger.info("Avvio inizializzazione in background...")
     await chromadb_manager.init()
     scheduler.add_job(
         sync_all_venues,
         CronTrigger(hour=4, minute=0),
-        id="xceed_sync",
+        id="sanity_sync",
         replace_existing=True,
     )
-    # Run sync 30s after startup so ChromaDB is never empty on first deploy
     scheduler.add_job(
         sync_all_venues,
         "date",
         run_date=datetime.now() + timedelta(seconds=30),
-        id="xceed_sync_startup",
+        id="sanity_sync_startup",
     )
     scheduler.start()
-    logger.info("Bot attivo. In ascolto su porta %d", settings.port)
+    _ready = True
+    logger.info("Bot pronto. In ascolto su porta %d", settings.port)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    asyncio.create_task(_init_background())
     yield
     scheduler.shutdown()
     logger.info("Bot fermato.")
 
+
 app = FastAPI(title="Gate Milano WhatsApp Bot", version="1.0.0", lifespan=lifespan)
 app.include_router(webhook_router, prefix="/webhook")
 
+
 @app.get("/health")
 async def health():
-    return {"status": "ok", "model": settings.model}
+    return {"status": "ok" if _ready else "starting", "model": settings.model}
+
 
 @app.post("/sync/xceed")
 async def trigger_sync():
     await sync_all_venues()
     return {"status": "sync completato"}
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=settings.port, reload=False)
