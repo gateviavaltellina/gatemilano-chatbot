@@ -8,7 +8,6 @@ Gate Sardinia è il venue estivo del gruppo Gate (attivo dal 2017 con Gate Milan
 **Email generale:** info@gatesardinia.it
 **Email booking:** booking@gatesardinia.it
 **Email VIP:** vip@gatesardinia.it
-**Telefono / WhatsApp:** +39 391 487 6443
 **Capacità:** 1.500 persone in 2.500 mq
 **Struttura:** venue outdoor, 4 bar, area food
 
@@ -51,7 +50,6 @@ Il venue dispone di un'area VIP con servizio dedicato:
 **Ideale per:** compleanni, eventi privati, gruppi
 
 **Come prenotare:**
-- WhatsApp: +39 391 487 6443
 - Email: vip@gatesardinia.it
 - Risposta entro poche ore con tutti i dettagli
 
@@ -79,6 +77,5 @@ Contattare info@gatesardinia.it con descrizione dell'oggetto e data della visita
 | Richiesta | Contatto |
 |-----------|----------|
 | Info generali, oggetti smarriti | info@gatesardinia.it |
-| Prenotazione tavoli VIP | vip@gatesardinia.it oppure WhatsApp +39 391 487 6443 |
+| Prenotazione tavoli VIP | vip@gatesardinia.it |
 | Booking artisti | booking@gatesardinia.it |
-| Telefono / WhatsApp | +39 391 487 6443 |

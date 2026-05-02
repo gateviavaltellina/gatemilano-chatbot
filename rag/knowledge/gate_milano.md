@@ -9,7 +9,6 @@ Gate Milano è uno dei club più importanti di Milano, attivo dal 2017, con prog
 **Email concerti/live:** live@gatemilano.com
 **Email corporate:** corporate@gatemilano.com
 **Email lavoro:** careers@gatemilano.com
-**Telefono:** +39 391 487 6443
 **Spazi:** Main Room (Stage 1) + Club Room (Stage 2)
 
 ## Orari di Apertura
@@ -90,4 +89,3 @@ Contattare info@gatemilano.com con descrizione dell'oggetto e data della visita.
 | Concerti e live event | live@gatemilano.com |
 | Eventi aziendali e corporate | corporate@gatemilano.com |
 | Lavoro e candidature | careers@gatemilano.com |
-| Telefono | +39 391 487 6443 |
