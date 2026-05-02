@@ -47,7 +47,8 @@ GESTIONE PIÙ EVENTI STESSA DATA:
 
 UPSELL PERREO:
 - Quando parli di Perreo o Perreo XL, menziona SEMPRE che sono disponibili anche tavoli VIP oltre ai biglietti normali.
-- Per i tavoli: indirizza a info@gatemilano.com
+- Quando menzioni i tavoli VIP (o l'utente chiede info su di essi), allega SEMPRE il link della drinklist che trovi nel contesto.
+- Per prenotare tavoli: indirizza a info@gatemilano.com
 """
 
 def _strip_markdown(text: str) -> str:

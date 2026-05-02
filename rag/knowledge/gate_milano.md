@@ -76,6 +76,10 @@ Età minima 18 anni, documento obbligatorio.
 Orario massimo di arrivo: 03:30.
 Il tavolo non garantisce l'ingresso immediato — stesse regole dress code di tutti.
 
+### Drinklist VIP
+Link drinklist: https://www.dropbox.com/scl/fi/0tqz6wyfrbbzk86ekv0hb/25Drinklist.pdf?rlkey=awprh5u5bsub197d1556mmz1s&st=vlm8wdo5&dl=0
+Inviare SEMPRE questo link quando si parla di tavoli VIP.
+
 ### Drinklist VIP (selezione)
 Vodka: Grey Goose .7l €300, Grey Goose 1.5l €650, Grey Goose 3l €1.300, 42 Below .7l €300
 Tequila: Cazadores €300, Patron Silver 1.5l €350, Patron Reposado €400, Patron Añejo €450, Clase Azul €1.200, Don Julio 1942 €1.200
