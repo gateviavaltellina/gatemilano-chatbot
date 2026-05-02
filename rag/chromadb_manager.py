@@ -71,6 +71,32 @@ class ChromaDBManager:
         docs = results.get("documents", [[]])[0]
         return "\n\n---\n\n".join(docs)
 
+    def get_events_for_date(self, venue: str, date_str: str) -> str:
+        """Fetch events on a specific date (YYYY-MM-DD) via metadata filter."""
+        col = self._collections.get(venue)
+        if col is None:
+            return ""
+        try:
+            next_day = _next_day_str(date_str)
+            results = col.get(
+                where={"$and": [
+                    {"type": {"$eq": "event"}},
+                    {"date": {"$gte": date_str}},
+                    {"date": {"$lt": next_day}},
+                ]}
+            )
+            docs = results.get("documents", [])
+            return "\n\n---\n\n".join(docs) if docs else ""
+        except Exception as e:
+            logger.warning("get_events_for_date error: %s", e)
+            return ""
+
+def _next_day_str(date_str: str) -> str:
+    from datetime import datetime, timedelta
+    dt = datetime.strptime(date_str[:10], "%Y-%m-%d")
+    return (dt + timedelta(days=1)).strftime("%Y-%m-%d")
+
+
 def _chunk_markdown(text: str, chunk_size: int = 400, overlap: int = 50) -> list[str]:
     paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
     chunks = []

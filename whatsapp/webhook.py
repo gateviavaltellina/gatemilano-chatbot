@@ -1,5 +1,6 @@
 import logging
 import asyncio
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
 from config import settings
 from whatsapp.client import send_message, mark_as_read
@@ -7,6 +8,19 @@ from venue.detector import VenueDetector
 from rag.chromadb_manager import chromadb_manager
 from ai.claude_client import generate_response
 from notifications.discord import notify_conversation
+
+_TODAY_TERMS = ["stasera", "stanotte", "oggi", "questa sera", "questa notte", "tonight"]
+_TOMORROW_TERMS = ["domani", "domani sera", "domani notte", "tomorrow"]
+
+def _extract_query_dates(text: str) -> list[str]:
+    now = datetime.now(timezone.utc)
+    lower = text.lower()
+    dates = []
+    if any(t in lower for t in _TODAY_TERMS):
+        dates.append(now.strftime("%Y-%m-%d"))
+    if any(t in lower for t in _TOMORROW_TERMS):
+        dates.append((now + timedelta(days=1)).strftime("%Y-%m-%d"))
+    return dates
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -92,6 +106,15 @@ async def process_message(phone: str, msg_id: str, text: str):
 
     # Recupera contesto RAG
     rag_context = await chromadb_manager.query(venue, text, top_k=settings.rag_top_k)
+
+    # Date-aware: per "stasera"/"domani" recupera eventi per data esatta da metadata
+    date_parts = []
+    for date_str in _extract_query_dates(text):
+        day_events = chromadb_manager.get_events_for_date(venue, date_str)
+        if day_events:
+            date_parts.append(day_events)
+    if date_parts:
+        rag_context = "\n\n---\n\n".join(date_parts) + ("\n\n---\n\n" + rag_context if rag_context else "")
 
     # Genera risposta con Claude
     _add_to_history(conv, "user", text, settings.max_history)
