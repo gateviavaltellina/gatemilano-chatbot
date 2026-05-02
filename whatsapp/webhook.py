@@ -11,6 +11,11 @@ from notifications.discord import notify_conversation
 
 _TODAY_TERMS = ["stasera", "stanotte", "oggi", "questa sera", "questa notte", "tonight"]
 _TOMORROW_TERMS = ["domani", "domani sera", "domani notte", "tomorrow"]
+_IT_MONTHS = {
+    "gennaio": 1, "febbraio": 2, "marzo": 3, "aprile": 4,
+    "maggio": 5, "giugno": 6, "luglio": 7, "agosto": 8,
+    "settembre": 9, "ottobre": 10, "novembre": 11, "dicembre": 12,
+}
 
 def _extract_query_dates(text: str) -> list[str]:
     now = datetime.now(timezone.utc)
@@ -20,7 +25,23 @@ def _extract_query_dates(text: str) -> list[str]:
         dates.append(now.strftime("%Y-%m-%d"))
     if any(t in lower for t in _TOMORROW_TERMS):
         dates.append((now + timedelta(days=1)).strftime("%Y-%m-%d"))
-    return dates
+    # Parsing date italiane esplicite: "15 maggio", "il 15 maggio 2026", ecc.
+    import re
+    for month_name, month_num in _IT_MONTHS.items():
+        pattern = rf"\b(\d{{1,2}})\s+{month_name}(?:\s+(\d{{4}}))?"
+        for m in re.finditer(pattern, lower):
+            day = int(m.group(1))
+            year = int(m.group(2)) if m.group(2) else now.year
+            # Se la data è già passata quest'anno, assume anno prossimo
+            try:
+                from datetime import date
+                d = date(year, month_num, day)
+                if d < now.date() and not m.group(2):
+                    d = date(year + 1, month_num, day)
+                dates.append(d.strftime("%Y-%m-%d"))
+            except ValueError:
+                pass
+    return list(dict.fromkeys(dates))  # deduplica mantenendo ordine
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
