@@ -7,6 +7,7 @@ from whatsapp.client import send_message, send_document, mark_as_read
 
 _DRINKLIST_URL = "https://gatemilano-chatbot-production.up.railway.app/static/drinklist_perreo.pdf"
 _DRINKLIST_TRIGGERS = ["tavolo", "tavoli", "vip", "drinklist", "bottle", "bottiglia", "minimo", "perreo xl"]
+_drinklist_sent: set[str] = set()  # phone → già inviata in questa sessione
 from venue.detector import VenueDetector
 from rag.chromadb_manager import chromadb_manager
 from ai.claude_client import generate_response
@@ -161,14 +162,11 @@ async def process_message(phone: str, msg_id: str, text: str):
 
     await send_message(phone, reply)
 
-    # Allega drinklist PDF se la conversazione riguarda i tavoli VIP
+    # Allega drinklist PDF una sola volta per conversazione
     lower_text = text.lower()
     lower_reply = reply.lower()
-    if any(t in lower_text or t in lower_reply for t in _DRINKLIST_TRIGGERS):
-        await send_document(
-            phone,
-            _DRINKLIST_URL,
-            "Drinklist VIP Perreo.pdf",
-        )
+    if phone not in _drinklist_sent and any(t in lower_text or t in lower_reply for t in _DRINKLIST_TRIGGERS):
+        await send_document(phone, _DRINKLIST_URL, "Drinklist VIP Perreo.pdf")
+        _drinklist_sent.add(phone)
 
     await notify_conversation(phone, venue, text, reply)
