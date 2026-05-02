@@ -40,7 +40,7 @@ async def generate_response(
     history: list[dict],
 ) -> str:
     venue_name = VENUE_NAMES.get(venue, venue)
-    current_datetime = datetime.now(timezone.utc).strftime("%-d %B %Y, %H:%M UTC")
+    current_datetime = datetime.now(timezone.utc).strftime("%A %-d %B %Y, %H:%M UTC")
     system = SYSTEM_TEMPLATE.format(
         venue_name=venue_name,
         rag_context=rag_context or "Nessuna informazione specifica disponibile al momento.",
