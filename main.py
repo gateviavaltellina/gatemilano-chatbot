@@ -9,7 +9,7 @@ from apscheduler.triggers.cron import CronTrigger
 from config import settings
 from whatsapp.webhook import router as webhook_router
 from rag.chromadb_manager import chromadb_manager
-from sync.xceed_sync import sync_all_venues
+from sync.sanity_sync import sync_all_venues
 
 logging.basicConfig(
     level=logging.INFO,
