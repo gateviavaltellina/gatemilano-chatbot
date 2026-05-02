@@ -1,6 +1,7 @@
 import logging
 import uvicorn
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
 from fastapi import FastAPI
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -27,6 +28,13 @@ async def lifespan(app: FastAPI):
         CronTrigger(hour=4, minute=0),
         id="xceed_sync",
         replace_existing=True,
+    )
+    # Run sync 30s after startup so ChromaDB is never empty on first deploy
+    scheduler.add_job(
+        sync_all_venues,
+        "date",
+        run_date=datetime.now() + timedelta(seconds=30),
+        id="xceed_sync_startup",
     )
     scheduler.start()
     logger.info("Bot attivo. In ascolto su porta %d", settings.port)

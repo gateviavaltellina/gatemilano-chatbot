@@ -11,17 +11,21 @@ PARTNER_BASE = "https://partner.xceed.me"
 EVENTS_BASE = "https://events.xceed.me"
 OFFER_BASE = "https://offer.xceed.me"
 
-# Venue names as they appear in Xceed events (from xceed_client.py context)
-XCEED_VENUE_FILTER = {
+# Open Event API channel slugs per venue (public API, no auth required)
+XCEED_CHANNELS = {
+    "gate_milano": "gate-milano",
+    "gate_sardinia": "gate-sardinia",  # seasonal — may return 0 events off-season
+}
+
+XCEED_VENUE_LABELS = {
     "gate_milano": "Gate Milano",
     "gate_sardinia": "Gate Sardinia",
 }
 
 
-async def _fetch_partner_events(xceed_api_key: str) -> list[dict]:
-    """Fetch all upcoming events from Xceed Partner API."""
+async def _fetch_open_events(channel: str) -> list[dict]:
+    """Fetch upcoming events from Xceed Open Event API (no auth, startTime filter works correctly)."""
     now_ts = int(time.time())
-    headers = {"X-API-Key": xceed_api_key, "Accept": "application/json"}
     all_events = []
     offset = 0
     limit = 100
@@ -29,10 +33,17 @@ async def _fetch_partner_events(xceed_api_key: str) -> list[dict]:
         while True:
             try:
                 r = await client.get(
-                    f"{PARTNER_BASE}/v1/events",
-                    headers=headers,
-                    params={"startingTime": now_ts, "limit": limit, "offset": offset},
+                    f"{EVENTS_BASE}/v1/events",
+                    params={
+                        "channel": channel,
+                        "startTime": now_ts,
+                        "limit": limit,
+                        "offset": offset,
+                    },
                 )
+                if r.status_code == 404:
+                    logger.debug("Channel %s not found on Xceed Open API", channel)
+                    break
                 r.raise_for_status()
                 data = r.json()
                 if not data.get("success"):
@@ -45,13 +56,13 @@ async def _fetch_partner_events(xceed_api_key: str) -> list[dict]:
                     break
                 offset += limit
             except Exception as e:
-                logger.error("Xceed API error (offset=%d): %s", offset, e)
+                logger.error("Xceed Open API error (channel=%s, offset=%d): %s", channel, offset, e)
                 break
     return all_events
 
 
 async def _fetch_event_offers(xceed_api_key: str, event_uuid: str) -> dict:
-    """Fetch ticket offers for a single event."""
+    """Fetch ticket offers for a single event via Partner API."""
     headers = {"X-API-Key": xceed_api_key, "Accept": "application/json"}
     async with httpx.AsyncClient(timeout=15) as client:
         try:
@@ -69,33 +80,46 @@ async def _fetch_event_offers(xceed_api_key: str, event_uuid: str) -> dict:
 
 def _build_event_document(event: dict, venue_label: str, offers: dict) -> tuple[str, dict]:
     name = event.get("name", "Evento")
-    uuid = event.get("uuid", event.get("id", ""))
+    uuid = event.get("id", event.get("uuid", ""))
 
-    # Date
-    date_raw = event.get("date", event.get("start_date", ""))
+    # Date — Open Event API uses startingTime (Unix timestamp)
+    date_raw = event.get("startingTime", 0)
     try:
-        if isinstance(date_raw, (int, float)):
-            dt = datetime.fromtimestamp(date_raw, tz=timezone.utc)
-        else:
-            dt = datetime.fromisoformat(str(date_raw).replace("Z", "+00:00"))
+        dt = datetime.fromtimestamp(int(date_raw), tz=timezone.utc)
         date_str = dt.strftime("%-d %B %Y, ore %H:%M")
     except Exception:
-        date_str = str(date_raw) or "Data da definire"
+        date_str = "Data da definire"
 
-    # Ticket tiers from offers
+    # Lineup from Open Event API
+    lineup = event.get("lineup", [])
+    artists = [a.get("name", "") for a in lineup if isinstance(a, dict) and not a.get("isGeneric")]
+    lineup_str = f"\nArtisti: {', '.join(artists)}" if artists else ""
+
+    # Music genres
+    genres = [g.get("name", "") for g in event.get("musicGenres", []) if isinstance(g, dict)]
+    genres_str = f"\nGeneri: {', '.join(genres)}" if genres else ""
+
+    # Ticket tiers from Partner API offers
     ticket_lines = []
-    xceed_url = event.get("xceedUrl", event.get("url", ""))
-    for category in ("tickets", "guestlist", "bottleservice"):
+    xceed_url = event.get("externalSalesUrl", "")
+    for category in ("ticket", "guestlist", "bottleservice", "tickets"):
         items = offers.get(category, [])
         if not isinstance(items, list):
             items = list(items.values()) if isinstance(items, dict) else []
         for item in items:
             if not isinstance(item, dict):
                 continue
-            t_name = item.get("name", "")
-            t_price = item.get("price", item.get("basePrice", ""))
-            sold_out = item.get("soldOut", False) or item.get("available", True) is False
-            if t_price is not None:
+            # name can be a localized dict {"it": ..., "en": ...} or a plain string
+            raw_name = item.get("name", "")
+            if isinstance(raw_name, dict):
+                t_name = raw_name.get("it") or raw_name.get("en") or next(
+                    (v for v in raw_name.values() if v), ""
+                )
+            else:
+                t_name = raw_name
+            t_price = item.get("priceAmount", item.get("onlinePrice", ""))
+            sold_out = item.get("isSoldOut", False) or item.get("soldOut", False)
+            if t_price is not None and t_price != "":
                 avail = " (ESAURITO)" if sold_out else ""
                 ticket_lines.append(f"  - {t_name}: €{t_price}{avail}")
 
@@ -107,6 +131,8 @@ def _build_event_document(event: dict, venue_label: str, offers: dict) -> tuple[
         f"EVENTO: {name}\n"
         f"Venue: {venue_label}\n"
         f"Data: {date_str}"
+        f"{lineup_str}"
+        f"{genres_str}"
         f"{tickets_str}"
     ).strip()
 
@@ -121,52 +147,31 @@ def _build_event_document(event: dict, venue_label: str, offers: dict) -> tuple[
 
 
 async def sync_all_venues():
-    """Fetch upcoming events from Xceed and upsert into ChromaDB."""
-    if not settings.xceed_api_key:
-        logger.warning("XCEED_API_KEY non configurata — sync saltato")
-        return
-
+    """Fetch upcoming events from Xceed Open Event API and upsert into ChromaDB."""
     logger.info("Avvio sync Xceed...")
-    all_events = await _fetch_partner_events(settings.xceed_api_key)
-    logger.info("Xceed: %d eventi totali ricevuti", len(all_events))
 
-    venue_event_ids: dict[str, list[str]] = {k: [] for k in XCEED_VENUE_FILTER}
+    venue_event_ids: dict[str, list[str]] = {k: [] for k in XCEED_CHANNELS}
 
-    for event in all_events:
-        # Match event to venue by name
-        event_venue_raw = event.get("venue", {})
-        if isinstance(event_venue_raw, dict):
-            event_venue_name = event_venue_raw.get("name", "")
-        else:
-            event_venue_name = str(event_venue_raw)
+    for venue_key, channel_slug in XCEED_CHANNELS.items():
+        venue_label = XCEED_VENUE_LABELS[venue_key]
+        events = await _fetch_open_events(channel_slug)
+        logger.info("Xceed Open API: %d eventi ricevuti per %s", len(events), venue_label)
 
-        matched_key = None
-        for venue_key, venue_label in XCEED_VENUE_FILTER.items():
-            if venue_label.lower() in event_venue_name.lower():
-                matched_key = venue_key
-                break
+        for event in events:
+            event_uuid = str(event.get("id", event.get("uuid", "")))
+            if not event_uuid:
+                continue
 
-        if matched_key is None:
-            # Also try matching by event name field if venue field empty
-            for venue_key, venue_label in XCEED_VENUE_FILTER.items():
-                if venue_label.lower() in event.get("name", "").lower():
-                    matched_key = venue_key
-                    break
+            # Fetch offers via Partner API if key available
+            offers = {}
+            if settings.xceed_api_key:
+                offers = await _fetch_event_offers(settings.xceed_api_key, event_uuid)
 
-        if matched_key is None:
-            continue
+            doc, meta = _build_event_document(event, venue_label, offers)
+            chromadb_manager.upsert_event(venue_key, event_uuid, doc, meta)
+            venue_event_ids[venue_key].append(event_uuid)
 
-        event_uuid = str(event.get("uuid", event.get("id", "")))
-        if not event_uuid:
-            continue
-
-        offers = await _fetch_event_offers(settings.xceed_api_key, event_uuid)
-        doc, meta = _build_event_document(event, XCEED_VENUE_FILTER[matched_key], offers)
-        chromadb_manager.upsert_event(matched_key, event_uuid, doc, meta)
-        venue_event_ids[matched_key].append(event_uuid)
-
-    for venue_key, event_ids in venue_event_ids.items():
-        chromadb_manager.delete_stale_events(venue_key, event_ids)
-        logger.info("Sync completato per %s: %d eventi", XCEED_VENUE_FILTER[venue_key], len(event_ids))
+        chromadb_manager.delete_stale_events(venue_key, venue_event_ids[venue_key])
+        logger.info("Sync completato per %s: %d eventi", venue_label, len(venue_event_ids[venue_key]))
 
     logger.info("Sync Xceed completato.")

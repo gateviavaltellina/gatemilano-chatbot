@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timezone
 from anthropic import AsyncAnthropic
 from config import settings
 
@@ -15,6 +16,9 @@ SYSTEM_TEMPLATE = """\
 Sei il chatbot ufficiale di {venue_name}, un club/venue eventi.
 Rispondi SEMPRE nella lingua del messaggio dell'utente (italiano di default).
 Tono: friendly, professionale, conciso. Non usare linguaggio eccessivamente formale.
+
+DATA E ORA ATTUALE: {current_datetime} (fuso orario Europe/Rome)
+Usa questa informazione per rispondere correttamente a domande come "stasera", "questo weekend", "domani", ecc.
 
 INFORMAZIONI VENUE E EVENTI:
 {rag_context}
@@ -36,9 +40,11 @@ async def generate_response(
     history: list[dict],
 ) -> str:
     venue_name = VENUE_NAMES.get(venue, venue)
+    current_datetime = datetime.now(timezone.utc).strftime("%-d %B %Y, %H:%M UTC")
     system = SYSTEM_TEMPLATE.format(
         venue_name=venue_name,
         rag_context=rag_context or "Nessuna informazione specifica disponibile al momento.",
+        current_datetime=current_datetime,
     )
     messages = [*history, {"role": "user", "content": user_message}]
     try:
