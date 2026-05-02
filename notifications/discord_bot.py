@@ -47,12 +47,12 @@ async def on_message(message: discord.Message):
 
     content = message.content.strip()
 
-    if content.startswith("!reply "):
+    if content.startswith("!r "):
         phone = _phone_from_reply(message)
         if not phone:
-            await message.reply("❌ Rispondi a una notifica del bot per usare !reply", mention_author=False)
+            await message.reply("❌ Rispondi a una notifica del bot per usare !r", mention_author=False)
             return
-        text = content[len("!reply "):].strip()
+        text = content[3:].strip()
         if not text:
             return
         from whatsapp.client import send_message
@@ -60,10 +60,10 @@ async def on_message(message: discord.Message):
         _human_sessions[phone] = message.author.display_name
         await message.add_reaction("✅")
 
-    elif content == "!takeover":
+    elif content == "!t":
         phone = _phone_from_reply(message)
         if not phone:
-            await message.reply("❌ Rispondi a una notifica del bot per usare !takeover", mention_author=False)
+            await message.reply("❌ Rispondi a una notifica del bot per usare !t", mention_author=False)
             return
         _human_sessions[phone] = message.author.display_name
         await message.add_reaction("🤝")
@@ -72,7 +72,7 @@ async def on_message(message: discord.Message):
             delete_after=60,
         )
 
-    elif content == "!release":
+    elif content == "!rel":
         phone = _phone_from_reply(message)
         if phone and phone in _human_sessions:
             del _human_sessions[phone]
