@@ -108,11 +108,17 @@ async def process_message(phone: str, msg_id: str, text: str):
     rag_context = await chromadb_manager.query(venue, text, top_k=settings.rag_top_k)
 
     # Date-aware: per "stasera"/"domani" recupera eventi per data esatta da metadata
+    # Cerca anche nell'altra venue (utente potrebbe chiedere di eventi cross-venue)
+    other_venue = "gate_sardinia" if venue == "gate_milano" else "gate_milano"
+    other_venue_name = "Gate Sardinia" if other_venue == "gate_sardinia" else "Gate Milano"
     date_parts = []
     for date_str in _extract_query_dates(text):
         day_events = chromadb_manager.get_events_for_date(venue, date_str)
         if day_events:
             date_parts.append(day_events)
+        other_events = chromadb_manager.get_events_for_date(other_venue, date_str)
+        if other_events:
+            date_parts.append(f"[EVENTI A {other_venue_name.upper()} — venue diversa]\n{other_events}")
     if date_parts:
         rag_context = "\n\n---\n\n".join(date_parts) + ("\n\n---\n\n" + rag_context if rag_context else "")
 
