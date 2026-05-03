@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from config import settings
-from rag.chromadb_manager import chromadb_manager
+from rag.event_store import upsert_event, delete_stale_events
 
 _ROME = ZoneInfo("Europe/Rome")
 
@@ -176,10 +176,10 @@ async def sync_all_venues():
                 offers = await _fetch_event_offers(settings.xceed_api_key, event_uuid)
 
             doc, meta = _build_event_document(event, venue_label, offers)
-            chromadb_manager.upsert_event(venue_key, event_uuid, doc, meta)
+            upsert_event(venue_key, event_uuid, doc, meta)
             venue_event_ids[venue_key].append(event_uuid)
 
-        chromadb_manager.delete_stale_events(venue_key, venue_event_ids[venue_key], source="xceed")
+        delete_stale_events(venue_key, venue_event_ids[venue_key], source="xceed")
         logger.info("Sync completato per %s: %d eventi", venue_label, len(venue_event_ids[venue_key]))
 
     logger.info("Sync Xceed completato.")

@@ -1,10 +1,9 @@
 import logging
-import asyncio
 from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
-from config import settings
+from config import settings, KNOWLEDGE_DIR
 from whatsapp.client import send_message, send_document, mark_as_read
 from venue.detector import VenueDetector
-from rag.chromadb_manager import chromadb_manager
+from rag.event_store import get_upcoming_events, get_events_for_date
 from rag.date_utils import extract_query_dates
 from ai.claude_client import generate_response
 from notifications.discord import notify_conversation, notify_human_message
@@ -120,28 +119,37 @@ async def process_message(phone: str, msg_id: str, text: str):
 
     conv["venue"] = venue
 
-    # Recupera contesto RAG
-    rag_context = await chromadb_manager.query(venue, text, top_k=settings.rag_top_k)
+    # Knowledge base statica (letta direttamente dal file markdown)
+    static_knowledge = ""
+    try:
+        static_knowledge = (KNOWLEDGE_DIR / f"{venue}.md").read_text(encoding="utf-8")
+    except Exception:
+        pass
 
-    # Sempre inietta eventi futuri (prossimi 14 giorni) — indipendente dalla lingua della query
-    upcoming = chromadb_manager.get_upcoming_events(venue, days=14)
-    if upcoming:
-        rag_context = upcoming + ("\n\n---\n\n" + rag_context if rag_context else "")
+    # Tutti gli eventi futuri (prossimi 14 giorni), ordinati per data
+    upcoming = get_upcoming_events(venue, days=14)
 
-    # Date-aware: per "stasera"/"domani" recupera eventi per data esatta da metadata
-    # Cerca anche nell'altra venue (utente potrebbe chiedere di eventi cross-venue)
+    # Date-aware: per "sabato", "domani", "9 maggio" ecc. inietta eventi del giorno esatto
     other_venue = "gate_sardinia" if venue == "gate_milano" else "gate_milano"
     other_venue_name = "Gate Sardinia" if other_venue == "gate_sardinia" else "Gate Milano"
     date_parts = []
     for date_str in extract_query_dates(text):
-        day_events = chromadb_manager.get_events_for_date(venue, date_str)
+        day_events = get_events_for_date(venue, date_str)
         if day_events:
             date_parts.append(day_events)
-        other_events = chromadb_manager.get_events_for_date(other_venue, date_str)
+        other_events = get_events_for_date(other_venue, date_str)
         if other_events:
             date_parts.append(f"[EVENTI A {other_venue_name.upper()} — venue diversa]\n{other_events}")
+
+    # Costruisci contesto: date-specific > upcoming > static knowledge
+    parts = []
     if date_parts:
-        rag_context = "\n\n---\n\n".join(date_parts) + ("\n\n---\n\n" + rag_context if rag_context else "")
+        parts.extend(date_parts)
+    if upcoming:
+        parts.append(upcoming)
+    if static_knowledge:
+        parts.append(static_knowledge)
+    rag_context = "\n\n---\n\n".join(parts)
 
     # Genera risposta con Claude
     _add_to_history(conv, "user", text, settings.max_history)

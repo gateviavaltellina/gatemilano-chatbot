@@ -3,7 +3,7 @@ import httpx
 import logging
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
-from rag.chromadb_manager import chromadb_manager
+from rag.event_store import upsert_event, delete_stale_events
 
 _ROME = ZoneInfo("Europe/Rome")
 
@@ -346,16 +346,16 @@ async def sync_all_venues():
             else:
                 xceed_data = {"about": "", "prices_str": ""}
             doc, meta = _build_document(event, label, xceed_data)
-            chromadb_manager.upsert_event(venue_key, sanity_id, doc, meta)
+            upsert_event(venue_key, sanity_id, doc, meta)
             current_ids.append(sanity_id)
-        chromadb_manager.delete_stale_events(venue_key, current_ids, source="sanity")
+        delete_stale_events(venue_key, current_ids, source="sanity")
 
         # Site settings (Milano only)
         if cfg.get("has_site_settings"):
             settings = await _fetch_site_settings(project_id, dataset)
             if settings:
                 doc, meta = _build_site_settings_document(settings, label)
-                chromadb_manager.upsert_event(venue_key, f"site_settings_{venue_key}", doc, meta)
+                upsert_event(venue_key, f"site_settings_{venue_key}", doc, meta)
                 logger.info("Sync siteSettings per %s", label)
 
         # Blog posts (Sardinia only)
@@ -370,7 +370,7 @@ async def sync_all_venues():
                 if not body_text:
                     continue
                 doc, meta = _build_blog_document(post, label)
-                chromadb_manager.upsert_event(venue_key, post_id, doc, meta)
+                upsert_event(venue_key, post_id, doc, meta)
 
         logger.info("Sync Sanity completato per %s: %d eventi", label, len(current_ids))
 

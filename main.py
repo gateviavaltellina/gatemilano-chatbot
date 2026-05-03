@@ -11,7 +11,6 @@ from apscheduler.triggers.cron import CronTrigger
 from config import settings
 from whatsapp.webhook import router as webhook_router
 from instagram.webhook import router as ig_router
-from rag.chromadb_manager import chromadb_manager
 from sync.sanity_sync import sync_all_venues as _sanity_sync
 from sync.xceed_sync import sync_all_venues as _xceed_sync
 from notifications.discord_bot import start as start_discord_bot
@@ -34,7 +33,6 @@ _ready = False
 async def _init_background():
     global _ready
     logger.info("Avvio inizializzazione in background...")
-    await chromadb_manager.init()
     scheduler.add_job(
         sync_all_venues,
         CronTrigger(hour=4, minute=0),
@@ -85,13 +83,10 @@ async def sanity_webhook(background_tasks: BackgroundTasks):
     return {"status": "sync scheduled"}
 
 
-@app.get("/debug/collections")
-async def debug_collections():
-    from rag.chromadb_manager import chromadb_manager
-    result = {}
-    for name, col in chromadb_manager._collections.items():
-        result[name] = col.count()
-    return result
+@app.get("/debug/events")
+async def debug_events():
+    from rag.event_store import count
+    return {"gate_milano": count("gate_milano"), "gate_sardinia": count("gate_sardinia")}
 
 
 if __name__ == "__main__":
