@@ -70,8 +70,9 @@ Per info e preventivi contattare George:
 - Email: george@gatemilano.com
 
 ## Oggetti Smarriti e Capi Dimenticati in Guardaroba
-Per oggetti smarriti in venue o capi dimenticati in guardaroba (chi ha il tagliandino fisico ma non ha ritirato), contattare direttamente Antonio (responsabile guardaroba):
+Per oggetti smarriti in venue o capi dimenticati in guardaroba, contattare direttamente Antonio (responsabile guardaroba):
 - WhatsApp: +39 389 640 6077
+Se si ha ancora il tagliandino fisico del guardaroba, mandare una foto del tagliandino ad Antonio su WhatsApp — facilita il recupero.
 
 ## Tavoli VIP — Perreo XL
 
