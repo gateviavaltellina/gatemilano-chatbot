@@ -85,5 +85,14 @@ async def sanity_webhook(background_tasks: BackgroundTasks):
     return {"status": "sync scheduled"}
 
 
+@app.get("/debug/collections")
+async def debug_collections():
+    from rag.chromadb_manager import chromadb_manager
+    result = {}
+    for name, col in chromadb_manager._collections.items():
+        result[name] = col.count()
+    return result
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=settings.port, reload=False)
