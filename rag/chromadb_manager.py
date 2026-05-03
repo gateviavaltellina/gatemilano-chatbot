@@ -1,7 +1,6 @@
 import asyncio
 import chromadb
 import logging
-from pathlib import Path
 from chromadb.utils import embedding_functions
 from config import settings, KNOWLEDGE_DIR
 
@@ -10,16 +9,19 @@ COLLECTIONS = ["gate_milano", "gate_sardinia"]
 
 class ChromaDBManager:
     def __init__(self):
-        self._client: chromadb.PersistentClient | None = None
+        self._client = None
         self._collections: dict = {}
         self._ef = None
 
     async def init(self):
-        Path(settings.chroma_db_path).mkdir(parents=True, exist_ok=True)
-        self._client = chromadb.PersistentClient(path=settings.chroma_db_path)
-        self._ef = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name=settings.embedding_model
+        # EphemeralClient: in-memory, nessun file lock — compatibile con Railway rolling deploy.
+        # I dati vengono ricostruiti ad ogni startup: static knowledge (qui) + eventi (sync Sanity).
+        self._ef = await asyncio.to_thread(
+            lambda: embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name=settings.embedding_model
+            )
         )
+        self._client = chromadb.EphemeralClient()
         for name in COLLECTIONS:
             self._collections[name] = self._client.get_or_create_collection(
                 name=name, embedding_function=self._ef
@@ -37,24 +39,9 @@ class ChromaDBManager:
             content = knowledge_file.read_text(encoding="utf-8")
             chunks = _chunk_markdown(content, chunk_size=600, overlap=80)
             ids = [f"static_{collection_name}_{i}" for i in range(len(chunks))]
-
-            # Fetch existing docs (non-blocking) — salta chunk non modificati
-            existing = await asyncio.to_thread(lambda: col.get(ids=ids, include=["documents"]))
-            existing_map = dict(zip(existing["ids"], existing["documents"] or []))
-            changed = [(i, c) for i, c in zip(ids, chunks) if existing_map.get(i) != c]
-            if changed:
-                c_ids, c_docs = zip(*changed)
-                await asyncio.to_thread(lambda: col.upsert(ids=list(c_ids), documents=list(c_docs)))
-                logger.info("Aggiornati %d chunk statici in '%s'", len(changed), collection_name)
-            else:
-                logger.info("Chunk statici invariati per '%s' — skip embedding", collection_name)
-
-            # Rimuovi chunk in eccesso (file diventato più corto)
-            probe_ids = [f"static_{collection_name}_{i}" for i in range(len(chunks), len(chunks) + 50)]
-            stale = await asyncio.to_thread(lambda: col.get(ids=probe_ids))
-            if stale["ids"]:
-                await asyncio.to_thread(lambda: col.delete(ids=stale["ids"]))
-                logger.info("Rimossi %d chunk obsoleti da '%s'", len(stale["ids"]), collection_name)
+            _col, _ids, _chunks = col, ids, chunks
+            await asyncio.to_thread(lambda: _col.add(ids=_ids, documents=_chunks))
+            logger.info("Aggiunti %d chunk statici a '%s'", len(chunks), collection_name)
 
     def upsert_event(self, venue: str, event_id: str, document: str, metadata: dict):
         col = self._collections.get(venue)
