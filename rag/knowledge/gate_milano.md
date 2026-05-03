@@ -35,6 +35,11 @@ Gate Milano è uno dei club più importanti di Milano, attivo dal 2017, con prog
 - Tutti i biglietti sono non rimborsabili dopo 48 ore
 - **Nessun rientro** dopo l'uscita: serve un nuovo biglietto
 
+## Accrediti
+È possibile richiedere un accredito per le seguenti categorie: stampa, content creator, artisti, foto & video.
+- WhatsApp: +39 329 169 6882
+- Email: george@gatemilano.com
+
 ## Accesso e Dress Code
 **Età minima:** 18 anni (16+ ammessi solo per concerti)
 **Documento:** documento d'identità valido obbligatorio (carta d'identità o passaporto — NO fotocopie)
