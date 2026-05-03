@@ -2,8 +2,11 @@ import httpx
 import logging
 import time
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from config import settings
 from rag.chromadb_manager import chromadb_manager
+
+_ROME = ZoneInfo("Europe/Rome")
 
 logger = logging.getLogger(__name__)
 
@@ -84,9 +87,12 @@ def _build_event_document(event: dict, venue_label: str, offers: dict) -> tuple[
 
     # Date — Open Event API uses startingTime (Unix timestamp)
     date_raw = event.get("startingTime", 0)
+    date_ts = 0
     try:
         dt = datetime.fromtimestamp(int(date_raw), tz=timezone.utc)
         date_str = dt.strftime("%-d %B %Y, ore %H:%M")
+        dt_rome = dt.astimezone(_ROME)
+        date_ts = int(datetime(dt_rome.year, dt_rome.month, dt_rome.day, tzinfo=timezone.utc).timestamp())
     except Exception:
         date_str = "Data da definire"
 
@@ -138,8 +144,10 @@ def _build_event_document(event: dict, venue_label: str, offers: dict) -> tuple[
 
     metadata = {
         "type": "event",
+        "source": "xceed",
         "event_name": name,
         "date": str(date_raw),
+        "date_ts": date_ts,
         "venue": venue_label,
         "uuid": uuid,
     }
@@ -171,7 +179,7 @@ async def sync_all_venues():
             chromadb_manager.upsert_event(venue_key, event_uuid, doc, meta)
             venue_event_ids[venue_key].append(event_uuid)
 
-        chromadb_manager.delete_stale_events(venue_key, venue_event_ids[venue_key])
+        chromadb_manager.delete_stale_events(venue_key, venue_event_ids[venue_key], source="xceed")
         logger.info("Sync completato per %s: %d eventi", venue_label, len(venue_event_ids[venue_key]))
 
     logger.info("Sync Xceed completato.")

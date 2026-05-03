@@ -11,8 +11,14 @@ from apscheduler.triggers.cron import CronTrigger
 from config import settings
 from whatsapp.webhook import router as webhook_router
 from rag.chromadb_manager import chromadb_manager
-from sync.sanity_sync import sync_all_venues
+from sync.sanity_sync import sync_all_venues as _sanity_sync
+from sync.xceed_sync import sync_all_venues as _xceed_sync
 from notifications.discord_bot import start as start_discord_bot
+
+
+async def sync_all_venues():
+    await _sanity_sync()
+    await _xceed_sync()
 
 logging.basicConfig(
     level=logging.INFO,

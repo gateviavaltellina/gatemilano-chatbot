@@ -87,6 +87,28 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
     except Exception:
         raise HTTPException(status_code=400, detail="Body non valido")
 
+    # Instagram DM
+    if body.get("object") == "instagram":
+        from instagram.webhook import process_ig_message
+        for entry in body.get("entry", []):
+            ig_account_id = entry.get("id", "")
+            for messaging in entry.get("messaging", []):
+                msg = messaging.get("message", {})
+                msg_id = msg.get("mid", "")
+                sender_id = messaging.get("sender", {}).get("id", "")
+                text = msg.get("text", "").strip()
+                if not sender_id or not text or not msg_id or sender_id == ig_account_id:
+                    continue
+                if msg_id in _processed_ids:
+                    continue
+                _processed_ids.add(msg_id)
+                if len(_processed_ids) > _MAX_PROCESSED:
+                    old = list(_processed_ids)[:_MAX_PROCESSED // 2]
+                    for m in old:
+                        _processed_ids.discard(m)
+                background_tasks.add_task(process_ig_message, ig_account_id, sender_id, text)
+        return {"status": "ok"}
+
     if body.get("object") != "whatsapp_business_account":
         return {"status": "ignored"}
 

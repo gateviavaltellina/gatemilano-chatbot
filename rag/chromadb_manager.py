@@ -51,17 +51,21 @@ class ChromaDBManager:
             return
         col.upsert(ids=[f"event_{event_id}"], documents=[document], metadatas=[metadata])
 
-    def delete_stale_events(self, venue: str, current_event_ids: list[str]):
+    def delete_stale_events(self, venue: str, current_event_ids: list[str], source: str | None = None):
         col = self._collections.get(venue)
         if col is None:
             return
-        all_items = col.get(where={"type": "event"})
+        if source:
+            where = {"$and": [{"type": {"$eq": "event"}}, {"source": {"$eq": source}}]}
+        else:
+            where = {"type": "event"}
+        all_items = col.get(where=where)
         existing_ids = set(all_items["ids"])
         current_prefixed = {f"event_{eid}" for eid in current_event_ids}
         stale = existing_ids - current_prefixed
         if stale:
             col.delete(ids=list(stale))
-            logger.info("Rimossi %d eventi scaduti da '%s'", len(stale), venue)
+            logger.info("Rimossi %d eventi scaduti da '%s'%s", len(stale), venue, f" ({source})" if source else "")
 
     async def query(self, venue: str, query_text: str, top_k: int = 5) -> str:
         col = self._collections.get(venue)

@@ -113,6 +113,7 @@ def _build_document(event: dict, venue_label: str) -> tuple[str, dict]:
 
     metadata = {
         "type": "event",
+        "source": "sanity",
         "event_name": title,
         "date": date_str,
         "date_ts": date_ts,
@@ -139,7 +140,7 @@ async def sync_all_venues():
             chromadb_manager.upsert_event(venue_key, sanity_id, doc, meta)
             current_ids.append(sanity_id)
 
-        chromadb_manager.delete_stale_events(venue_key, current_ids)
+        chromadb_manager.delete_stale_events(venue_key, current_ids, source="sanity")
         logger.info("Sync completato per %s: %d eventi", label, len(current_ids))
 
     logger.info("Sync Sanity completato.")
