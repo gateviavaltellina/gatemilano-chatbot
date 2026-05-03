@@ -85,8 +85,23 @@ async def sanity_webhook(background_tasks: BackgroundTasks):
 
 @app.get("/debug/events")
 async def debug_events():
-    from rag.event_store import count
-    return {"gate_milano": count("gate_milano"), "gate_sardinia": count("gate_sardinia")}
+    from rag.event_store import count, upsert_event, _store
+    return {
+        "gate_milano": count("gate_milano"),
+        "gate_sardinia": count("gate_sardinia"),
+        "store_keys": list(_store.keys()),
+        "total_docs": {k: len(v) for k, v in _store.items()},
+    }
+
+
+@app.post("/debug/test-store")
+async def debug_test_store():
+    from rag.event_store import upsert_event, count, _store
+    upsert_event("test_venue", "test_001", "Test event doc", {"type": "event", "date_ts": 9999999999})
+    return {
+        "after_insert_count": count("test_venue"),
+        "store_id": id(_store),
+    }
 
 
 if __name__ == "__main__":
