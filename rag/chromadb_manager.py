@@ -40,7 +40,8 @@ class ChromaDBManager:
             chunks = _chunk_markdown(content, chunk_size=600, overlap=80)
             ids = [f"static_{collection_name}_{i}" for i in range(len(chunks))]
             _col, _ids, _chunks = col, ids, chunks
-            await asyncio.to_thread(lambda: _col.add(ids=_ids, documents=_chunks))
+            _metas = [{"type": "static", "source": "knowledge"} for _ in _chunks]
+            await asyncio.to_thread(lambda: _col.add(ids=_ids, documents=_chunks, metadatas=_metas))
             logger.info("Aggiunti %d chunk statici a '%s'", len(chunks), collection_name)
 
     def upsert_event(self, venue: str, event_id: str, document: str, metadata: dict):
