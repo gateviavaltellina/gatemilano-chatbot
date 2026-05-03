@@ -12,8 +12,9 @@ Gate Milano è uno dei club più importanti di Milano, attivo dal 2017, con prog
 **Spazi:** Main Room (Stage 1) + Club Room (Stage 2)
 
 ## Orari di Apertura
-- Venerdì e sabato: 23:00 – 05:00 (orari possono variare per evento)
-- Concerti: apertura porte generalmente 20:00
+- Stagione: settembre – fine giugno
+- Venerdì e sabato: 23:00 – 05:00
+- Concerti infrasettimanali: orari variabili — controlla sempre l'evento specifico su gatemilano.it o Xceed
 - Orario consigliato per arrivare: prima dell'1:00 di notte
 
 ## Come Arrivare
