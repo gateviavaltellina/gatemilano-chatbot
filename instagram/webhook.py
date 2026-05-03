@@ -2,6 +2,7 @@ import logging
 from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
 from config import settings
 from rag.chromadb_manager import chromadb_manager
+from rag.date_utils import extract_query_dates
 from ai.claude_client import generate_response
 from notifications.discord import notify_conversation, notify_human_message
 from notifications.discord_bot import is_human_takeover
@@ -115,6 +116,20 @@ async def process_ig_message(ig_account_id: str, sender_id: str, text: str) -> N
     rag_context = await chromadb_manager.query(venue, text, top_k=settings.rag_top_k)
     if upcoming:
         rag_context = upcoming + ("\n\n---\n\n" + rag_context if rag_context else "")
+
+    # Date-aware: per "sabato", "venerdì", "este sabado", ecc. inietta eventi per data esatta
+    other_venue = "gate_sardinia" if venue == "gate_milano" else "gate_milano"
+    other_venue_name = "Gate Sardinia" if other_venue == "gate_sardinia" else "Gate Milano"
+    date_parts = []
+    for date_str in extract_query_dates(text):
+        day_events = chromadb_manager.get_events_for_date(venue, date_str)
+        if day_events:
+            date_parts.append(day_events)
+        other_events = chromadb_manager.get_events_for_date(other_venue, date_str)
+        if other_events:
+            date_parts.append(f"[EVENTI A {other_venue_name.upper()} — venue diversa]\n{other_events}")
+    if date_parts:
+        rag_context = "\n\n---\n\n".join(date_parts) + ("\n\n---\n\n" + rag_context if rag_context else "")
 
     _add_to_history(conv, "user", text)
     reply = await generate_response(

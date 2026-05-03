@@ -78,5 +78,12 @@ async def trigger_sync():
     return {"status": "sync completato"}
 
 
+@app.post("/webhook/sanity")
+async def sanity_webhook(background_tasks: BackgroundTasks):
+    """Endpoint per webhook Sanity CMS — sync immediato quando un evento viene modificato."""
+    background_tasks.add_task(sync_all_venues)
+    return {"status": "sync scheduled"}
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=settings.port, reload=False)

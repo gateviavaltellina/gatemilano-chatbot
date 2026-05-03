@@ -29,21 +29,22 @@ class ChromaDBManager:
     async def _populate_static_knowledge(self):
         for collection_name in COLLECTIONS:
             col = self._collections[collection_name]
-            venue_key = collection_name.replace("gate_", "")
             knowledge_file = KNOWLEDGE_DIR / f"{collection_name}.md"
             if not knowledge_file.exists():
                 logger.warning("File knowledge non trovato: %s", knowledge_file)
                 continue
             content = knowledge_file.read_text(encoding="utf-8")
-            chunks = _chunk_markdown(content, chunk_size=400, overlap=50)
+            chunks = _chunk_markdown(content, chunk_size=600, overlap=80)
             ids = [f"static_{collection_name}_{i}" for i in range(len(chunks))]
-            existing = col.get(ids=ids)
-            existing_ids = set(existing["ids"])
-            new_chunks = [(id_, chunk) for id_, chunk in zip(ids, chunks) if id_ not in existing_ids]
-            if new_chunks:
-                new_ids, new_docs = zip(*new_chunks)
-                col.add(ids=list(new_ids), documents=list(new_docs))
-                logger.info("Aggiunti %d chunk statici a '%s'", len(new_chunks), collection_name)
+            # Upsert: aggiorna contenuto se il file è cambiato
+            col.upsert(ids=ids, documents=chunks)
+            logger.info("Upserted %d chunk statici in '%s'", len(chunks), collection_name)
+            # Rimuovi chunk in eccesso (se il file è diventato più corto)
+            probe_ids = [f"static_{collection_name}_{i}" for i in range(len(chunks), len(chunks) + 100)]
+            stale = col.get(ids=probe_ids)
+            if stale["ids"]:
+                col.delete(ids=stale["ids"])
+                logger.info("Rimossi %d chunk statici obsoleti da '%s'", len(stale["ids"]), collection_name)
 
     def upsert_event(self, venue: str, event_id: str, document: str, metadata: dict):
         col = self._collections.get(venue)

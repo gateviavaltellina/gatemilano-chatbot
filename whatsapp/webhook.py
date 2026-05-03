@@ -1,52 +1,18 @@
 import logging
 import asyncio
-from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
 from config import settings
 from whatsapp.client import send_message, send_document, mark_as_read
-
-_DRINKLIST_URL = "https://gatemilano-chatbot-production.up.railway.app/static/drinklist_perreo.pdf"
-_DRINKLIST_TRIGGERS = ["tavolo", "tavoli", "vip", "drinklist", "bottle", "bottiglia", "minimo", "perreo xl"]
-_drinklist_sent: set[str] = set()  # phone → già inviata in questa sessione
 from venue.detector import VenueDetector
 from rag.chromadb_manager import chromadb_manager
+from rag.date_utils import extract_query_dates
 from ai.claude_client import generate_response
 from notifications.discord import notify_conversation, notify_human_message
 from notifications.discord_bot import is_human_takeover
 
-_TODAY_TERMS = ["stasera", "stanotte", "oggi", "questa sera", "questa notte", "tonight"]
-_TOMORROW_TERMS = ["domani", "domani sera", "domani notte", "tomorrow"]
-_IT_MONTHS = {
-    "gennaio": 1, "febbraio": 2, "marzo": 3, "aprile": 4,
-    "maggio": 5, "giugno": 6, "luglio": 7, "agosto": 8,
-    "settembre": 9, "ottobre": 10, "novembre": 11, "dicembre": 12,
-}
-
-def _extract_query_dates(text: str) -> list[str]:
-    now = datetime.now(timezone.utc)
-    lower = text.lower()
-    dates = []
-    if any(t in lower for t in _TODAY_TERMS):
-        dates.append(now.strftime("%Y-%m-%d"))
-    if any(t in lower for t in _TOMORROW_TERMS):
-        dates.append((now + timedelta(days=1)).strftime("%Y-%m-%d"))
-    # Parsing date italiane esplicite: "15 maggio", "il 15 maggio 2026", ecc.
-    import re
-    for month_name, month_num in _IT_MONTHS.items():
-        pattern = rf"\b(\d{{1,2}})\s+{month_name}(?:\s+(\d{{4}}))?"
-        for m in re.finditer(pattern, lower):
-            day = int(m.group(1))
-            year = int(m.group(2)) if m.group(2) else now.year
-            # Se la data è già passata quest'anno, assume anno prossimo
-            try:
-                from datetime import date
-                d = date(year, month_num, day)
-                if d < now.date() and not m.group(2):
-                    d = date(year + 1, month_num, day)
-                dates.append(d.strftime("%Y-%m-%d"))
-            except ValueError:
-                pass
-    return list(dict.fromkeys(dates))  # deduplica mantenendo ordine
+_DRINKLIST_URL = "https://gatemilano-chatbot-production.up.railway.app/static/drinklist_perreo.pdf"
+_DRINKLIST_TRIGGERS = ["tavolo", "tavoli", "vip", "drinklist", "bottle", "bottiglia", "minimo", "perreo xl"]
+_drinklist_sent: set[str] = set()
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -167,7 +133,7 @@ async def process_message(phone: str, msg_id: str, text: str):
     other_venue = "gate_sardinia" if venue == "gate_milano" else "gate_milano"
     other_venue_name = "Gate Sardinia" if other_venue == "gate_sardinia" else "Gate Milano"
     date_parts = []
-    for date_str in _extract_query_dates(text):
+    for date_str in extract_query_dates(text):
         day_events = chromadb_manager.get_events_for_date(venue, date_str)
         if day_events:
             date_parts.append(day_events)
