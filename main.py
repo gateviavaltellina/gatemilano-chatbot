@@ -104,5 +104,27 @@ async def debug_test_store():
     }
 
 
+@app.get("/debug/sanity")
+async def debug_sanity():
+    import httpx
+    from datetime import datetime, timezone
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    query = '*[_type == "event" && date >= $today && defined(title)] | order(date asc) { _id, title, date }'
+    url = "https://68pz8xfn.api.sanity.io/v2021-10-21/data/query/production"
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            r = await client.get(url, params={"query": query, "$today": f'"{today}"'})
+            data = r.json()
+            results = data.get("result", []) or []
+            return {
+                "today": today,
+                "status_code": r.status_code,
+                "event_count": len(results),
+                "first_3": results[:3],
+            }
+    except Exception as e:
+        return {"error": str(e), "today": today}
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=settings.port, reload=False)
