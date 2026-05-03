@@ -66,13 +66,20 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
         return {"status": "ignored"}
 
     for entry in body.get("entry", []):
+        # Formato reale: entry.messaging[]
+        events = entry.get("messaging", [])
+        # Formato test Meta: entry.changes[].value
         for change in entry.get("changes", []):
-            if change.get("field") != "messages":
-                continue
-            value = change.get("value", {})
-            ig_account_id = value.get("recipient", {}).get("id", "")
-            sender_id = value.get("sender", {}).get("id", "")
-            msg = value.get("message", {})
+            if change.get("field") == "messages":
+                events.append(change.get("value", {}))
+
+        for event in events:
+            ig_account_id = (
+                event.get("recipient", {}).get("id", "")
+                or entry.get("id", "")
+            )
+            sender_id = event.get("sender", {}).get("id", "")
+            msg = event.get("message", {})
             text = msg.get("text", "").strip()
             msg_id = msg.get("mid", "")
 
