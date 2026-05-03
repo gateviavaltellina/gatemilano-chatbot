@@ -53,7 +53,10 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
     except Exception:
         raise HTTPException(status_code=400, detail="Body non valido")
 
+    logger.info("IG webhook body: %s", body)
+
     if body.get("object") != "instagram":
+        logger.info("IG webhook ignored: object=%s", body.get("object"))
         return {"status": "ignored"}
 
     for entry in body.get("entry", []):
