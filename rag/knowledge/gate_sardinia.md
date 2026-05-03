@@ -25,7 +25,7 @@ Gate Sardinia è il venue estivo del gruppo Gate (attivo dal 2017 con Gate Milan
 
 ## Biglietti
 - Acquisto online su Xceed (xceed.me) e Dice (dice.fm)
-- Link biglietti sempre su gatesardinia.it e Instagram @gate.sardinia
+- Link biglietti sempre su gatesardinia.it e Instagram @gatesardinia
 - Acquisto anticipato consigliato
 - **Acquista solo dai canali ufficiali — diffidate dai rivenditori non autorizzati**
 
@@ -70,7 +70,7 @@ Rap e trap italiani, techno internazionale, tech house, reggaeton (Perreo XL ogn
 Contattare info@gatesardinia.it con descrizione dell'oggetto e data della visita.
 
 ## Social Media
-- Instagram: @gate.sardinia
+- Instagram: @gatesardinia
 - Sito: gatesardinia.it
 
 ## Contatti per Tipo di Richiesta
