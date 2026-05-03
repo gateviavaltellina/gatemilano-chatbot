@@ -157,6 +157,11 @@ async def process_message(phone: str, msg_id: str, text: str):
     # Recupera contesto RAG
     rag_context = await chromadb_manager.query(venue, text, top_k=settings.rag_top_k)
 
+    # Sempre inietta eventi futuri (prossimi 14 giorni) — indipendente dalla lingua della query
+    upcoming = chromadb_manager.get_upcoming_events(venue, days=14)
+    if upcoming:
+        rag_context = upcoming + ("\n\n---\n\n" + rag_context if rag_context else "")
+
     # Date-aware: per "stasera"/"domani" recupera eventi per data esatta da metadata
     # Cerca anche nell'altra venue (utente potrebbe chiedere di eventi cross-venue)
     other_venue = "gate_sardinia" if venue == "gate_milano" else "gate_milano"

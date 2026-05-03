@@ -75,6 +75,33 @@ class ChromaDBManager:
         docs = results.get("documents", [[]])[0]
         return "\n\n---\n\n".join(docs)
 
+    def get_upcoming_events(self, venue: str, days: int = 14) -> str:
+        """Fetch all events in the next N days, sorted by date."""
+        col = self._collections.get(venue)
+        if col is None:
+            return ""
+        try:
+            from datetime import datetime, timezone as tz
+            now_ts = int(datetime.now(tz.utc).timestamp())
+            end_ts = now_ts + days * 86400
+            results = col.get(
+                where={"$and": [
+                    {"type": {"$eq": "event"}},
+                    {"date_ts": {"$gte": now_ts}},
+                    {"date_ts": {"$lte": end_ts}},
+                ]},
+                include=["documents", "metadatas"],
+            )
+            docs = results.get("documents", [])
+            metas = results.get("metadatas", [])
+            if not docs:
+                return ""
+            paired = sorted(zip(metas, docs), key=lambda x: x[0].get("date_ts", 0) if x[0] else 0)
+            return "\n\n---\n\n".join(d for _, d in paired)
+        except Exception as e:
+            logger.warning("get_upcoming_events error: %s", e)
+            return ""
+
     def get_events_for_date(self, venue: str, date_str: str) -> str:
         """Fetch events on a specific date (YYYY-MM-DD) via numeric timestamp filter."""
         col = self._collections.get(venue)

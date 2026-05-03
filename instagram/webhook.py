@@ -110,7 +110,11 @@ async def process_ig_message(ig_account_id: str, sender_id: str, text: str) -> N
         await notify_human_message(phone, venue, text, context)
         return
 
+    # Sempre inietta eventi futuri (prossimi 14 giorni) — indipendente dalla lingua della query
+    upcoming = chromadb_manager.get_upcoming_events(venue, days=14)
     rag_context = await chromadb_manager.query(venue, text, top_k=settings.rag_top_k)
+    if upcoming:
+        rag_context = upcoming + ("\n\n---\n\n" + rag_context if rag_context else "")
 
     _add_to_history(conv, "user", text)
     reply = await generate_response(
