@@ -4,7 +4,7 @@ from pathlib import Path
 class Settings(BaseSettings):
     # Anthropic
     anthropic_api_key: str
-    model: str = "claude-haiku-4-5-20251001"
+    model: str = "claude-sonnet-4-6"
 
     # WhatsApp
     wa_phone_number_id: str = "1021019861105099"
