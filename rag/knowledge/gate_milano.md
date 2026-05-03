@@ -134,6 +134,11 @@ Inviare il link solo dopo aver spiegato prezzi e condizioni.
 ### Se il gruppo è troppo piccolo
 Per gruppi sotto 8 persone suggerire la guestlist invece del tavolo.
 
+## Alias Artisti
+Alcuni artisti vengono cercati con nomi alternativi — trattali come sinonimi:
+- "nine times nine" / "nine nine nine" / "nines" → **999999999**
+- "tre cerchi" / "triple nine" → **999999999**
+
 ## Pagamenti
 Accettati: **Contactless, Mastercard, Visa, Maestro, American Express, contanti**
 
