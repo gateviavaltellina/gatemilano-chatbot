@@ -44,8 +44,8 @@ Gate Milano è uno dei club più importanti di Milano, attivo dal 2017, con prog
 **Età minima:** 18 anni (16+ ammessi solo per concerti)
 **Documento:** documento d'identità valido obbligatorio (carta d'identità o passaporto — NO fotocopie)
 
-**Dress code:** smart casual
-**Vietato:** beachwear, infradito, canottiere, abbigliamento sportivo, merchandising sportivo, messaggi politici o religiosi sull'abbigliamento
+**Dress code:** libero — non siamo un locale da camicia. Vieni come vuoi, l'importante è che ci sia cura nel look.
+**Non ammessi:** pantaloncini, abbigliamento eccessivamente sportivo, abbigliamento che possa ledere la sensibilità degli altri partecipanti.
 
 **Controllo sicurezza:** metal detector e personale security all'ingresso
 **Il venue si riserva il diritto di rifiutare l'accesso a propria discrezione**
