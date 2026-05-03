@@ -80,10 +80,12 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
             text = msg.get("text", "").strip()
             msg_id = msg.get("mid", "")
 
+            if msg.get("is_echo"):
+                continue
             if not sender_id or not text or not msg_id:
                 continue
             if sender_id == ig_account_id:
-                continue  # ignora messaggi inviati da noi stessi
+                continue
 
             if msg_id in _processed_ids:
                 continue
