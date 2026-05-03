@@ -30,7 +30,9 @@ Gate Milano è uno dei club più importanti di Milano, attivo dal 2017, con prog
 ## Biglietti
 - Acquisto online su Xceed (xceed.me)
 - Acquisto consigliato in anticipo per prezzi migliori
-- eTicket digitale da mostrare su smartphone
+- eTicket digitale da mostrare su smartphone — non serve stampare nulla
+- Il biglietto è valido per la sala specifica (Main Room o Club Room) — ogni sala ha il suo ingresso dedicato
+- Problemi con l'acquisto: support@xceed.com
 - I biglietti non sono rimborsabili. È possibile rivenderli tramite i canali di rivendita Xceed.
 - Rimborsi post-evento: ammessi solo in casi eccezionali, con richiesta entro e non oltre il lunedì successivo all'evento a info@gatemilano.com. Documentazione obbligatoria: nome e cognome intestatario del biglietto, email usata per l'acquisto, screenshot del biglietto, screenshot della prova di pagamento. In assenza di anche uno solo di questi elementi la richiesta non verrà presa in carico.
 - **Nessun rientro** dopo l'uscita: serve un nuovo biglietto
@@ -41,8 +43,13 @@ Gate Milano è uno dei club più importanti di Milano, attivo dal 2017, con prog
 - Email: george@gatemilano.com
 
 ## Accesso e Dress Code
-**Età minima:** 18 anni (16+ ammessi solo per concerti)
-**Documento:** documento d'identità valido obbligatorio (carta d'identità o passaporto — NO fotocopie)
+**Età minima:** 18 anni
+- Concerti: ammessi anche 16 e 17 anni
+- Concerti: under 16 ammessi solo se accompagnati da un genitore o tutore legale
+**Documento obbligatorio:** originale (no fotocopie, no foto digitali)
+- Cittadini UE: carta d'identità o passaporto
+- Cittadini non UE: solo passaporto
+- Patente di guida: non accettata in nessun caso
 
 **Dress code:** libero — non siamo un locale da camicia. Vieni come vuoi, l'importante è che ci sia cura nel look.
 **Non ammessi:** pantaloncini, abbigliamento eccessivamente sportivo, abbigliamento che possa ledere la sensibilità degli altri partecipanti.
@@ -95,6 +102,9 @@ Inviare come allegato quando l'utente chiede la mappa o sta scegliendo la zona.
 - Senza pagamento la prenotazione non è confermata
 - Cancellazioni: nessun rimborso. Il credito si sposta su un'altra data entro fine stagione (giugno)
 
+### Accesso VIP
+L'ingresso VIP si trova sul lato sinistro dell'entrata principale. Il personale accoglie e accompagna direttamente.
+
 ### Regole
 - Età minima 18 anni, documento obbligatorio
 - Orario massimo di arrivo: 03:30
@@ -142,9 +152,6 @@ Techno, house, hard techno, tech house, reggaeton, urban, musica elettronica, li
 - Attrezzatura professionale vietata senza autorizzazione scritta
 - Registrazioni per scopi commerciali vietate senza autorizzazione
 - Accessibilità disabili: il venue è accessibile; avvisare in anticipo per assistenza
-
-## Oggetti Smarriti
-Contattare info@gatemilano.com con descrizione dell'oggetto e data della visita.
 
 ## Social Media
 - Instagram: @gate.milano
