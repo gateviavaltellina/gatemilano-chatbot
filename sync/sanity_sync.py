@@ -1,3 +1,4 @@
+import re
 import httpx
 import logging
 from datetime import datetime, timezone
@@ -68,6 +69,56 @@ async def _sanity_get(project_id: str, dataset: str, query: str, params: dict = 
         return r.json()
 
 
+_XCEED_ID_RE = re.compile(r"xceed\.me/[^/]+/[^/]+/event/[^/]+/(\d+)")
+
+def _extract_xceed_id(ticket_url: str) -> str:
+    m = _XCEED_ID_RE.search(ticket_url or "")
+    return m.group(1) if m else ""
+
+
+async def _fetch_xceed_enrichment(xceed_id: str, xceed_api_key: str) -> dict:
+    """Returns {about, prices_str} for an Xceed event numeric ID. Never raises."""
+    result = {"about": "", "prices_str": ""}
+    if not xceed_id:
+        return result
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(f"https://events.xceed.me/v1/events/{xceed_id}")
+            if r.status_code != 200:
+                return result
+            data = r.json().get("data", {})
+            result["about"] = (data.get("about") or "").strip()
+            uuid = data.get("id", "")
+            if not uuid or not xceed_api_key:
+                return result
+            r2 = await client.get(
+                f"https://partner.xceed.me/v2/events/{uuid}/offers",
+                headers={"X-API-Key": xceed_api_key},
+            )
+            if r2.status_code != 200:
+                return result
+            offers = r2.json().get("data", {})
+            lines = []
+            for cat in ("ticket", "guestlist"):
+                for item in offers.get(cat, []):
+                    if not isinstance(item, dict):
+                        continue
+                    name = item.get("name", "")
+                    if isinstance(name, dict):
+                        name = name.get("it") or name.get("en") or ""
+                    price = item.get("priceAmount")
+                    sold_out = item.get("isSoldOut", False)
+                    hidden = item.get("isHidden", False)
+                    if hidden or price is None:
+                        continue
+                    avail = " (ESAURITO)" if sold_out else ""
+                    lines.append(f"  - {name}: €{price}{avail}")
+            result["prices_str"] = "\n".join(lines)
+    except Exception as e:
+        logger.debug("Xceed enrichment failed for id=%s: %s", xceed_id, e)
+    return result
+
+
 async def _fetch_events(project_id: str, dataset: str) -> list[dict]:
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     try:
@@ -112,7 +163,7 @@ def _format_date(date_str: str) -> str:
         return date_str
 
 
-def _build_document(event: dict, venue_label: str) -> tuple[str, dict]:
+def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[str, dict]:
     title = event.get("title", "Evento").strip()
     date_str = event.get("date", "")
     room = event.get("venue") or ""
@@ -134,12 +185,19 @@ def _build_document(event: dict, venue_label: str) -> tuple[str, dict]:
         else:
             ticket_str = f"\nAcquista biglietti: {ticket_url}"
 
+    xceed = xceed or {}
+    prices_str = f"\nPrezzi:\n{xceed['prices_str']}" if xceed.get("prices_str") else ""
+    about = xceed.get("about", "")
+    about_str = f"\nDescrizione: {about[:600]}" if about else ""
+
     document = (
         f"EVENTO: {title}\n"
         f"Venue: {venue_label}"
         f"{room_str}\n"
         f"Data: {date_fmt}"
         f"{genres_str}"
+        f"{about_str}"
+        f"{prices_str}"
         f"{ticket_str}"
     ).strip()
 
@@ -251,12 +309,15 @@ async def sync_all_venues():
         # Events
         events = await _fetch_events(project_id, dataset)
         logger.info("Sanity: %d eventi futuri per %s", len(events), label)
+        from config import settings as _settings
         current_ids = []
         for event in events:
             sanity_id = event.get("_id", "")
             if not sanity_id:
                 continue
-            doc, meta = _build_document(event, label)
+            xceed_id = _extract_xceed_id(event.get("ticketUrl", ""))
+            xceed_data = await _fetch_xceed_enrichment(xceed_id, _settings.xceed_api_key)
+            doc, meta = _build_document(event, label, xceed_data)
             chromadb_manager.upsert_event(venue_key, sanity_id, doc, meta)
             current_ids.append(sanity_id)
         chromadb_manager.delete_stale_events(venue_key, current_ids, source="sanity")
