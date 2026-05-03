@@ -22,7 +22,7 @@ def upsert_event(venue: str, event_id: str, document: str, metadata: dict):
 
 
 def delete_stale_events(venue: str, current_event_ids: list[str], source: str = None):
-    current = {f"event_{eid}" for eid in current_event_ids}
+    current = set(current_event_ids)
     events = _get(venue)
     before = len(events)
     _store[venue] = [
