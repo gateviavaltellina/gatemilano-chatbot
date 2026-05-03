@@ -56,6 +56,10 @@ Gate Milano è uno dei club più importanti di Milano, attivo dal 2017, con prog
 - Borse grandi e zaini **devono** essere lasciati al guardaroba
 - Borsette piccole ammesse in sala
 
+## Oggetti Smarriti e Capi Dimenticati in Guardaroba
+Per oggetti smarriti in venue o capi dimenticati in guardaroba (chi ha il tagliandino fisico ma non ha ritirato), contattare direttamente Antonio (responsabile guardaroba):
+- WhatsApp: +39 389 640 6077
+
 ## Tavoli VIP — Perreo XL
 
 I tavoli VIP sono disponibili per le serate Perreo XL (Main Room).
