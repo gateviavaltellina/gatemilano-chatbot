@@ -3,7 +3,8 @@ from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
 from config import settings
 from rag.chromadb_manager import chromadb_manager
 from ai.claude_client import generate_response
-from notifications.discord import notify_conversation
+from notifications.discord import notify_conversation, notify_human_message
+from notifications.discord_bot import is_human_takeover
 from instagram.client import send_ig_message
 
 router = APIRouter()
@@ -102,6 +103,12 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
 async def process_ig_message(ig_account_id: str, sender_id: str, text: str) -> None:
     venue = _venue_for_account(ig_account_id)
     conv = _get_conversation(ig_account_id, sender_id)
+    phone = f"ig:{sender_id[:12]}"
+    context = {"ig_account_id": ig_account_id, "sender_id": sender_id}
+
+    if is_human_takeover(phone):
+        await notify_human_message(phone, venue, text, context)
+        return
 
     rag_context = await chromadb_manager.query(venue, text, top_k=settings.rag_top_k)
 
@@ -115,4 +122,4 @@ async def process_ig_message(ig_account_id: str, sender_id: str, text: str) -> N
     _add_to_history(conv, "assistant", reply)
 
     await send_ig_message(ig_account_id, sender_id, reply)
-    await notify_conversation(f"ig:{sender_id[:12]}", venue, text, reply)
+    await notify_conversation(phone, venue, text, reply, context)

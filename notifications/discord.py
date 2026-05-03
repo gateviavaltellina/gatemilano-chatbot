@@ -23,7 +23,7 @@ def _webhook_url_for(phone: str) -> str:
     return settings.discord_webhook_url.split("?")[0] + "?wait=true"
 
 
-async def notify_conversation(phone: str, venue: str, user_msg: str, bot_reply: str) -> None:
+async def notify_conversation(phone: str, venue: str, user_msg: str, bot_reply: str, context: dict = None) -> None:
     if not settings.discord_webhook_url and not settings.discord_ig_webhook_url:
         return
     url = _webhook_url_for(phone)
@@ -55,12 +55,12 @@ async def notify_conversation(phone: str, venue: str, user_msg: str, bot_reply: 
             msg_id = r.json().get("id")
             if msg_id:
                 from notifications.discord_bot import register_message
-                register_message(msg_id, phone)
+                register_message(msg_id, phone, context)
         except Exception as e:
             logger.warning("Discord notify failed: %s", e)
 
 
-async def notify_human_message(phone: str, venue: str, user_msg: str) -> None:
+async def notify_human_message(phone: str, venue: str, user_msg: str, context: dict = None) -> None:
     """Notifica Discord quando il bot è in pausa (human takeover)."""
     if not settings.discord_webhook_url:
         return
@@ -87,6 +87,6 @@ async def notify_human_message(phone: str, venue: str, user_msg: str) -> None:
             msg_id = r.json().get("id")
             if msg_id:
                 from notifications.discord_bot import register_message
-                register_message(msg_id, phone)
+                register_message(msg_id, phone, context)
         except Exception as e:
             logger.warning("Discord notify_human failed: %s", e)
