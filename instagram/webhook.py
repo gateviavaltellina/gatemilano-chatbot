@@ -15,9 +15,15 @@ logger = logging.getLogger(__name__)
 _ig_conversations: dict[str, dict] = {}
 
 
+_SARDINIA_IDS = {"24588954374135134", "17841452139166980"}
+_MILANO_IDS = {"35517015101275600", "17841405933946552"}
+
 def _venue_for_account(ig_account_id: str) -> str:
-    if ig_account_id == settings.ig_gatesardinia_id:
+    if ig_account_id in _SARDINIA_IDS:
         return "gate_sardinia"
+    if ig_account_id in _MILANO_IDS:
+        return "gate_milano"
+    logger.warning("IG account ID sconosciuto: %s — default gate_milano", ig_account_id)
     return "gate_milano"
 
 
@@ -60,10 +66,13 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
         return {"status": "ignored"}
 
     for entry in body.get("entry", []):
-        ig_account_id = entry.get("id", "")
-        for event in entry.get("messaging", []):
-            msg = event.get("message", {})
-            sender_id = event.get("sender", {}).get("id", "")
+        for change in entry.get("changes", []):
+            if change.get("field") != "messages":
+                continue
+            value = change.get("value", {})
+            ig_account_id = value.get("recipient", {}).get("id", "")
+            sender_id = value.get("sender", {}).get("id", "")
+            msg = value.get("message", {})
             text = msg.get("text", "").strip()
             msg_id = msg.get("mid", "")
 
