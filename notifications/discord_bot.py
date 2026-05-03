@@ -27,7 +27,7 @@ intents.message_content = True
 bot = discord.Client(intents=intents)
 
 
-def _phone_from_reply(message: discord.Message) -> str | None:
+def _phone_from_reply(message: discord.Message) -> str:
     if not message.reference:
         return None
     return _msg_to_phone.get(str(message.reference.message_id))

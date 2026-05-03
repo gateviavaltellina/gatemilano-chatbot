@@ -51,7 +51,7 @@ class ChromaDBManager:
             return
         col.upsert(ids=[f"event_{event_id}"], documents=[document], metadatas=[metadata])
 
-    def delete_stale_events(self, venue: str, current_event_ids: list[str], source: str | None = None):
+    def delete_stale_events(self, venue: str, current_event_ids: list[str], source=None):
         col = self._collections.get(venue)
         if col is None:
             return

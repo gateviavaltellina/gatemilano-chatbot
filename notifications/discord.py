@@ -16,7 +16,7 @@ def _mask_phone(phone: str) -> str:
     return "****"
 
 
-async def notify_conversation(phone: str, venue: str | None, user_msg: str, bot_reply: str) -> None:
+async def notify_conversation(phone: str, venue: str, user_msg: str, bot_reply: str) -> None:
     if not settings.discord_webhook_url:
         return
     emoji = VENUE_EMOJI.get(venue or "", "❓")
@@ -48,7 +48,7 @@ async def notify_conversation(phone: str, venue: str | None, user_msg: str, bot_
             logger.warning("Discord notify failed: %s", e)
 
 
-async def notify_human_message(phone: str, venue: str | None, user_msg: str) -> None:
+async def notify_human_message(phone: str, venue: str, user_msg: str) -> None:
     """Notifica Discord quando il bot è in pausa (human takeover)."""
     if not settings.discord_webhook_url:
         return

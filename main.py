@@ -10,6 +10,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 from config import settings
 from whatsapp.webhook import router as webhook_router
+from instagram.webhook import router as ig_router
 from rag.chromadb_manager import chromadb_manager
 from sync.sanity_sync import sync_all_venues as _sanity_sync
 from sync.xceed_sync import sync_all_venues as _xceed_sync
@@ -63,6 +64,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Gate Milano WhatsApp Bot", version="1.0.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(webhook_router, prefix="/webhook")
+app.include_router(ig_router, prefix="/webhook/instagram")
 
 
 @app.get("/health")
