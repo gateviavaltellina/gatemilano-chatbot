@@ -14,9 +14,10 @@ class Settings(BaseSettings):
     wa_api_url: str = "https://graph.facebook.com/v25.0"
 
     # Instagram
-    ig_gatemilano_id: str = "17841405933946552"
+    ig_api_url: str = "https://graph.instagram.com/v22.0"
+    ig_gatemilano_id: str = "35517015101275600"
     ig_gatemilano_token: str = ""
-    ig_gatesardinia_id: str = "17841452139166980"
+    ig_gatesardinia_id: str = "24588954374135134"
     ig_gatesardinia_token: str = ""
 
     # Xceed

@@ -29,7 +29,7 @@ async def send_ig_message(ig_account_id: str, recipient_id: str, text: str) -> b
     async with httpx.AsyncClient(timeout=15) as client:
         try:
             r = await client.post(
-                f"{settings.wa_api_url}/{ig_account_id}/messages",
+                f"{settings.ig_api_url}/{ig_account_id}/messages",
                 headers=headers,
                 json=payload,
             )
