@@ -13,6 +13,11 @@ VENUE_NAMES = {
     "gate_sardinia": "Gate Sardinia",
 }
 
+VENUE_CONTACT_EMAIL = {
+    "gate_milano": "info@gatemilano.com",
+    "gate_sardinia": "info@gatesardinia.it",
+}
+
 SYSTEM_TEMPLATE = """\
 Sei il chatbot ufficiale di {venue_name}, un club/venue eventi.
 Rispondi SEMPRE nella lingua del messaggio dell'utente (italiano di default).
@@ -29,7 +34,7 @@ REGOLE FONDAMENTALI:
 - Cita SEMPRE il nome esatto dell'evento quando parli di serate specifiche.
 - Per biglietti includi SEMPRE il link diretto se disponibile nel contesto.
 - Se non hai informazioni su qualcosa, NON dire mai "non ho questa info nel database/sistema/calendario" o simili. Parla naturalmente: "non abbiamo serate in programma quel giorno" — mai esporre il fatto che esiste un sistema o database interno.
-- Per qualsiasi richiesta operativa (oggetti smarriti, reclami, accrediti, info non disponibili): indirizza SOLO a info@gatemilano.com — MAI suggerire di chiamare, MAI citare numeri di telefono.
+- Per qualsiasi richiesta operativa (oggetti smarriti, reclami, accrediti, info non disponibili): indirizza SOLO a {contact_email} — MAI suggerire di chiamare, MAI citare numeri di telefono.
 - Non inventare date, prezzi o lineup non presenti nel contesto.
 - Se non trovi un evento nel tuo database, suggerisci di controllare anche l'altro venue (Gate Milano / Gate Sardinia) — potrebbe essere lì.
 - Se non ci sono eventi nella data richiesta, suggerisci l'evento più vicino disponibile nel contesto (upselling).
@@ -45,6 +50,10 @@ GESTIONE PIÙ EVENTI STESSA DATA:
 - Esempio corretto: "Il 9 maggio abbiamo Perreo XL in Main Room e Schranz Movement in Club Room. Quale ti interessa?"
 - Solo dopo che l'utente sceglie: dai link, orari e dettagli dell'evento scelto.
 
+{perreo_section}\
+"""
+
+PERREO_SECTION_MILANO = """\
 UPSELL PERREO:
 - Quando parli di Perreo o Perreo XL, menziona SEMPRE che sono disponibili anche tavoli VIP oltre ai biglietti normali.
 - PREZZI TAVOLI (fissi, non variabili — rispondi SEMPRE con questi valori, non dire mai che "varia"):
@@ -71,9 +80,13 @@ async def generate_response(
     history: list[dict],
 ) -> str:
     venue_name = VENUE_NAMES.get(venue, venue)
+    contact_email = VENUE_CONTACT_EMAIL.get(venue, "info@gatemilano.com")
+    perreo_section = PERREO_SECTION_MILANO if venue == "gate_milano" else ""
     current_datetime = datetime.now(timezone.utc).strftime("%A %-d %B %Y, %H:%M UTC")
     system = SYSTEM_TEMPLATE.format(
         venue_name=venue_name,
+        contact_email=contact_email,
+        perreo_section=perreo_section,
         rag_context=rag_context or "Nessuna informazione specifica disponibile al momento.",
         current_datetime=current_datetime,
     )
@@ -89,6 +102,6 @@ async def generate_response(
     except Exception as e:
         logger.error("Errore Claude API: %s", e)
         return (
-            "Mi dispiace, al momento non riesco a rispondere. "
-            "Per assistenza contatta info@gatemilano.com o +39 391 487 6443."
+            f"Mi dispiace, al momento non riesco a rispondere. "
+            f"Per assistenza contatta {contact_email}."
         )
