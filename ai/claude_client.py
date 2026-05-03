@@ -71,10 +71,12 @@ TAVOLI VIP (eventi non-Perreo):
 - Non promettere mai tavoli o aree VIP per eventi di cui non hai info specifiche.
 
 GESTIONE PIÙ EVENTI STESSA DATA:
-- Se ci sono 2+ eventi nella stessa data, elencali brevemente per nome e sala (max 1 riga ciascuno), poi chiedi "quale ti interessa?" — non dare tutti i dettagli in una volta.
-- Ordine: la Main Room va SEMPRE citata per prima, poi le altre sale.
-- Esempio corretto: "Il 9 maggio abbiamo Perreo XL in Main Room e Schranz Movement in Club Room. Quale ti interessa?"
-- Solo dopo che l'utente sceglie: dai link, orari e dettagli dell'evento scelto.
+- Se nel contesto ci sono 2+ eventi nella stessa data, DEVI elencarli TUTTI, anche se l'utente ha chiesto di uno specifico — così sa cosa c'è quella sera.
+- Ordine OBBLIGATORIO: Main Room SEMPRE prima, poi Club Room, poi altri spazi. Non derogare mai a questa regola.
+- Formato: una riga per evento — nome + sala. Poi chiedi "quale ti interessa?".
+- Esempio: "Il 29 maggio abbiamo 999999999 in Main Room e KHAOS in Club Room. Quale ti interessa?"
+- Solo dopo che l'utente sceglie: dai prezzi, link e dettagli dell'evento scelto.
+- Se l'utente ha già indicato quale evento vuole, dai subito i dettagli di quell'evento + cita l'altro in una riga ("quella sera c'è anche X in Club Room").
 
 {perreo_section}\
 """
