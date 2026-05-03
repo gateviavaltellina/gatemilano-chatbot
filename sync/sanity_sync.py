@@ -76,6 +76,27 @@ def _extract_xceed_id(ticket_url: str) -> str:
     return m.group(1) if m else ""
 
 
+async def _fetch_dice_description(ticket_url: str) -> str:
+    """Extract event description from Dice.fm JSON-LD. Returns empty string on failure."""
+    try:
+        async with httpx.AsyncClient(timeout=10, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0"}) as client:
+            r = await client.get(ticket_url)
+            if r.status_code != 200:
+                return ""
+            blocks = re.findall(r'<script type="application/ld\+json">(.*?)</script>', r.text, re.DOTALL)
+            import json as _json
+            for block in blocks:
+                try:
+                    data = _json.loads(block)
+                    if data.get("@type") == "MusicEvent":
+                        return (data.get("description") or "").strip()
+                except Exception:
+                    continue
+    except Exception as e:
+        logger.debug("Dice scrape failed for %s: %s", ticket_url, e)
+    return ""
+
+
 async def _fetch_xceed_enrichment(xceed_id: str, xceed_api_key: str) -> dict:
     """Returns {about, prices_str} for an Xceed event numeric ID. Never raises."""
     result = {"about": "", "prices_str": ""}
@@ -315,8 +336,15 @@ async def sync_all_venues():
             sanity_id = event.get("_id", "")
             if not sanity_id:
                 continue
-            xceed_id = _extract_xceed_id(event.get("ticketUrl", ""))
-            xceed_data = await _fetch_xceed_enrichment(xceed_id, _settings.xceed_api_key)
+            ticket_url = event.get("ticketUrl", "")
+            xceed_id = _extract_xceed_id(ticket_url)
+            if xceed_id:
+                xceed_data = await _fetch_xceed_enrichment(xceed_id, _settings.xceed_api_key)
+            elif "dice.fm" in ticket_url:
+                desc = await _fetch_dice_description(ticket_url)
+                xceed_data = {"about": desc, "prices_str": ""}
+            else:
+                xceed_data = {"about": "", "prices_str": ""}
             doc, meta = _build_document(event, label, xceed_data)
             chromadb_manager.upsert_event(venue_key, sanity_id, doc, meta)
             current_ids.append(sanity_id)
