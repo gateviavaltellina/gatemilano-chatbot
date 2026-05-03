@@ -104,6 +104,31 @@ async def debug_test_store():
     }
 
 
+@app.post("/debug/sync-trace")
+async def debug_sync_trace():
+    """Run sanity sync with tracing to find where events are lost."""
+    from sync.sanity_sync import _fetch_events, _build_document, _extract_xceed_id, SANITY_PROJECTS
+    from rag.event_store import upsert_event, _store
+    from config import settings as _settings
+
+    results = {}
+    for venue_key, cfg in SANITY_PROJECTS.items():
+        events = await _fetch_events(cfg["project_id"], cfg["dataset"])
+        results[venue_key] = {
+            "fetched": len(events),
+            "first_3": [{"id": e.get("_id"), "title": e.get("title"), "date": e.get("date")} for e in events[:3]],
+        }
+        for event in events:
+            sanity_id = event.get("_id", "")
+            if not sanity_id:
+                continue
+            doc, meta = _build_document(event, cfg["label"], {})
+            upsert_event(venue_key, sanity_id, doc, meta)
+    from rag.event_store import count
+    results["count_after"] = {"gate_milano": count("gate_milano"), "gate_sardinia": count("gate_sardinia")}
+    return results
+
+
 @app.get("/debug/sanity")
 async def debug_sanity():
     import httpx
