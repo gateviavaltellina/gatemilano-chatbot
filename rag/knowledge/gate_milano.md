@@ -31,8 +31,8 @@ Gate Milano è uno dei club più importanti di Milano, attivo dal 2017, con prog
 - Acquisto online su Xceed (xceed.me)
 - Acquisto consigliato in anticipo per prezzi migliori
 - eTicket digitale da mostrare su smartphone
-- Rimborsi: entro 48 ore tramite piattaforma di acquisto; supporto su support@xceed.com
-- Tutti i biglietti sono non rimborsabili dopo 48 ore
+- I biglietti non sono rimborsabili. È possibile rivenderli tramite i canali di rivendita Xceed.
+- Rimborsi post-evento: ammessi solo in casi eccezionali, con richiesta entro e non oltre il lunedì successivo all'evento a info@gatemilano.com. Documentazione obbligatoria: nome e cognome intestatario del biglietto, email usata per l'acquisto, screenshot del biglietto, screenshot della prova di pagamento. In assenza di anche uno solo di questi elementi la richiesta non verrà presa in carico.
 - **Nessun rientro** dopo l'uscita: serve un nuovo biglietto
 
 ## Accrediti
