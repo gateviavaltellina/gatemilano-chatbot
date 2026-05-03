@@ -25,6 +25,7 @@ class Settings(BaseSettings):
 
     # Notifications
     discord_webhook_url: str = ""
+    discord_ig_webhook_url: str = ""
     discord_bot_token: str = ""
     discord_channel_id: int = 0
 

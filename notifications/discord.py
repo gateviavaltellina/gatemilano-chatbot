@@ -16,18 +16,30 @@ def _mask_phone(phone: str) -> str:
     return "****"
 
 
+def _webhook_url_for(phone: str) -> str:
+    is_ig = phone.startswith("ig:")
+    if is_ig and settings.discord_ig_webhook_url:
+        return settings.discord_ig_webhook_url.split("?")[0] + "?wait=true"
+    return settings.discord_webhook_url.split("?")[0] + "?wait=true"
+
+
 async def notify_conversation(phone: str, venue: str, user_msg: str, bot_reply: str) -> None:
-    if not settings.discord_webhook_url:
+    if not settings.discord_webhook_url and not settings.discord_ig_webhook_url:
         return
+    url = _webhook_url_for(phone)
+    if not url or url.startswith("?"):
+        return
+    is_ig = phone.startswith("ig:")
     emoji = VENUE_EMOJI.get(venue or "", "❓")
+    source = "📸 IG" if is_ig else "💬 WA"
     venue_label = {"gate_milano": "Gate Milano", "gate_sardinia": "Gate Sardinia"}.get(venue or "", "Venue sconosciuto")
     masked = _mask_phone(phone)
     payload = {
         "embeds": [
             {
-                "color": 0x7C3AED,
+                "color": 0xE1306C if is_ig else 0x7C3AED,
                 "fields": [
-                    {"name": f"{emoji} {venue_label} · {masked}", "value": "", "inline": False},
+                    {"name": f"{emoji} {venue_label} · {source} · {masked}", "value": "", "inline": False},
                     {"name": "👤 Utente", "value": user_msg[:1024], "inline": False},
                     {"name": "🤖 Bot", "value": bot_reply[:1024], "inline": False},
                 ],
@@ -35,7 +47,7 @@ async def notify_conversation(phone: str, venue: str, user_msg: str, bot_reply: 
         ]
     }
     # ?wait=true → Discord restituisce il messaggio con l'ID (necessario per human takeover)
-    url = settings.discord_webhook_url.split("?")[0] + "?wait=true"
+    url = _webhook_url_for(phone)
     async with httpx.AsyncClient(timeout=10) as client:
         try:
             r = await client.post(url, json=payload)
