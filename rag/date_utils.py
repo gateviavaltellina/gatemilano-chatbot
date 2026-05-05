@@ -1,5 +1,8 @@
 import re
 from datetime import datetime, timezone, timedelta, date as _date
+from zoneinfo import ZoneInfo
+
+_ROME = ZoneInfo("Europe/Rome")
 
 _TODAY_TERMS = ["stasera", "stanotte", "oggi", "questa sera", "questa notte", "tonight", "hoy", "esta noche"]
 _TOMORROW_TERMS = ["domani", "domani sera", "domani notte", "tomorrow", "mañana", "manana"]
@@ -37,7 +40,7 @@ def _next_weekday(now: datetime, target_weekday: int, force_next: bool = False) 
 
 
 def extract_query_dates(text: str) -> list[str]:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(_ROME)
     lower = text.lower()
     dates = []
 

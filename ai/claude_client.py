@@ -1,6 +1,7 @@
 import re
 import logging
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from anthropic import AsyncAnthropic
 from config import settings
 
@@ -110,7 +111,7 @@ async def generate_response(
     venue_name = VENUE_NAMES.get(venue, venue)
     contact_email = VENUE_CONTACT_EMAIL.get(venue, "info@gatemilano.com")
     perreo_section = PERREO_SECTION_MILANO if venue == "gate_milano" else ""
-    current_datetime = datetime.now(timezone.utc).strftime("%A %-d %B %Y, %H:%M UTC")
+    current_datetime = datetime.now(ZoneInfo("Europe/Rome")).strftime("%A %-d %B %Y, %H:%M (Europe/Rome)")
     system = SYSTEM_TEMPLATE.format(
         venue_name=venue_name,
         contact_email=contact_email,

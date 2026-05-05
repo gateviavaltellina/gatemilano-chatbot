@@ -29,11 +29,6 @@ class Settings(BaseSettings):
     discord_bot_token: str = ""
     discord_channel_id: int = 0
 
-    # RAG
-    embedding_model: str = "paraphrase-multilingual-MiniLM-L12-v2"
-    rag_top_k: int = 5
-    chroma_db_path: str = str(Path(__file__).parent / "data" / "chroma_db")
-
     # Bot loop prevention — numeri WhatsApp (E.164, es. "393331234567") da ignorare
     wa_ignored_phones: str = ""
 
