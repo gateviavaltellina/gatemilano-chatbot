@@ -41,12 +41,21 @@ _ready = False
 async def _init_background():
     global _ready
     logger.info("Avvio inizializzazione in background...")
+    # Sync ogni 2 ore durante la giornata (08-23)
+    scheduler.add_job(
+        sync_all_venues,
+        CronTrigger(hour="8-23", minute=0, step=2),
+        id="sanity_sync_hourly",
+        replace_existing=True,
+    )
+    # Sync notturno alle 4
     scheduler.add_job(
         sync_all_venues,
         CronTrigger(hour=4, minute=0),
-        id="sanity_sync",
+        id="sanity_sync_night",
         replace_existing=True,
     )
+    # Sync startup — attende 60s per dare tempo all'app di essere pronta
     scheduler.add_job(
         nightly_cleanup,
         CronTrigger(hour=4, minute=5),
@@ -56,7 +65,7 @@ async def _init_background():
     scheduler.add_job(
         sync_all_venues,
         "date",
-        run_date=datetime.now() + timedelta(seconds=30),
+        run_date=datetime.now() + timedelta(seconds=60),
         id="sanity_sync_startup",
     )
     scheduler.start()
