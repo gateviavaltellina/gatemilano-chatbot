@@ -86,7 +86,9 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
                 continue
             if not sender_id or not text or not msg_id:
                 continue
-            if sender_id == ig_account_id:
+            # Ignora messaggi provenienti dagli stessi account bot (previene loop cross-bot)
+            all_bot_ids = _SARDINIA_IDS | _MILANO_IDS
+            if sender_id in all_bot_ids:
                 continue
 
             if msg_id in _processed_ids:
