@@ -6,9 +6,8 @@ MILANO_KEYWORDS = [
     "gatemilano", "milano club", "club milano",
 ]
 SARDINIA_KEYWORDS = [
-    "sardinia", "sardegna", "sarda", "budoni", "gate sardinia",
-    "gatesardinia", "sardinia club", "estate", "summer", "sardinian",
-    "sardo", "mare",
+    "sardinia", "sardegna", "sarda", "sardo", "sardinian",
+    "budoni", "gate sardinia", "gatesardinia", "sardinia club",
 ]
 
 class VenueDetector:

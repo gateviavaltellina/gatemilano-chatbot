@@ -1,4 +1,5 @@
 import logging
+import time
 from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
 from config import settings, KNOWLEDGE_DIR
 from rag.event_store import get_upcoming_events, get_events_for_date
@@ -15,6 +16,18 @@ _MAX_PROCESSED = 10_000
 logger = logging.getLogger(__name__)
 
 _ig_conversations: dict[str, dict] = {}
+_CONV_TTL = 86400  # 24 ore
+
+# Cache knowledge statica: {venue: content}
+_knowledge_cache: dict[str, str] = {}
+
+def _get_static_knowledge(venue: str) -> str:
+    if venue not in _knowledge_cache:
+        try:
+            _knowledge_cache[venue] = (KNOWLEDGE_DIR / f"{venue}.md").read_text(encoding="utf-8")
+        except Exception:
+            _knowledge_cache[venue] = ""
+    return _knowledge_cache[venue]
 
 
 _SARDINIA_IDS = {"24588954374135134", "17841452139166980"}
@@ -31,9 +44,19 @@ def _venue_for_account(ig_account_id: str) -> str:
 
 def _get_conversation(ig_account_id: str, sender_id: str) -> dict:
     key = f"ig_{ig_account_id}_{sender_id}"
+    now = time.time()
     if key not in _ig_conversations:
-        _ig_conversations[key] = {"history": []}
+        _ig_conversations[key] = {"history": [], "last_seen": now}
+    else:
+        _ig_conversations[key]["last_seen"] = now
     return _ig_conversations[key]
+
+def prune_ig_conversations() -> int:
+    cutoff = time.time() - _CONV_TTL
+    stale = [k for k, c in _ig_conversations.items() if c.get("last_seen", 0) < cutoff]
+    for k in stale:
+        del _ig_conversations[k]
+    return len(stale)
 
 
 def _add_to_history(conv: dict, role: str, content: str) -> None:
@@ -113,12 +136,7 @@ async def process_ig_message(ig_account_id: str, sender_id: str, text: str) -> N
         await notify_human_message(phone, venue, text, context)
         return
 
-    # Knowledge base statica
-    static_knowledge = ""
-    try:
-        static_knowledge = (KNOWLEDGE_DIR / f"{venue}.md").read_text(encoding="utf-8")
-    except Exception:
-        pass
+    static_knowledge = _get_static_knowledge(venue)
 
     upcoming = get_upcoming_events(venue, days=14)
 

@@ -1,4 +1,5 @@
 import logging
+import time
 from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
 from config import settings, KNOWLEDGE_DIR
 from whatsapp.client import send_message, send_document, mark_as_read
@@ -8,6 +9,17 @@ from rag.date_utils import extract_query_dates
 from ai.claude_client import generate_response
 from notifications.discord import notify_conversation, notify_human_message
 from notifications.discord_bot import is_human_takeover
+
+# Cache knowledge statica: {venue: content}
+_knowledge_cache: dict[str, str] = {}
+
+def _get_static_knowledge(venue: str) -> str:
+    if venue not in _knowledge_cache:
+        try:
+            _knowledge_cache[venue] = (KNOWLEDGE_DIR / f"{venue}.md").read_text(encoding="utf-8")
+        except Exception:
+            _knowledge_cache[venue] = ""
+    return _knowledge_cache[venue]
 
 _DRINKLIST_URL = "https://gatemilano-chatbot-production.up.railway.app/static/drinklist_perreo.pdf"
 _DRINKLIST_TRIGGERS = ["tavolo", "tavoli", "vip", "drinklist", "bottle", "bottiglia", "minimo", "perreo xl"]
@@ -23,11 +35,23 @@ _MAX_PROCESSED = 10_000
 # Stato conversazione per utente: {phone: {"venue": str|None, "history": list}}
 _conversations: dict[str, dict] = {}
 _venue_detector = VenueDetector()
+_CONV_TTL = 86400  # 24 ore
 
 def _get_conversation(phone: str) -> dict:
+    now = time.time()
     if phone not in _conversations:
-        _conversations[phone] = {"venue": None, "history": []}
+        _conversations[phone] = {"venue": None, "history": [], "last_seen": now}
+    else:
+        _conversations[phone]["last_seen"] = now
     return _conversations[phone]
+
+def prune_conversations() -> int:
+    cutoff = time.time() - _CONV_TTL
+    stale = [p for p, c in _conversations.items() if c.get("last_seen", 0) < cutoff]
+    for p in stale:
+        del _conversations[p]
+    _drinklist_sent.difference_update(stale)
+    return len(stale)
 
 def _add_to_history(conv: dict, role: str, content: str, max_history: int):
     conv["history"].append({"role": role, "content": content})
@@ -133,12 +157,7 @@ async def process_message(phone: str, msg_id: str, text: str):
 
     conv["venue"] = venue
 
-    # Knowledge base statica (letta direttamente dal file markdown)
-    static_knowledge = ""
-    try:
-        static_knowledge = (KNOWLEDGE_DIR / f"{venue}.md").read_text(encoding="utf-8")
-    except Exception:
-        pass
+    static_knowledge = _get_static_knowledge(venue)
 
     # Tutti gli eventi futuri (prossimi 14 giorni), ordinati per data
     upcoming = get_upcoming_events(venue, days=14)

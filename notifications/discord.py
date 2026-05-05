@@ -62,7 +62,7 @@ async def notify_conversation(phone: str, venue: str, user_msg: str, bot_reply: 
 
 async def notify_human_message(phone: str, venue: str, user_msg: str, context: dict = None) -> None:
     """Notifica Discord quando il bot è in pausa (human takeover)."""
-    if not settings.discord_webhook_url:
+    if not settings.discord_webhook_url and not settings.discord_ig_webhook_url:
         return
     emoji = VENUE_EMOJI.get(venue or "", "❓")
     venue_label = {"gate_milano": "Gate Milano", "gate_sardinia": "Gate Sardinia"}.get(venue or "", "Venue sconosciuto")
@@ -74,12 +74,12 @@ async def notify_human_message(phone: str, venue: str, user_msg: str, context: d
                 "fields": [
                     {"name": f"{emoji} {venue_label} · {masked} — ⏸️ STAFF MODE", "value": "", "inline": False},
                     {"name": "👤 Utente", "value": user_msg[:1024], "inline": False},
-                    {"name": "", "value": "Rispondi con `!reply <testo>` oppure `!release` per riattivare il bot.", "inline": False},
+                    {"name": "", "value": "Rispondi con `!r <testo>` oppure `!rel` per riattivare il bot.", "inline": False},
                 ],
             }
         ]
     }
-    url = settings.discord_webhook_url.split("?")[0] + "?wait=true"
+    url = _webhook_url_for(phone)
     async with httpx.AsyncClient(timeout=10) as client:
         try:
             r = await client.post(url, json=payload)

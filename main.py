@@ -20,6 +20,14 @@ async def sync_all_venues():
     await _sanity_sync()
     await _xceed_sync()
 
+
+async def nightly_cleanup():
+    from whatsapp.webhook import prune_conversations
+    from instagram.webhook import prune_ig_conversations
+    wa = prune_conversations()
+    ig = prune_ig_conversations()
+    logger.info("Cleanup notturno: rimossi %d conversazioni WA e %d IG inattive", wa, ig)
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(name)s %(levelname)s %(message)s",
@@ -37,6 +45,12 @@ async def _init_background():
         sync_all_venues,
         CronTrigger(hour=4, minute=0),
         id="sanity_sync",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        nightly_cleanup,
+        CronTrigger(hour=4, minute=5),
+        id="nightly_cleanup",
         replace_existing=True,
     )
     scheduler.add_job(
