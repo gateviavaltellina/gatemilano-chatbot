@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     rag_top_k: int = 5
     chroma_db_path: str = str(Path(__file__).parent / "data" / "chroma_db")
 
+    # Bot loop prevention — numeri WhatsApp (E.164, es. "393331234567") da ignorare
+    wa_ignored_phones: str = ""
+
     # App
     max_history: int = 8
     port: int = 8000

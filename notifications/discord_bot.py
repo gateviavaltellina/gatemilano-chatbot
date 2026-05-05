@@ -83,7 +83,7 @@ async def on_message(message: discord.Message):
             delete_after=60,
         )
 
-    elif content == "!rel":
+    elif content in ("!rel", "!release"):
         phone, _ = _phone_from_reply(message)
         if phone and phone in _human_sessions:
             del _human_sessions[phone]

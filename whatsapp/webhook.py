@@ -62,7 +62,8 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
                 msg_id = msg.get("mid", "")
                 sender_id = messaging.get("sender", {}).get("id", "")
                 text = msg.get("text", "").strip()
-                if not sender_id or not text or not msg_id or sender_id == ig_account_id:
+                ig_bot_ids = {settings.ig_gatemilano_id, settings.ig_gatesardinia_id}
+                if not sender_id or not text or not msg_id or sender_id in ig_bot_ids:
                     continue
                 if msg_id in _processed_ids:
                     continue
@@ -100,7 +101,20 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
 
     return {"status": "ok"}
 
+_ignored_phones: set[str] | None = None
+
+def _get_ignored_phones() -> set[str]:
+    global _ignored_phones
+    if _ignored_phones is None:
+        raw = settings.wa_ignored_phones or ""
+        _ignored_phones = {p.strip() for p in raw.split(",") if p.strip()}
+    return _ignored_phones
+
+
 async def process_message(phone: str, msg_id: str, text: str):
+    if phone in _get_ignored_phones():
+        logger.debug("Messaggio ignorato da numero bot: %s", phone)
+        return
     await mark_as_read(msg_id)
     conv = _get_conversation(phone)
 
