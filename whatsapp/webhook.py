@@ -4,8 +4,9 @@ from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
 from config import settings, KNOWLEDGE_DIR
 from whatsapp.client import send_message, send_document, mark_as_read
 from venue.detector import VenueDetector
-from rag.event_store import get_upcoming_events, get_events_for_date
+from rag.event_store import get_upcoming_events, get_events_for_date, get_ticket_url_for_date
 from rag.date_utils import extract_query_dates
+from rag.vip_tables import get_vip_tables_context
 from ai.claude_client import generate_response
 from notifications.discord import notify_conversation, notify_human_message
 from notifications.discord_bot import is_human_takeover
@@ -166,7 +167,8 @@ async def process_message(phone: str, msg_id: str, text: str):
     other_venue = "gate_sardinia" if venue == "gate_milano" else "gate_milano"
     other_venue_name = "Gate Sardinia" if other_venue == "gate_sardinia" else "Gate Milano"
     date_parts = []
-    for date_str in extract_query_dates(text):
+    query_dates = extract_query_dates(text)
+    for date_str in query_dates:
         day_events = get_events_for_date(venue, date_str)
         if day_events:
             date_parts.append(day_events)
@@ -174,8 +176,31 @@ async def process_message(phone: str, msg_id: str, text: str):
         if other_events:
             date_parts.append(f"[EVENTI A {other_venue_name.upper()} — venue diversa]\n{other_events}")
 
-    # Costruisci contesto: date-specific > upcoming > static knowledge
+    # VIP tables: inietta disponibilità e link checkout se la query riguarda tavoli/VIP
+    _VIP_TRIGGERS = {"tavolo", "tavoli", "vip", "bottle", "bottiglia", "minimo", "table", "tables"}
+    lower_text = text.lower()
+    vip_context = ""
+    if any(t in lower_text for t in _VIP_TRIGGERS) and query_dates:
+        ticket_url = get_ticket_url_for_date(venue, query_dates[0])
+        if ticket_url and "xceed" in ticket_url:
+            vip_context = await get_vip_tables_context(ticket_url)
+    elif any(t in lower_text for t in _VIP_TRIGGERS):
+        # Nessuna data specifica — usa il prossimo evento con ticket Xceed
+        from datetime import datetime, timezone
+        now_ts = int(datetime.now(timezone.utc).timestamp())
+        from rag.event_store import _store
+        for e in sorted(_store.get(venue, []), key=lambda x: x["metadata"].get("date_ts", 0)):
+            meta = e["metadata"]
+            if (meta.get("type") == "event"
+                    and meta.get("date_ts", 0) >= now_ts
+                    and meta.get("ticket_url", "") and "xceed" in meta.get("ticket_url", "")):
+                vip_context = await get_vip_tables_context(meta["ticket_url"])
+                break
+
+    # Costruisci contesto: VIP tables > date-specific > upcoming > static knowledge
     parts = []
+    if vip_context:
+        parts.append(vip_context)
     if date_parts:
         parts.extend(date_parts)
     if upcoming:

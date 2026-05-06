@@ -64,3 +64,17 @@ def get_events_for_date(venue: str, date_str: str) -> str:
 
 def count(venue: str) -> int:
     return len([e for e in _get(venue) if e["metadata"].get("type") == "event"])
+
+
+def get_ticket_url_for_date(venue: str, date_str: str) -> str:
+    """Return the ticketUrl for the first event on date_str, or empty string."""
+    day_start = int(datetime.strptime(date_str[:10], "%Y-%m-%d")
+                    .replace(tzinfo=timezone.utc).timestamp())
+    day_end = day_start + 86400
+    for e in _get(venue):
+        meta = e["metadata"]
+        if (meta.get("type") == "event"
+                and day_start <= meta.get("date_ts", 0) < day_end
+                and meta.get("ticket_url")):
+            return meta["ticket_url"]
+    return ""

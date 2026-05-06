@@ -244,6 +244,7 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
         "date_ts": date_ts,
         "venue": venue_label,
         "sanity_id": event.get("_id", ""),
+        "ticket_url": ticket_url,
     }
     return document, metadata
 
