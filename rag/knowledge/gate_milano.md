@@ -82,12 +82,14 @@ Il minimo è consumazione (bottiglie e drink dalla drinklist VIP). Mixers inclus
 
 ### Zone e prezzi minimi
 
-| Zona | Tavoli | Descrizione | Minimo | Min. persone | Extra pax |
-|------|--------|-------------|--------|--------------|-----------|
+| Zona | Tavoli | Descrizione | Minimo spesa | Max. persone | Extra pax |
+|------|--------|-------------|--------------|--------------|-----------|
 | F standard | F5–F21, F17bis | Face Area, floor principale | €300 | 8 | €35/persona |
 | F premium | F1–F4 | Face Area, prima fila | €500 | 10 | €50/persona |
 | B — Balcony | B1–B5 | Vista palco | €300 | 8 | €35/persona |
 | C — Console | C1–C3 | Vicino al DJ | €500 | 10 | €50/persona |
+
+Il minimo è di **spesa**, non di persone. Anche in 2 si prenota un tavolo pagando il minimo (€300).
 
 **Calcolo persone extra:**
 Tavolo F standard per 11 persone = €300 + (3 × €35) = **€405**
@@ -127,15 +129,15 @@ Inviare il link solo dopo aver spiegato prezzi e condizioni.
 
 ### FAQ Tavoli
 **Possiamo pagare la sera stessa?** → No. Serve pagamento 100% via link Xceed per confermare.
-**Possiamo essere in meno del minimo?** → No. Il minimo persone garantisce la consumazione minima.
+**Possiamo essere in 2?** → Sì. Non c'è un minimo di persone — si paga il minimo di spesa (€300) indipendentemente da quanti siete.
 **Possiamo aggiungere persone?** → Sì, ogni extra paga il supplemento (€35 o €50). Va concordato prima.
 **Possiamo cancellare?** → Nessun rimborso. Si può spostare il credito su un'altra data entro giugno.
 **L'ingresso è incluso?** → Sì, il biglietto è incluso nel minimo di spesa.
 **Entro che ora arrivare?** → Entro le 03:30. Dopo non si garantisce la disponibilità del posto.
 **I prezzi sono trattabili?** → No. Se il budget non basta → guestlist.
 
-### Se il gruppo è troppo piccolo
-Per gruppi sotto 8 persone suggerire la guestlist invece del tavolo.
+### Gruppi numerosi
+Per gruppi oltre il massimo per tavolo (8 o 10 persone secondo la zona) ogni persona extra paga il supplemento. Va concordato prima della prenotazione.
 
 ## Alias Artisti
 Alcuni artisti vengono cercati con nomi alternativi — trattali come sinonimi:
