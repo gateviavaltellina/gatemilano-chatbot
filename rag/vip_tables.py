@@ -101,6 +101,7 @@ async def get_vip_tables_context(ticket_url: str, channel: str = "gate-milano") 
         return ""
 
     available = [t for t in tables if t["available"]]
+
     unavailable = [t for t in tables if not t["available"]]
 
     lines = ["TAVOLI VIP DISPONIBILI:"]
@@ -113,3 +114,9 @@ async def get_vip_tables_context(ticket_url: str, channel: str = "gate-milano") 
         lines = ["TAVOLI VIP: tutti esauriti per questo evento."]
 
     return "\n".join(lines)
+
+
+def invalidate_vip_cache() -> None:
+    """Clear the VIP tables cache — call after Xceed sync so sold-out status is fresh."""
+    _cache.clear()
+    logger.debug("VIP tables cache invalidata")

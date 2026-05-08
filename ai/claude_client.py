@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from anthropic import AsyncAnthropic
+from rag.prices import build_prices_text
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -82,15 +83,10 @@ GESTIONE PIÙ EVENTI STESSA DATA:
 {perreo_section}\
 """
 
-PERREO_SECTION_MILANO = """\
+PERREO_SECTION_MILANO = f"""\
 UPSELL PERREO:
 - Quando parli di Perreo o Perreo XL, menziona SEMPRE che sono disponibili anche tavoli VIP oltre ai biglietti normali.
-- PREZZI TAVOLI (fissi, non variabili — rispondi SEMPRE con questi valori, non dire mai che "varia"):
-  Zona F standard (F5-F21): minimo €300 per 8 persone, €35 per ogni persona extra
-  Zona F premium (F1-F4): minimo €500 per 10 persone, €50 per ogni persona extra
-  Zona B Balcony (B1-B5): minimo €300 per 8 persone, €35 per ogni persona extra
-  Zona C Console (C1-C3): minimo €500 per 10 persone, €50 per ogni persona extra
-  Ingresso INCLUSO nel tavolo. Il minimo è consumazione (bottiglie/drink).
+- {build_prices_text()}
 - Se chiedono quante persone sono: calcola subito il prezzo esatto e digli quale zona si adatta.
 - Per prenotare: info@gatemilano.com (MAI il telefono)
 """

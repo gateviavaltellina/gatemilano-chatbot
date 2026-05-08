@@ -375,4 +375,6 @@ async def sync_all_venues():
 
         logger.info("Sync Sanity completato per %s: %d eventi", label, len(current_ids))
 
-    logger.info("Sync Sanity completato.")
+    from rag.knowledge_cache import invalidate
+    invalidate()
+    logger.info("Sync Sanity completato — knowledge cache invalidata.")

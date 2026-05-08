@@ -1,3 +1,4 @@
+import asyncio
 import httpx
 import logging
 import time
@@ -5,6 +6,7 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from config import settings
 from rag.event_store import upsert_event, delete_stale_events
+from rag.vip_tables import invalidate_vip_cache
 
 _ROME = ZoneInfo("Europe/Rome")
 
@@ -32,8 +34,9 @@ async def _fetch_open_events(channel: str) -> list[dict]:
     all_events = []
     offset = 0
     limit = 100
+    max_pages = 50  # Guard against infinite pagination loop
     async with httpx.AsyncClient(timeout=30) as client:
-        while True:
+        for _ in range(max_pages):
             try:
                 r = await client.get(
                     f"{EVENTS_BASE}/v1/events",
@@ -61,24 +64,38 @@ async def _fetch_open_events(channel: str) -> list[dict]:
             except Exception as e:
                 logger.error("Xceed Open API error (channel=%s, offset=%d): %s", channel, offset, e)
                 break
+        else:
+            logger.warning("Xceed pagination hit max_pages=%d per channel=%s", max_pages, channel)
     return all_events
 
 
 async def _fetch_event_offers(xceed_api_key: str, event_uuid: str) -> dict:
-    """Fetch ticket offers for a single event via Partner API."""
+    """Fetch ticket offers for a single event via Partner API (with exponential backoff on 429)."""
     headers = {"X-API-Key": xceed_api_key, "Accept": "application/json"}
     async with httpx.AsyncClient(timeout=15) as client:
-        try:
-            r = await client.get(
-                f"{PARTNER_BASE}/v2/events/{event_uuid}/offers",
-                headers=headers,
-            )
-            r.raise_for_status()
-            data = r.json()
-            return data.get("data", {})
-        except Exception as e:
-            logger.debug("Could not fetch offers for %s: %s", event_uuid, e)
-            return {}
+        for attempt in range(3):
+            try:
+                r = await client.get(
+                    f"{PARTNER_BASE}/v2/events/{event_uuid}/offers",
+                    headers=headers,
+                )
+                if r.status_code == 429:
+                    wait = 2 ** attempt
+                    logger.warning("Xceed 429 rate limit (offer %s) — retry in %ds", event_uuid, wait)
+                    await asyncio.sleep(wait)
+                    continue
+                r.raise_for_status()
+                return r.json().get("data", {})
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 429 and attempt < 2:
+                    await asyncio.sleep(2 ** attempt)
+                    continue
+                logger.debug("Could not fetch offers for %s: %s", event_uuid, e)
+                return {}
+            except Exception as e:
+                logger.debug("Could not fetch offers for %s: %s", event_uuid, e)
+                return {}
+    return {}
 
 
 def _build_event_document(event: dict, venue_label: str, offers: dict) -> tuple[str, dict]:
@@ -182,4 +199,5 @@ async def sync_all_venues():
         delete_stale_events(venue_key, venue_event_ids[venue_key], source="xceed")
         logger.info("Sync completato per %s: %d eventi", venue_label, len(venue_event_ids[venue_key]))
 
+    invalidate_vip_cache()
     logger.info("Sync Xceed completato.")

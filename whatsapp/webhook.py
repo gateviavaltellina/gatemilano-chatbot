@@ -1,50 +1,57 @@
 import logging
+import random
 import time
+from collections import OrderedDict
+
 from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
-from config import settings, KNOWLEDGE_DIR
+
+from config import settings
 from whatsapp.client import send_message, send_document, mark_as_read
 from venue.detector import VenueDetector
-from rag.event_store import get_upcoming_events, get_events_for_date, get_ticket_url_for_date
-from rag.date_utils import extract_query_dates
-from rag.vip_tables import get_vip_tables_context
+from rag.context_builder import build_rag_context
 from ai.claude_client import generate_response
 from notifications.discord import notify_conversation, notify_human_message
 from notifications.discord_bot import is_human_takeover
 
-# Cache knowledge statica: {venue: content}
-_knowledge_cache: dict[str, str] = {}
-
-def _get_static_knowledge(venue: str) -> str:
-    if venue not in _knowledge_cache:
-        try:
-            _knowledge_cache[venue] = (KNOWLEDGE_DIR / f"{venue}.md").read_text(encoding="utf-8")
-        except Exception:
-            _knowledge_cache[venue] = ""
-    return _knowledge_cache[venue]
-
-_DRINKLIST_URL = "https://gatemilano-chatbot-production.up.railway.app/static/drinklist_perreo.pdf"
-_DRINKLIST_TRIGGERS = ["tavolo", "tavoli", "vip", "drinklist", "bottle", "bottiglia", "minimo", "perreo xl"]
-_drinklist_sent: set[str] = set()
-
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-# Deduplicazione messaggi in memoria (per MVP — produzione: Redis)
-_processed_ids: set[str] = set()
+# --- Deduplication (FIFO OrderedDict: oldest entry removed first) ---
+_processed_ids: OrderedDict[str, float] = OrderedDict()
 _MAX_PROCESSED = 10_000
 
-# Stato conversazione per utente: {phone: {"venue": str|None, "history": list}}
+
+def _mark_processed(msg_id: str) -> bool:
+    """Returns True if the message is new. Evicts oldest entries when full."""
+    if msg_id in _processed_ids:
+        return False
+    _processed_ids[msg_id] = time.time()
+    while len(_processed_ids) > _MAX_PROCESSED:
+        _processed_ids.popitem(last=False)  # FIFO
+    return True
+
+
+# --- Conversation state ---
 _conversations: dict[str, dict] = {}
 _venue_detector = VenueDetector()
-_CONV_TTL = 86400  # 24 ore
+_CONV_TTL = 86400       # 24h
+_LAZY_PRUNE_RATE = 0.02  # 2% chance of lazy cleanup per access
+
 
 def _get_conversation(phone: str) -> dict:
     now = time.time()
+    if random.random() < _LAZY_PRUNE_RATE:
+        cutoff = now - _CONV_TTL
+        stale = [p for p, c in list(_conversations.items()) if c.get("last_seen", 0) < cutoff]
+        for p in stale:
+            del _conversations[p]
+            _drinklist_sent.discard(p)
     if phone not in _conversations:
         _conversations[phone] = {"venue": None, "history": [], "last_seen": now}
     else:
         _conversations[phone]["last_seen"] = now
     return _conversations[phone]
+
 
 def prune_conversations() -> int:
     cutoff = time.time() - _CONV_TTL
@@ -54,21 +61,40 @@ def prune_conversations() -> int:
     _drinklist_sent.difference_update(stale)
     return len(stale)
 
-def _add_to_history(conv: dict, role: str, content: str, max_history: int):
+
+def _add_to_history(conv: dict, role: str, content: str, max_history: int) -> None:
     conv["history"].append({"role": role, "content": content})
     if len(conv["history"]) > max_history * 2:
         conv["history"] = conv["history"][-max_history * 2:]
 
+
+# --- Drinklist ---
+_DRINKLIST_URL = "https://gatemilano-chatbot-production.up.railway.app/static/drinklist_perreo.pdf"
+_DRINKLIST_TRIGGERS = ["tavolo", "tavoli", "vip", "drinklist", "bottle", "bottiglia", "minimo", "perreo xl"]
+_drinklist_sent: set[str] = set()
+
+# --- Ignored phones ---
+_ignored_phones: set[str] | None = None
+
+
+def _get_ignored_phones() -> set[str]:
+    global _ignored_phones
+    if _ignored_phones is None:
+        raw = settings.wa_ignored_phones or ""
+        _ignored_phones = {p.strip() for p in raw.split(",") if p.strip()}
+    return _ignored_phones
+
+
+# --- Webhook endpoints ---
+
 @router.get("")
 async def verify_webhook(request: Request) -> Response:
     params = dict(request.query_params)
-    mode = params.get("hub.mode")
-    token = params.get("hub.verify_token")
-    challenge = params.get("hub.challenge")
-    if mode == "subscribe" and token == settings.wa_verify_token:
+    if params.get("hub.mode") == "subscribe" and params.get("hub.verify_token") == settings.wa_verify_token:
         logger.info("Webhook verificato con successo")
-        return Response(content=challenge, media_type="text/plain")
+        return Response(content=params.get("hub.challenge"), media_type="text/plain")
     raise HTTPException(status_code=403, detail="Verifica fallita")
+
 
 @router.post("")
 async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -> dict:
@@ -77,7 +103,7 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
     except Exception:
         raise HTTPException(status_code=400, detail="Body non valido")
 
-    # Instagram DM
+    # Instagram DM (shared webhook endpoint)
     if body.get("object") == "instagram":
         from instagram.webhook import process_ig_message
         for entry in body.get("entry", []):
@@ -90,13 +116,8 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
                 ig_bot_ids = {settings.ig_gatemilano_id, settings.ig_gatesardinia_id}
                 if not sender_id or not text or not msg_id or sender_id in ig_bot_ids:
                     continue
-                if msg_id in _processed_ids:
+                if not _mark_processed(msg_id):
                     continue
-                _processed_ids.add(msg_id)
-                if len(_processed_ids) > _MAX_PROCESSED:
-                    old = list(_processed_ids)[:_MAX_PROCESSED // 2]
-                    for m in old:
-                        _processed_ids.discard(m)
                 background_tasks.add_task(process_ig_message, ig_account_id, sender_id, text)
         return {"status": "ok"}
 
@@ -110,14 +131,8 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
                 if msg.get("type") != "text":
                     continue
                 msg_id = msg.get("id", "")
-                if msg_id in _processed_ids:
+                if not _mark_processed(msg_id):
                     continue
-                _processed_ids.add(msg_id)
-                if len(_processed_ids) > _MAX_PROCESSED:
-                    old = list(_processed_ids)[:_MAX_PROCESSED // 2]
-                    for m in old:
-                        _processed_ids.discard(m)
-
                 phone = msg.get("from", "")
                 text = msg.get("text", {}).get("body", "").strip()
                 if not phone or not text:
@@ -126,102 +141,37 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
 
     return {"status": "ok"}
 
-_ignored_phones: set[str] | None = None
 
-def _get_ignored_phones() -> set[str]:
-    global _ignored_phones
-    if _ignored_phones is None:
-        raw = settings.wa_ignored_phones or ""
-        _ignored_phones = {p.strip() for p in raw.split(",") if p.strip()}
-    return _ignored_phones
-
-
-async def process_message(phone: str, msg_id: str, text: str):
+async def process_message(phone: str, msg_id: str, text: str) -> None:
     if phone in _get_ignored_phones():
         logger.debug("Messaggio ignorato da numero bot: %s", phone)
         return
     await mark_as_read(msg_id)
     conv = _get_conversation(phone)
 
-    # Human takeover attivo: notifica Discord, non rispondere automaticamente
     if is_human_takeover(phone):
         venue = conv.get("venue") or "gate_milano"
         await notify_human_message(phone, venue, text)
         return
 
-    # Rileva venue dal messaggio + storia conversazione
     venue = _venue_detector.detect(text, conv.get("venue"), conv.get("history", []))
-
     if venue is None:
-        # Default a Gate Milano (Gate Sardinia stagionale, apre luglio 2026)
         venue = "gate_milano"
-
     conv["venue"] = venue
 
-    static_knowledge = _get_static_knowledge(venue)
+    rag_context, _ = await build_rag_context(venue, text)
 
-    # Tutti gli eventi futuri (prossimi 14 giorni), ordinati per data
-    upcoming = get_upcoming_events(venue, days=14)
-
-    # Date-aware: per "sabato", "domani", "9 maggio" ecc. inietta eventi del giorno esatto
-    other_venue = "gate_sardinia" if venue == "gate_milano" else "gate_milano"
-    other_venue_name = "Gate Sardinia" if other_venue == "gate_sardinia" else "Gate Milano"
-    date_parts = []
-    query_dates = extract_query_dates(text)
-    for date_str in query_dates:
-        day_events = get_events_for_date(venue, date_str)
-        if day_events:
-            date_parts.append(day_events)
-        other_events = get_events_for_date(other_venue, date_str)
-        if other_events:
-            date_parts.append(f"[EVENTI A {other_venue_name.upper()} — venue diversa]\n{other_events}")
-
-    # VIP tables: inietta disponibilità e link checkout se la query riguarda tavoli/VIP
-    _VIP_TRIGGERS = {"tavolo", "tavoli", "vip", "bottle", "bottiglia", "minimo", "table", "tables"}
-    lower_text = text.lower()
-    vip_context = ""
-    if any(t in lower_text for t in _VIP_TRIGGERS) and query_dates:
-        ticket_url = get_ticket_url_for_date(venue, query_dates[0])
-        if ticket_url and "xceed" in ticket_url:
-            vip_context = await get_vip_tables_context(ticket_url)
-    elif any(t in lower_text for t in _VIP_TRIGGERS):
-        # Nessuna data specifica — usa il prossimo evento con ticket Xceed
-        from datetime import datetime, timezone
-        now_ts = int(datetime.now(timezone.utc).timestamp())
-        from rag.event_store import _store
-        for e in sorted(_store.get(venue, []), key=lambda x: x["metadata"].get("date_ts", 0)):
-            meta = e["metadata"]
-            if (meta.get("type") == "event"
-                    and meta.get("date_ts", 0) >= now_ts
-                    and meta.get("ticket_url", "") and "xceed" in meta.get("ticket_url", "")):
-                vip_context = await get_vip_tables_context(meta["ticket_url"])
-                break
-
-    # Costruisci contesto: VIP tables > date-specific > upcoming > static knowledge
-    parts = []
-    if vip_context:
-        parts.append(vip_context)
-    if date_parts:
-        parts.extend(date_parts)
-    if upcoming:
-        parts.append(upcoming)
-    if static_knowledge:
-        parts.append(static_knowledge)
-    rag_context = "\n\n---\n\n".join(parts)
-
-    # Genera risposta con Claude
     _add_to_history(conv, "user", text, settings.max_history)
     reply = await generate_response(
         venue=venue,
         user_message=text,
         rag_context=rag_context,
-        history=conv["history"][:-1],  # escludi l'ultimo (appena aggiunto)
+        history=conv["history"][:-1],
     )
     _add_to_history(conv, "assistant", reply, settings.max_history)
 
     await send_message(phone, reply)
 
-    # Allega drinklist PDF una sola volta per conversazione
     lower_text = text.lower()
     lower_reply = reply.lower()
     if phone not in _drinklist_sent and any(t in lower_text or t in lower_reply for t in _DRINKLIST_TRIGGERS):

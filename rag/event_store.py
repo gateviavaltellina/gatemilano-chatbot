@@ -50,6 +50,35 @@ def get_upcoming_events(venue: str, days: int = 14) -> str:
     return "\n\n---\n\n".join(e["document"] for e in events)
 
 
+def get_upcoming_events_compact(venue: str, days: int = 14) -> str:
+    """1-line-per-event summary — lighter RAG context for upcoming events.
+    Full details are injected separately only for dates the user explicitly asked about."""
+    now_ts = int(datetime.now(timezone.utc).timestamp())
+    end_ts = now_ts + days * 86400
+    events = [
+        e for e in _get(venue)
+        if e["metadata"].get("type") == "event"
+        and now_ts <= e["metadata"].get("date_ts", 0) <= end_ts
+    ]
+    if not events:
+        return ""
+    events.sort(key=lambda e: e["metadata"].get("date_ts", 0))
+    venue_label = venue.replace("_", " ").title()
+    lines = [f"PROSSIMI EVENTI {venue_label.upper()} (prossimi {days} giorni):"]
+    for e in events:
+        meta = e["metadata"]
+        name = meta.get("event_name", "Evento")
+        date_line = ""
+        for line in e["document"].split("\n"):
+            if line.startswith("Data:"):
+                date_line = line.replace("Data:", "").strip()
+                break
+        ticket = meta.get("ticket_url", "")
+        ticket_str = f" — {ticket}" if ticket else ""
+        lines.append(f"• {date_line}: {name}{ticket_str}")
+    return "\n".join(lines)
+
+
 def get_events_for_date(venue: str, date_str: str) -> str:
     day_start = int(datetime.strptime(date_str[:10], "%Y-%m-%d")
                     .replace(tzinfo=timezone.utc).timestamp())
