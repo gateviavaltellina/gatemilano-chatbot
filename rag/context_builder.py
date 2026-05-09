@@ -23,7 +23,7 @@ _OTHER_VENUE = {"gate_milano": "gate_sardinia", "gate_sardinia": "gate_milano"}
 _OTHER_VENUE_NAME = {"gate_milano": "Gate Sardinia", "gate_sardinia": "Gate Milano"}
 
 
-async def build_rag_context(venue: str, text: str) -> tuple[str, list[str]]:
+async def build_rag_context(venue: str, text: str, history: list[dict] | None = None) -> tuple[str, list[str]]:
     """
     Build RAG context for a user message.
     Returns (rag_context_string, query_dates_list).
@@ -36,9 +36,14 @@ async def build_rag_context(venue: str, text: str) -> tuple[str, list[str]]:
     other_venue = _OTHER_VENUE.get(venue, "gate_milano")
     other_venue_name = _OTHER_VENUE_NAME.get(venue, "Gate Milano")
 
-    # 1. VIP context — only when VIP keywords are detected
+    # Check history for VIP topic — last 6 messages (3 turns)
+    history_text = " ".join(
+        m.get("content", "") for m in (history or [])[-6:]
+    ).lower()
+
+    # 1. VIP context — when VIP keywords in current message OR recent history
     vip_context = ""
-    if any(t in lower_text for t in _VIP_TRIGGERS):
+    if any(t in lower_text for t in _VIP_TRIGGERS) or any(t in history_text for t in _VIP_TRIGGERS):
         ticket_url = ""
         if query_dates:
             ticket_url = get_ticket_url_for_date(venue, query_dates[0])

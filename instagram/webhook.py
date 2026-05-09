@@ -140,7 +140,7 @@ async def process_ig_message(ig_account_id: str, sender_id: str, text: str) -> N
         await notify_human_message(phone, venue, text, context)
         return
 
-    rag_context, _ = await build_rag_context(venue, text)
+    rag_context, _ = await build_rag_context(venue, text, history=conv.get("history", []))
 
     _add_to_history(conv, "user", text)
     reply = await generate_response(

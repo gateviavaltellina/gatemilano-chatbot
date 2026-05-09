@@ -159,7 +159,7 @@ async def process_message(phone: str, msg_id: str, text: str) -> None:
         venue = "gate_milano"
     conv["venue"] = venue
 
-    rag_context, _ = await build_rag_context(venue, text)
+    rag_context, _ = await build_rag_context(venue, text, history=conv.get("history", []))
 
     _add_to_history(conv, "user", text, settings.max_history)
     reply = await generate_response(
