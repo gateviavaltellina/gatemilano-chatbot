@@ -35,5 +35,5 @@ def build_prices_text() -> str:
             f"  {t['label']}: minimo €{t['min_spend']} per {t['max_people']} persone, "
             f"€{t['extra_per_person']} per ogni persona extra"
         )
-    lines.append("  Ingresso INCLUSO nel tavolo. Il minimo è consumazione (bottiglie/drink).")
+    lines.append("  Ingresso INCLUSO nel tavolo. Il minimo è di bottiglie (non drink singoli).")
     return "\n".join(lines)
