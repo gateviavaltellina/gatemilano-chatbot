@@ -55,7 +55,6 @@ async def _init_background():
         id="sanity_sync_night",
         replace_existing=True,
     )
-    # Sync startup — attende 60s per dare tempo all'app di essere pronta
     scheduler.add_job(
         nightly_cleanup,
         CronTrigger(hour=4, minute=5),
@@ -65,7 +64,7 @@ async def _init_background():
     scheduler.add_job(
         sync_all_venues,
         "date",
-        run_date=datetime.now() + timedelta(seconds=60),
+        run_date=datetime.now() + timedelta(seconds=5),
         id="sanity_sync_startup",
     )
     scheduler.start()
