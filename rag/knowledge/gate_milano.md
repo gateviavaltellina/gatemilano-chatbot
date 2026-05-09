@@ -307,25 +307,24 @@ La policy va comunicata con **fermezza ma senza freddezza**. Non è un "no" buro
 
 Gate è impegnata a rendere gli eventi accessibili. La policy si applica sia agli eventi nella venue principale di Via Valtellina, sia agli eventi Gate prodotti in altre location (off-site).
 
-### Policy standard
+### Policy Gate Milano (Via Valtellina)
 
-**Per la persona con disabilità motoria / in carrozzina:**
-- Biglietto **General Admission** valido (stesso prezzo di un biglietto standard, nessuna categoria speciale da acquistare)
-- Accesso a un'**area dedicata e separata** all'interno della venue, con vista sul palco e accessibile in carrozzina
+**Per la persona:**
+- Biglietto **General Admission** valido (stesso prezzo di tutti, nessuna categoria speciale)
+- Non abbiamo un'area dedicata — segnalaci la tua situazione via email a **info@gatemilano.com** prima dell'evento, così il team in loco sarà pronto ad assisterti
 
 **Per l'accompagnatore:**
 - **Biglietto omaggio** — non va acquistato
-- Da richiedere in anticipo via email a **info@gatemilano.com**
+- Da richiedere in anticipo via email a **info@gatemilano.com** indicando: nome e cognome di chi ha acquistato il biglietto, numero del biglietto, nome e cognome dell'accompagnatore
 - Non viene richiesta documentazione
 
-### Come richiedere l'omaggio accompagnatore
+### Policy Gate @ Carroponte (eventi off-site)
 
-1. Acquistare il biglietto General Admission sui canali ufficiali (Xceed, Ticketone, ecc. a seconda dell'evento)
-2. Scrivere a **info@gatemilano.com** indicando:
-   - Nome e cognome di chi ha acquistato il biglietto
-   - Numero del biglietto
-   - Nome e cognome dell'accompagnatore
-3. Lo staff conferma l'omaggio e fornisce le indicazioni per l'arrivo (ingresso dedicato, percorsi accessibili)
+Quando Gate organizza eventi in altre location (es. Carroponte):
+- Biglietto **General Admission** valido (stesso prezzo)
+- Accesso a un'**area dedicata** con vista sul palco accessibile in carrozzina
+- Accompagnatore **omaggio** — stessa procedura email sopra
+- La gestione è sempre tramite **info@gatemilano.com**, non tramite la venue ospitante
 
 ### Eventi Gate off-site
 
