@@ -15,8 +15,9 @@ from rag.knowledge_cache import get as get_static_knowledge
 logger = logging.getLogger(__name__)
 
 _VIP_TRIGGERS = {
-    "tavolo", "tavoli", "vip", "bottle", "bottiglia", "minimo",
-    "table", "tables", "backstage",
+    "tavolo", "tavoli", "vip", "bottle", "bottiglia", "bottiglie", "minimo",
+    "table", "tables", "backstage", "disponibil", "prenotare", "prenot",
+    "zona f", "zona b", "zona c", "balcony", "console",
 }
 _OTHER_VENUE = {"gate_milano": "gate_sardinia", "gate_sardinia": "gate_milano"}
 _OTHER_VENUE_NAME = {"gate_milano": "Gate Sardinia", "gate_sardinia": "Gate Milano"}
