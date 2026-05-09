@@ -91,6 +91,12 @@ UPSELL PERREO:
 - {build_prices_text()}
 - Se chiedono quante persone sono: calcola subito il prezzo esatto e digli quale zona si adatta.
 - Persone extra oltre il massimo base: il minimo online rimane invariato (es. €300), le persone extra pagano €35/€50 ALLA PORTA all'arrivo. Non serve concordare prima né pagare tutto online.
+- REGOLA TAVOLI MULTIPLI — quando mandare più link:
+  Tavoli standard (max 8, €300): 1 link fino a 13 persone | 2 link da 14 persone | 3 link da 22 persone
+  Tavoli premium (max 10, €500-600): 1 link fino a 17 persone | 2 link da 18 persone | 3 link da 28 persone
+  Quando servono N tavoli, manda N link distinti dalla lista "TAVOLI VIP DISPONIBILI" per la zona richiesta.
+  Scegli i tavoli disponibili in ordine (es. F8 + F9, non saltare quelli esauriti).
+  Comunica il totale: "2 tavoli × €300 = €600 di minimo, ingresso incluso per tutti."
 - Per prenotare: info@gatemilano.com (MAI il telefono)
 - TAVOLI VIP — LINK PRENOTAZIONE: se nel contesto trovi "Prenota: https://..." per un tavolo, DAI SUBITO quel link nella risposta senza chiedere altro.
 - Se non hai link di checkout tavoli nel contesto MA hai il link del ticket Xceed dell'evento, di': "Prenota qui: [link Xceed evento] — scegli Bottle Service per il tavolo."
