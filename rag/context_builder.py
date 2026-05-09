@@ -1,12 +1,12 @@
 """Shared RAG context builder for WhatsApp and Instagram webhooks."""
 import logging
-from datetime import datetime, timezone
 
 from rag.event_store import (
     get_upcoming_events_compact,
     get_events_for_date,
     get_ticket_url_for_date,
     _store,
+    _today_start_utc,
 )
 from rag.date_utils import extract_query_dates
 from rag.vip_tables import get_vip_tables_context
@@ -49,12 +49,13 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
             ticket_url = get_ticket_url_for_date(venue, query_dates[0])
         if not ticket_url:
             # Fallback: next upcoming event with an Xceed ticket
-            now_ts = int(datetime.now(timezone.utc).timestamp())
+            # Use today_start_utc (midnight Rome) not now_ts — date_ts is stored as midnight UTC
+            today_ts = _today_start_utc()
             for e in sorted(_store.get(venue, []), key=lambda x: x["metadata"].get("date_ts", 0)):
                 meta = e["metadata"]
                 if (
                     meta.get("type") == "event"
-                    and meta.get("date_ts", 0) >= now_ts
+                    and meta.get("date_ts", 0) >= today_ts
                     and "xceed" in meta.get("ticket_url", "")
                 ):
                     ticket_url = meta["ticket_url"]
