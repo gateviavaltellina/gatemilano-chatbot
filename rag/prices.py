@@ -2,25 +2,25 @@
 
 PERREO_TABLES = {
     "f_standard": {
-        "label": "Zona F standard (F5-F21, F17bis)",
+        "label": "VIP Face standard (F6-F21)",
         "min_spend": 300,
         "max_people": 8,
         "extra_per_person": 35,
     },
     "f_premium": {
-        "label": "Zona F premium (F1-F4)",
-        "min_spend": 500,
+        "label": "VIP Face premium (F1-F5)",
+        "min_spend": 600,
         "max_people": 10,
         "extra_per_person": 50,
     },
     "b_balcony": {
-        "label": "Zona B Balcony (B1-B5)",
+        "label": "VIP Balcony (B1-B5)",
         "min_spend": 300,
         "max_people": 8,
         "extra_per_person": 35,
     },
     "c_console": {
-        "label": "Zona C Console (C1-C3)",
+        "label": "Console (C1-C3)",
         "min_spend": 500,
         "max_people": 10,
         "extra_per_person": 50,
