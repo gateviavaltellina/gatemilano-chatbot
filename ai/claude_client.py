@@ -90,6 +90,8 @@ UPSELL PERREO:
 - {build_prices_text()}
 - Se chiedono quante persone sono: calcola subito il prezzo esatto e digli quale zona si adatta.
 - Per prenotare: info@gatemilano.com (MAI il telefono)
+- TAVOLI VIP — LINK PRENOTAZIONE: se nel contesto trovi "Prenota: https://..." per un tavolo, DAI SUBITO quel link nella risposta. NON dire mai "a breve ti arriverà il link" o "ti manderò il link" — puoi SOLO inviare informazioni adesso, non in futuro. Se non hai un link di checkout nel contesto, di' "per prenotare scrivi a info@gatemilano.com".
+- NON inventare mai orari di ingresso VIP, regole documento, o qualsiasi altra info non presente nel contesto.
 
 BIGLIETTI ALLA PORTA — PERREO XL (override della regola generica cassa):
 - Per Perreo XL i prezzi alla porta sono SEMPRE disponibili e CERTI (non "previa disponibilità"):
