@@ -26,11 +26,24 @@ def _extract_slug_id(ticket_url: str) -> tuple[str, int] | tuple[None, None]:
 
 
 async def _fetch_uuid_for_numeric_id(numeric_id: int, api_key: str) -> str | None:
-    """Find the Xceed UUID for a given numeric event ID via Partner API."""
-    headers = {"X-API-Key": api_key, "Accept": "application/json"}
-    now = int(time.time())
-    async with httpx.AsyncClient(timeout=20) as client:
-        for start_time in (now - 86400 * 30, now - 86400 * 180):
+    """Find the Xceed UUID for a given numeric event ID.
+    Uses Open Events API first (no auth, fast), falls back to Partner API search."""
+    async with httpx.AsyncClient(timeout=15) as client:
+        # Fast path: Open Events API returns UUID directly from numeric ID
+        try:
+            r = await client.get(f"https://events.xceed.me/v1/events/{numeric_id}")
+            if r.status_code == 200:
+                uuid = r.json().get("data", {}).get("id")
+                if uuid:
+                    logger.debug("VIP tables: UUID=%s trovato via Open API per id=%d", uuid, numeric_id)
+                    return uuid
+        except Exception as e:
+            logger.debug("Open API UUID lookup failed for id=%d: %s", numeric_id, e)
+
+        # Fallback: Partner API search
+        headers = {"X-API-Key": api_key, "Accept": "application/json"}
+        now = int(time.time())
+        for start_time in (now - 86400 * 7, now - 86400 * 180):
             try:
                 r = await client.get(
                     f"{_PARTNER_BASE}/v1/events",
@@ -40,8 +53,10 @@ async def _fetch_uuid_for_numeric_id(numeric_id: int, api_key: str) -> str | Non
                 r.raise_for_status()
                 data = r.json()
                 for e in data.get("data", []):
-                    if e.get("id") == numeric_id:
-                        return e.get("uuid")
+                    if str(e.get("id", "")) == str(numeric_id):
+                        uuid = e.get("uuid")
+                        if uuid:
+                            return uuid
             except Exception as e:
                 logger.debug("Partner API error fetching events: %s", e)
     return None

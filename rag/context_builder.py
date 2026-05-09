@@ -55,6 +55,7 @@ async def build_rag_context(venue: str, text: str) -> tuple[str, list[str]]:
                     ticket_url = meta["ticket_url"]
                     break
         if ticket_url:
+            logger.debug("VIP lookup triggered for ticket_url=%s", ticket_url[:60])
             vip_context = await get_vip_tables_context(ticket_url)
 
     # 2. Full event details for specifically queried dates
