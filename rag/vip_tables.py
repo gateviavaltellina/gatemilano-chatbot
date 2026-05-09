@@ -15,7 +15,7 @@ _PARTNER_BASE = "https://partner.xceed.me"
 
 # Cache: numeric_id → {"tables": list, "ts": float}
 _cache: dict[int, dict] = {}
-_CACHE_TTL = 1800  # 30 minuti
+_CACHE_TTL = 300  # 5 minuti
 
 
 def _extract_slug_id(ticket_url: str) -> tuple[str, int] | tuple[None, None]:
