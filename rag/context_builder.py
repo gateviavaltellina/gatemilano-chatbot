@@ -44,11 +44,15 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # 1. VIP context — when VIP keywords in current message OR recent history
     vip_context = ""
     if any(t in lower_text for t in _VIP_TRIGGERS) or any(t in history_text for t in _VIP_TRIGGERS):
-        ticket_url = ""
         if query_dates:
+            # User asked about a specific date — only use that date's event, no fallback
             ticket_url = get_ticket_url_for_date(venue, query_dates[0])
-        if not ticket_url:
-            # Fallback: try all upcoming Xceed events until one returns VIP tables
+            if ticket_url:
+                logger.debug("VIP lookup triggered for ticket_url=%s", ticket_url[:60])
+                vip_context = await get_vip_tables_context(ticket_url)
+            # If no ticket_url for that date → vip_context stays "" (bot says data not available)
+        else:
+            # No specific date — try all upcoming Xceed events until one returns VIP tables
             # Use today_start_utc (midnight Rome) not now_ts — date_ts is stored as midnight UTC
             today_ts = _today_start_utc()
             candidates = [
@@ -66,9 +70,6 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
                 if result:
                     vip_context = result
                     break
-        elif ticket_url:
-            logger.debug("VIP lookup triggered for ticket_url=%s", ticket_url[:60])
-            vip_context = await get_vip_tables_context(ticket_url)
 
     # 2. Full event details for specifically queried dates
     date_parts = []
