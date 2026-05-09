@@ -36,4 +36,5 @@ def build_prices_text() -> str:
             f"€{t['extra_per_person']} per ogni persona extra"
         )
     lines.append("  Ingresso INCLUSO nel tavolo. Il minimo è di bottiglie (non drink singoli).")
+    lines.append("  Persone extra oltre il base: pagano la differenza ALLA PORTA all'arrivo (non online).")
     return "\n".join(lines)
