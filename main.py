@@ -41,33 +41,38 @@ _ready = False
 async def _init_background():
     global _ready
     logger.info("Avvio inizializzazione in background...")
-    # Sync ogni 2 ore durante la giornata (08-23)
-    scheduler.add_job(
-        sync_all_venues,
-        CronTrigger(hour="8-23", minute=0, step=2),
-        id="sanity_sync_hourly",
-        replace_existing=True,
-    )
-    # Sync notturno alle 4
-    scheduler.add_job(
-        sync_all_venues,
-        CronTrigger(hour=4, minute=0),
-        id="sanity_sync_night",
-        replace_existing=True,
-    )
-    scheduler.add_job(
-        nightly_cleanup,
-        CronTrigger(hour=4, minute=5),
-        id="nightly_cleanup",
-        replace_existing=True,
-    )
-    scheduler.add_job(
-        sync_all_venues,
-        "date",
-        run_date=datetime.now() + timedelta(seconds=5),
-        id="sanity_sync_startup",
-    )
-    scheduler.start()
+    try:
+        # Sync ogni 2 ore durante la giornata (08-23)
+        scheduler.add_job(
+            sync_all_venues,
+            CronTrigger(hour="8-23", minute=0, step=2),
+            id="sanity_sync_hourly",
+            replace_existing=True,
+        )
+        # Sync notturno alle 4
+        scheduler.add_job(
+            sync_all_venues,
+            CronTrigger(hour=4, minute=0),
+            id="sanity_sync_night",
+            replace_existing=True,
+        )
+        scheduler.add_job(
+            nightly_cleanup,
+            CronTrigger(hour=4, minute=5),
+            id="nightly_cleanup",
+            replace_existing=True,
+        )
+        scheduler.add_job(
+            sync_all_venues,
+            "date",
+            run_date=datetime.now() + timedelta(seconds=5),
+            id="sanity_sync_startup",
+        )
+        scheduler.start()
+        logger.info("Scheduler avviato con %d job", len(scheduler.get_jobs()))
+    except Exception:
+        logger.exception("Errore avvio scheduler — riprovo sync diretto")
+        asyncio.create_task(sync_all_venues())
     asyncio.create_task(start_discord_bot())
     _ready = True
     logger.info("Bot pronto. In ascolto su porta %d", settings.port)
