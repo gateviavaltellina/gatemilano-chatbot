@@ -124,5 +124,37 @@ async def debug_vip(venue: str = "gate_milano"):
     return {"vip_lines": lines, "context_preview": ctx[:800]}
 
 
+@app.get("/debug/vip/raw")
+async def debug_vip_raw():
+    import re, httpx
+    from rag.vip_tables import _extract_slug_id, _fetch_uuid_for_numeric_id, _fetch_bottleservice
+    from rag.event_store import _store, _today_start_utc
+    from config import settings
+
+    ticket_url = ""
+    today_ts = _today_start_utc()
+    for e in sorted(_store.get("gate_milano", []), key=lambda x: x["metadata"].get("date_ts", 0)):
+        meta = e["metadata"]
+        if meta.get("type") == "event" and meta.get("date_ts", 0) >= today_ts and "xceed" in meta.get("ticket_url", ""):
+            ticket_url = meta["ticket_url"]
+            break
+
+    if not ticket_url:
+        return {"error": "no xceed ticket_url found", "today_ts": today_ts, "events_count": len(_store.get("gate_milano", []))}
+
+    slug, numeric_id = _extract_slug_id(ticket_url)
+    uuid = await _fetch_uuid_for_numeric_id(numeric_id, settings.xceed_api_key)
+    offers = await _fetch_bottleservice(uuid, settings.xceed_api_key) if uuid else []
+    return {
+        "ticket_url": ticket_url,
+        "slug": slug,
+        "numeric_id": numeric_id,
+        "uuid": uuid,
+        "offers_count": len(offers),
+        "first_offer": offers[0] if offers else None,
+        "api_key_set": bool(settings.xceed_api_key),
+    }
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=settings.port, reload=False)
