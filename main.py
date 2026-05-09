@@ -116,5 +116,13 @@ async def debug_events():
     return {"gate_milano": count("gate_milano"), "gate_sardinia": count("gate_sardinia")}
 
 
+@app.get("/debug/vip")
+async def debug_vip(venue: str = "gate_milano"):
+    from rag.context_builder import build_rag_context
+    ctx, _ = await build_rag_context(venue, "vorrei un tavolo vip")
+    lines = [l for l in ctx.split("\n") if "Prenota" in l or "TAVOLI" in l or "NON DISPONIBILE" in l]
+    return {"vip_lines": lines, "context_preview": ctx[:800]}
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=settings.port, reload=False)
