@@ -117,11 +117,11 @@ async def debug_events():
 
 
 @app.get("/debug/vip")
-async def debug_vip(venue: str = "gate_milano"):
+async def debug_vip(venue: str = "gate_milano", text: str = "vorrei un tavolo vip"):
     from rag.context_builder import build_rag_context
-    ctx, _ = await build_rag_context(venue, "vorrei un tavolo vip")
+    ctx, dates = await build_rag_context(venue, text)
     lines = [l for l in ctx.split("\n") if "Prenota" in l or "TAVOLI" in l or "NON DISPONIBILE" in l]
-    return {"vip_lines": lines, "context_preview": ctx[:800]}
+    return {"query_dates": dates, "vip_lines": lines, "context_preview": ctx[:800]}
 
 
 @app.get("/debug/vip/raw")
