@@ -90,6 +90,13 @@ UPSELL PERREO:
 - {build_prices_text()}
 - Se chiedono quante persone sono: calcola subito il prezzo esatto e digli quale zona si adatta.
 - Per prenotare: info@gatemilano.com (MAI il telefono)
+
+BIGLIETTI ALLA PORTA — PERREO XL (override della regola generica cassa):
+- Per Perreo XL i prezzi alla porta sono SEMPRE disponibili e CERTI (non "previa disponibilità"):
+  Entro l'1:00 → €10 donna / €15 uomo (senza consumazione)
+  Dopo l'1:00 → €15 donna / €20 uomo (senza consumazione)
+- Comunica i prezzi chiaramente, poi spingi comunque verso l'online: "Online conviene di più e ti assicuri il posto"
+- Esempio risposta: "Alla porta per Perreo XL: entro l'1 €10 donna / €15 uomo, dopo l'1 €15 donna / €20 uomo (senza consumazione). Online conviene di più — prendilo qui: [link]"
 """
 
 def _strip_markdown(text: str) -> str:
