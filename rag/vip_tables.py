@@ -1,6 +1,6 @@
 """
 VIP table availability and checkout links via Xceed Partner API.
-URL pattern: xceed.me/en/{city}/checkout/bottleService/{slug}/{numeric_id}/{offer_uuid}?channel={channel}
+URL pattern: https://booking-plugin.xceed.me/{channel-slug}/offer/{offer_uuid}
 """
 import re
 import time
@@ -108,7 +108,7 @@ async def get_vip_tables_context(ticket_url: str, channel: str = "gate-milano") 
             status = t.get("status", "")
             available = not sold_out and status not in ("sales_closed",)
             offer_uuid = t.get("id", "")
-            link = f"https://xceed.me/en/milano/checkout/bottleService/{slug}/{numeric_id}/{offer_uuid}?channel={channel}"
+            link = f"https://booking-plugin.xceed.me/{channel}/offer/{offer_uuid}"
             tables.append({"name": name, "price": price, "available": available, "link": link})
         _cache[numeric_id] = {"tables": tables, "ts": time.time()}
 
