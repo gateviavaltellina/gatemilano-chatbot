@@ -68,14 +68,45 @@ def get_upcoming_events_compact(venue: str, days: int = 14) -> str:
     for e in events:
         meta = e["metadata"]
         name = meta.get("event_name", "Evento")
+        doc = e["document"]
+
         date_line = ""
-        for line in e["document"].split("\n"):
+        room = ""
+        min_price = ""
+        sold_out = False
+        selling_fast = False
+
+        for line in doc.split("\n"):
             if line.startswith("Data:"):
                 date_line = line.replace("Data:", "").strip()
-                break
+            elif line.startswith("Sala:"):
+                room = line.replace("Sala:", "").strip()
+            elif "ESAURITI" in line:
+                sold_out = True
+            elif "Sold out velocemente" in line:
+                selling_fast = True
+            elif line.startswith("Prezzi:"):
+                # Extract lowest price from lines like "• Normale: €15"
+                pass
+            elif line.strip().startswith("•") and "€" in line:
+                import re
+                m = re.search(r"€(\d+)", line)
+                if m and not min_price:
+                    min_price = m.group(1)
+
+        parts = [name]
+        if room:
+            parts.append(room)
+        if sold_out:
+            parts.append("ESAURITI")
+        elif selling_fast:
+            parts.append("ultimi biglietti")
+        elif min_price:
+            parts.append(f"da €{min_price}")
+
         ticket = meta.get("ticket_url", "")
         ticket_str = f" — {ticket}" if ticket else ""
-        lines.append(f"• {date_line}: {name}{ticket_str}")
+        lines.append(f"• {date_line}: {' · '.join(parts)}{ticket_str}")
     return "\n".join(lines)
 
 

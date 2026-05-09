@@ -119,7 +119,7 @@ async def generate_response(
     try:
         response = await _client.messages.create(
             model=settings.model,
-            max_tokens=512,
+            max_tokens=800,
             system=system,
             messages=messages,
         )
