@@ -48,19 +48,25 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
         if query_dates:
             ticket_url = get_ticket_url_for_date(venue, query_dates[0])
         if not ticket_url:
-            # Fallback: next upcoming event with an Xceed ticket
+            # Fallback: try all upcoming Xceed events until one returns VIP tables
             # Use today_start_utc (midnight Rome) not now_ts — date_ts is stored as midnight UTC
             today_ts = _today_start_utc()
-            for e in sorted(_store.get(venue, []), key=lambda x: x["metadata"].get("date_ts", 0)):
-                meta = e["metadata"]
+            candidates = [
+                e["metadata"]["ticket_url"]
+                for e in sorted(_store.get(venue, []), key=lambda x: x["metadata"].get("date_ts", 0))
                 if (
-                    meta.get("type") == "event"
-                    and meta.get("date_ts", 0) >= today_ts
-                    and "xceed" in meta.get("ticket_url", "")
-                ):
-                    ticket_url = meta["ticket_url"]
+                    e["metadata"].get("type") == "event"
+                    and e["metadata"].get("date_ts", 0) >= today_ts
+                    and "xceed" in e["metadata"].get("ticket_url", "")
+                )
+            ]
+            for url in candidates:
+                logger.debug("VIP lookup trying ticket_url=%s", url[:60])
+                result = await get_vip_tables_context(url)
+                if result:
+                    vip_context = result
                     break
-        if ticket_url:
+        elif ticket_url:
             logger.debug("VIP lookup triggered for ticket_url=%s", ticket_url[:60])
             vip_context = await get_vip_tables_context(ticket_url)
 
