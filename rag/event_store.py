@@ -4,8 +4,16 @@ Populated on startup by Sanity/Xceed sync, reset on each restart.
 """
 import logging
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
+_ROME = ZoneInfo("Europe/Rome")
 logger = logging.getLogger(__name__)
+
+
+def _today_start_utc() -> int:
+    """Midnight UTC of today's date in Europe/Rome — matches how date_ts is stored."""
+    now_rome = datetime.now(_ROME)
+    return int(datetime(now_rome.year, now_rome.month, now_rome.day, tzinfo=timezone.utc).timestamp())
 
 # venue_key → list of {"id": str, "document": str, "metadata": dict}
 _store: dict[str, list[dict]] = {}
@@ -39,12 +47,12 @@ def delete_stale_events(venue: str, current_event_ids: list[str], source: str = 
 
 
 def get_upcoming_events(venue: str, days: int = 14) -> str:
-    now_ts = int(datetime.now(timezone.utc).timestamp())
-    end_ts = now_ts + days * 86400
+    today_ts = _today_start_utc()
+    end_ts = today_ts + days * 86400
     events = [
         e for e in _get(venue)
         if e["metadata"].get("type") == "event"
-        and now_ts <= e["metadata"].get("date_ts", 0) <= end_ts
+        and today_ts <= e["metadata"].get("date_ts", 0) <= end_ts
     ]
     events.sort(key=lambda e: e["metadata"].get("date_ts", 0))
     return "\n\n---\n\n".join(e["document"] for e in events)
@@ -53,12 +61,12 @@ def get_upcoming_events(venue: str, days: int = 14) -> str:
 def get_upcoming_events_compact(venue: str, days: int = 14) -> str:
     """1-line-per-event summary — lighter RAG context for upcoming events.
     Full details are injected separately only for dates the user explicitly asked about."""
-    now_ts = int(datetime.now(timezone.utc).timestamp())
-    end_ts = now_ts + days * 86400
+    today_ts = _today_start_utc()
+    end_ts = today_ts + days * 86400
     events = [
         e for e in _get(venue)
         if e["metadata"].get("type") == "event"
-        and now_ts <= e["metadata"].get("date_ts", 0) <= end_ts
+        and today_ts <= e["metadata"].get("date_ts", 0) <= end_ts
     ]
     if not events:
         return ""
