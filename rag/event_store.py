@@ -146,3 +146,18 @@ def get_ticket_url_for_date(venue: str, date_str: str) -> str:
                 and meta.get("ticket_url")):
             return meta["ticket_url"]
     return ""
+
+
+def get_all_ticket_urls_for_date(venue: str, date_str: str) -> list[str]:
+    """Return all ticketUrls for events on date_str (to try VIP lookup on each)."""
+    day_start = int(datetime.strptime(date_str[:10], "%Y-%m-%d")
+                    .replace(tzinfo=timezone.utc).timestamp())
+    day_end = day_start + 86400
+    urls = []
+    for e in _get(venue):
+        meta = e["metadata"]
+        if (meta.get("type") == "event"
+                and day_start <= meta.get("date_ts", 0) < day_end
+                and meta.get("ticket_url")):
+            urls.append(meta["ticket_url"])
+    return urls
