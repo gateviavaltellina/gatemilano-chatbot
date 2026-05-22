@@ -2,6 +2,7 @@
 from __future__ import annotations
 import asyncio
 import json
+import os
 import sys
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -59,7 +60,9 @@ async def main() -> int:
     from ai.claude_client import generate_response
     from eval.judge import judge_reply
 
-    client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+    # max_retries alto: l'org puo' essere su un tier basso (es. 30k token/min),
+    # i 429 vanno assorbiti col backoff dell'SDK invece di far fallire la run.
+    client = AsyncAnthropic(api_key=settings.anthropic_api_key, max_retries=8)
     judge_model = settings.model  # Sonnet
 
     async def judge_fn(case, reply):
@@ -69,8 +72,10 @@ async def main() -> int:
     if not cases:
         print("Nessun caso trovato in", CASES_DIR)
         return 1
-    print(f"Eseguo {len(cases)} casi...")
-    results = await run_all(cases, generate_fn=generate_response, judge_fn=judge_fn)
+    # Concorrenza bassa di default per non sforare il rate limit; override via env.
+    concurrency = int(os.getenv("EVAL_CONCURRENCY", "2"))
+    print(f"Eseguo {len(cases)} casi (concurrency={concurrency})...")
+    results = await run_all(cases, generate_fn=generate_response, judge_fn=judge_fn, concurrency=concurrency)
     path = save_results(results, model=settings.model)
     passed = sum(r.passed for r in results)
     print(f"Risultati: {passed}/{len(results)} pass — salvati in {path}")
