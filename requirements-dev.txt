@@ -1,0 +1,6 @@
+# Dipendenze solo per sviluppo locale e per l'eval harness (eval/).
+# NON installate in produzione su Railway (che usa requirements.txt).
+-r requirements.txt
+pyyaml>=6.0
+pytest>=8.0
+pytest-asyncio>=0.23
