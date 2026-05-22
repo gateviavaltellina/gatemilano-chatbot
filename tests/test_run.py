@@ -53,3 +53,21 @@ async def test_run_all_runs_every_case():
     results = await run_all(cases, generate_fn=gen, judge_fn=judge, concurrency=2)
     assert {r.id for r in results} == {"a", "b", "c"}
     assert all(r.passed for r in results)
+
+
+@pytest.mark.asyncio
+async def test_run_case_marks_bot_fallback_as_error():
+    judge_calls = []
+
+    async def gen(venue, user_message, rag_context, history):
+        return "Mi dispiace, al momento non riesco a rispondere. Per assistenza contatta info@gatemilano.com."
+
+    async def judge(case, reply):
+        judge_calls.append(case.id)
+        return JudgeVerdict("pass")
+
+    case = _case()
+    res = await run_case(case, generate_fn=gen, judge_fn=judge)
+    assert res.error is not None
+    assert res.passed is False
+    assert judge_calls == []  # ne' assertion ne' judge sull'errore infra

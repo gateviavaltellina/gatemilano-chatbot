@@ -14,6 +14,8 @@ def load_results(path) -> dict:
 def summarize(run: dict) -> dict[str, tuple[int, int]]:
     out: dict[str, list[int]] = {}
     for c in run["cases"]:
+        if c.get("error"):
+            continue
         agg = out.setdefault(c["category"], [0, 0])
         agg[1] += 1
         if c["passed"]:
@@ -25,6 +27,8 @@ def diff_runs(prev: dict, curr: dict) -> dict:
     prev_pass = {c["id"]: c["passed"] for c in prev["cases"]}
     regressions, improvements = [], []
     for c in curr["cases"]:
+        if c.get("error"):
+            continue
         was = prev_pass.get(c["id"])
         if was is None:
             continue
@@ -43,13 +47,18 @@ def render(run: dict, prev: dict | None = None) -> str:
         total_p += p
         total_t += t
     lines.append(f"  {'TOTALE':20} {total_p}/{total_t}")
-    fails = [c for c in run["cases"] if not c["passed"]]
+    fails = [c for c in run["cases"] if not c["passed"] and not c.get("error")]
     if fails:
         lines += ["", "FALLITI:"]
         for c in fails:
             why = ", ".join(c["assertion_failures"]) or (
                 ", ".join((c["judge"] or {}).get("violated", [])) if c["judge"] else "?")
             lines.append(f"  [{c['category']}] {c['id']}: {why}")
+    errored = [c for c in run["cases"] if c.get("error")]
+    if errored:
+        lines += ["", "ERRORI INFRA (esclusi dal punteggio):"]
+        for c in errored:
+            lines.append(f"  [{c['category']}] {c['id']}: {c['error']}")
     if prev:
         d = diff_runs(prev, run)
         lines += ["", f"vs run precedente — regressioni: {d['regressions'] or 'nessuna'} | "

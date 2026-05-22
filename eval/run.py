@@ -15,9 +15,18 @@ from eval.schema import Case, CaseResult
 CASES_DIR = Path(__file__).parent / "cases"
 RESULTS_DIR = Path(__file__).parent / "results"
 
+# Prefisso della risposta di fallback di generate_response() quando l'API fallisce.
+# Una risposta cosi' NON e' un fail comportamentale: e' un errore infra, da escludere dal punteggio.
+BOT_FALLBACK_PREFIX = "Mi dispiace, al momento non riesco a rispondere"
+
 
 async def run_case(case: Case, *, generate_fn, judge_fn) -> CaseResult:
     reply = await generate_fn(case.venue, case.user_message, case.rag_context, case.history)
+    if reply.startswith(BOT_FALLBACK_PREFIX):
+        return CaseResult(
+            id=case.id, category=case.category, user_message=case.user_message,
+            reply=reply, error="bot fallback (errore API, non valutato)",
+        )
     failures = run_assertions(reply, case.assertions)
     if failures:
         return CaseResult(

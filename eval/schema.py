@@ -46,9 +46,12 @@ class CaseResult:
     assertion_failures: list[str] = field(default_factory=list)
     judge: JudgeVerdict | None = None
     usage: dict = field(default_factory=dict)
+    error: str | None = None
 
     @property
     def passed(self) -> bool:
+        if self.error:
+            return False
         if self.assertion_failures:
             return False
         if self.judge is None:

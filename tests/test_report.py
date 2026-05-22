@@ -30,3 +30,19 @@ def test_render_returns_string_with_totals():
     out = render(run)
     assert "vip" in out
     assert "1/2" in out
+
+
+def test_summarize_excludes_errored_cases():
+    err = _c("e", "vip", False)
+    err["error"] = "bot fallback"
+    run = _run([_c("a", "vip", True), err])
+    s = summarize(run)
+    assert s["vip"] == (1, 1)  # il caso in errore e' escluso dal conteggio
+
+
+def test_render_lists_infra_errors():
+    err = _c("e", "vip", False)
+    err["error"] = "bot fallback"
+    out = render(_run([_c("a", "vip", True), err]))
+    assert "ERRORI INFRA" in out
+    assert "e:" in out or "e: bot fallback" in out
