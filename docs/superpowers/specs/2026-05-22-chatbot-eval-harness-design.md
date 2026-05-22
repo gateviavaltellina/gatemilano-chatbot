@@ -118,13 +118,15 @@ Asserzioni deterministiche opzionali per caso (controllo a costo zero, pre-judge
 - Concorrenza limitata (es. `asyncio.Semaphore(5)`) per non saturare l'API.
 - Salva il grezzo in `eval/results/<timestamp>.json`.
 
-**Prompt caching**: il system prompt è grande e statico per venue. Il runner riusa
-lo stesso system prompt tra i casi dello stesso venue; va marcato con
-`cache_control: {"type": "ephemeral"}` sull'ultimo blocco system, così le run
-ripetute (e i casi consecutivi) colpiscono la cache invece di riprocessare ~90
-righe ogni volta. Questo richiede una piccola modifica a `generate_response` per
-accettare il system come blocchi con `cache_control` (o un parametro opt-in), senza
-cambiarne il comportamento in produzione.
+**Prompt caching nel runner — RINVIATO alla fase 2.** Il runner chiama
+`generate_response()` **as-is**, senza modifiche. Motivo: per ottenere cache hit
+servirebbe riordinare il system prompt (oggi `datetime` e `rag_context` variabili
+stanno in mezzo alle regole statiche → un breakpoint di cache darebbe hit ~zero), e
+riordinare cambia il comportamento di produzione. Dato che le modifiche al prompt
+sono la fase successiva validata *contro* questo harness, il caching del prompt di
+produzione diventa la **prima modifica validata dal diff** dopo il baseline, non
+parte della costruzione dell'harness. Senza caching il costo di una run (~60
+chiamate) resta comunque trascurabile.
 
 ### Verità di riferimento — tavoli VIP Perreo
 
@@ -202,8 +204,9 @@ on-demand, non in CI automatica (almeno in questa fase).
 - `python -m eval.report --diff` mostra la tabella per categoria e il diff vs run
   precedente.
 - Almeno i 4 failure mode prompt-addressable sono coperti da ≥3 casi ciascuno.
-- Il prompt caching è attivo sia nel runner che nel judge (verificabile dai
-  `usage.cache_read_input_tokens` nei risultati grezzi).
+- Il prompt caching è attivo nel **judge** (prefisso istruzioni statico,
+  verificabile dai `usage.cache_read_input_tokens` nei risultati grezzi). Il caching
+  del prompt di produzione è rinviato alla fase 2 (prima modifica validata dal diff).
 - Eseguito il baseline iniziale: sappiamo quanti casi il prompt attuale fallisce
   (questo è il punto di partenza per il lavoro successivo sul prompt).
 ```
