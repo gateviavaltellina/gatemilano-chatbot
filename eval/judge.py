@@ -10,7 +10,12 @@ Valuta la risposta SOLO contro i criteri della rubrica, non con criteri tuoi.
 - I criteri 'must' devono essere tutti soddisfatti.
 - I criteri 'must_not' non devono essere violati.
 Se anche un solo criterio non e rispettato, il verdetto e 'fail'.
+Un criterio 'must_not' e violato SOLO se la risposta contiene esplicitamente il problema descritto.
+Se la risposta e naturale e non contiene la frase/comportamento vietato, il criterio e RISPETTATO.
+Non penalizzare per cio' che la risposta omette: valuta solo cio' che dice davvero.
 Elenca in 'violated' i criteri non rispettati (testo esatto). Sii conciso nel reasoning.
+Compila i campi in ordine: prima 'reasoning' (ragiona e concludi), poi 'violated', poi 'verdict'.
+Il 'verdict' DEVE essere coerente con la conclusione del reasoning: se il reasoning conclude che i criteri sono rispettati, verdict='pass'.
 Registra sempre il risultato con lo strumento record_verdict.
 """
 
@@ -20,11 +25,13 @@ _VERDICT_TOOL = {
     "input_schema": {
         "type": "object",
         "properties": {
-            "verdict": {"type": "string", "enum": ["pass", "fail"]},
+            # reasoning PRIMA: il judge ragiona, poi conclude — evita verdetti
+            # incoerenti col ragionamento (verdict generato prima del reasoning).
+            "reasoning": {"type": "string", "description": "Ragiona qui PRIMA di decidere; chiudi con la decisione finale."},
             "violated": {"type": "array", "items": {"type": "string"}},
-            "reasoning": {"type": "string"},
+            "verdict": {"type": "string", "enum": ["pass", "fail"], "description": "Coerente con la conclusione del reasoning."},
         },
-        "required": ["verdict", "violated", "reasoning"],
+        "required": ["reasoning", "violated", "verdict"],
     },
 }
 
@@ -61,6 +68,7 @@ async def judge_reply(case: Case, reply: str, *, client, model: str) -> JudgeVer
     response = await client.messages.create(
         model=model,
         max_tokens=500,
+        temperature=0,  # giudizio deterministico, riduce i falsi positivi
         system=build_judge_system(),
         tools=[_VERDICT_TOOL],
         tool_choice={"type": "tool", "name": "record_verdict"},
