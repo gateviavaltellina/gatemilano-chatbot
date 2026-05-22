@@ -126,10 +126,36 @@ righe ogni volta. Questo richiede una piccola modifica a `generate_response` per
 accettare il system come blocchi con `cache_control` (o un parametro opt-in), senza
 cambiarne il comportamento in produzione.
 
+### Verità di riferimento — tavoli VIP Perreo
+
+Fonte unica: `rag/prices.py` (`PERREO_TABLES`). Regola **fissa fino a giugno**.
+I casi VIP devono essere scritti contro questi valori:
+
+| Zona          | Tavoli | Minimo | Max persone | Extra/persona |
+|---------------|--------|--------|-------------|---------------|
+| Face premium  | F1–F5  | €600   | 10          | €50           |
+| Face standard | F6–F21 | €300   | 8           | €35           |
+| Balcony       | B1–B5  | €300   | 8           | €35           |
+| Console       | C1–C3  | €500   | 10          | €50           |
+
+Regole derivate (da codificare nelle rubriche):
+- NON esiste un "minimo di persone": il minimo è di **spesa**, non di teste.
+- Persone oltre il `max_people` pagano `extra_per_person` **alla porta**, il minimo
+  online resta invariato.
+- F5 è **premium (€600)**, non standard — questo è esattamente l'errore osservato.
+- Ingresso incluso nel minimo; il minimo è di bottiglie, non drink singoli.
+
+Eventi **non-Perreo**: non c'è regola fissa. Il contesto VIP (solo tavoli / anche
+backstage / solo backstage / nessuno) arriva a runtime dal lookup Xceed via UUID.
+Per l'eval si **congela uno snapshot** del contesto Xceed per caso; le rubriche
+verificano solo che il bot non inventi opzioni non presenti nello snapshot.
+
 ### 3. Judge — `eval/judge.py`
 
-- Per ogni risposta, un secondo Claude (stesso modello o `claude-opus` per giudizio
-  più severo) riceve: `user_message`, `reply`, e la `rubric` del caso.
+- Modello del judge: **Sonnet** (`settings.model`), per contenere costi e impatto
+  economico. Reso configurabile via parametro/env, ma default Sonnet.
+- Per ogni risposta, un secondo Claude riceve: `user_message`, `reply`, e la
+  `rubric` del caso.
 - Output strutturato (tool use / JSON): `{verdict: pass|fail, violated: [...],
   reasoning: "..."}`.
 - Il judge valuta SOLO contro la rubrica del caso, non con criteri propri, per
