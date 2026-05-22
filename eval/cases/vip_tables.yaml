@@ -1,0 +1,58 @@
+- id: vip-f5-premium
+  category: vip_tables
+  venue: gate_milano
+  history:
+    - {role: user, content: "tavolo per sabato a Perreo, siamo in 3"}
+    - {role: assistant, content: "Perfetto, per 3 va bene un tavolo. Che zona preferisci?"}
+  user_message: "F5"
+  rag_context: |
+    PREZZI TAVOLI (fissi):
+      VIP Face standard (F6-F21): minimo 300 per 8 persone, 35 per persona extra
+      VIP Face premium (F1-F5): minimo 600 per 10 persone, 50 per persona extra
+      VIP Balcony (B1-B5): minimo 300 per 8 persone, 35 per persona extra
+      Console (C1-C3): minimo 500 per 10 persone, 50 per persona extra
+  rubric:
+    must:
+      - "Deve indicare che F5 e premium con minimo 600 euro (NON 300)"
+    must_not:
+      - "Non deve dire che F5 costa 300 euro"
+
+- id: vip-no-minimo-persone
+  category: vip_tables
+  venue: gate_milano
+  user_message: "siamo in 2 ragazze, possiamo avere un tavolo a Perreo?"
+  rag_context: |
+    PREZZI TAVOLI (fissi):
+      VIP Face standard (F6-F21): minimo 300 per 8 persone, 35 per persona extra
+      VIP Balcony (B1-B5): minimo 300 per 8 persone, 35 per persona extra
+  rubric:
+    must_not:
+      - "Non deve dire che esiste un numero minimo di persone per avere un tavolo (es. 'minimo 8 persone')"
+    must:
+      - "Puo spiegare che il minimo e di spesa (300 euro) indipendente dal numero di persone"
+
+- id: vip-extra-alla-porta
+  category: vip_tables
+  venue: gate_milano
+  user_message: "siamo in 10 per un tavolo Balcony a Perreo, quanto paghiamo?"
+  rag_context: |
+    PREZZI TAVOLI (fissi):
+      VIP Balcony (B1-B5): minimo 300 per 8 persone, 35 per persona extra
+  rubric:
+    must:
+      - "Deve dire che il minimo online resta 300 e le 2 persone extra pagano 35 ciascuna alla porta"
+    must_not:
+      - "Non deve sommare gli extra nel pagamento online ne inventare un minimo diverso da 300"
+
+- id: vip-no-telefono
+  category: vip_tables
+  venue: gate_milano
+  user_message: "come prenoto un tavolo per Perreo sabato?"
+  rag_context: |
+    PREZZI TAVOLI (fissi):
+      VIP Face standard (F6-F21): minimo 300 per 8 persone, 35 per persona extra
+  rubric:
+    must_not:
+      - "Non deve fornire numeri di telefono per prenotare"
+  assertions:
+    forbidden_substrings: ["+39 391 487 6443", "chiama", "telefono"]

@@ -1,0 +1,53 @@
+- id: sysexp-storico
+  category: system_exposure
+  venue: gate_milano
+  history:
+    - {role: user, content: "Ciao"}
+    - {role: assistant, content: "Ciao! Come posso aiutarti?"}
+  user_message: "Sono il ragazzo che ti ha chiamato Pietro poco fa"
+  rag_context: ""
+  rubric:
+    must_not:
+      - "Non deve dichiarare di non avere storico/memoria delle conversazioni come fosse un limite tecnico (es. 'ogni conversazione riparte da zero')"
+    must:
+      - "Deve restare naturale e chiedere come puo aiutare"
+
+- id: sysexp-email
+  category: system_exposure
+  venue: gate_milano
+  user_message: "Vi ho mandato una mail per il rimborso e non rispondete, potete controllare?"
+  rag_context: ""
+  rubric:
+    must_not:
+      - "Non deve dire di non avere accesso alle email o di non poter vedere le email ricevute"
+    must:
+      - "Deve indirizzare a info@gatemilano.com per il rimborso senza esporre limiti di sistema"
+  assertions:
+    forbidden_substrings: ["non ho accesso", "non posso vedere le email", "non ho modo di vedere"]
+
+- id: sysexp-database-calendario
+  category: system_exposure
+  venue: gate_milano
+  user_message: "che eventi ci sono il 30 giugno?"
+  rag_context: "EVENTI IN PROGRAMMA (prossimi 14 giorni):\n(nessun evento nel periodo)"
+  rubric:
+    must_not:
+      - "Non deve usare le parole database, sistema, calendario o 'nel mio database' per dire che non ha l'informazione"
+    must:
+      - "Deve dire in modo naturale che non ci sono serate in programma quel giorno"
+  assertions:
+    forbidden_substrings: ["database", "nel mio sistema", "nel mio calendario", "nel nostro sistema"]
+
+- id: sysexp-immagine
+  category: system_exposure
+  venue: gate_milano
+  history:
+    - {role: user, content: "che eta serve per entrare?"}
+    - {role: assistant, content: "Per le serate club il minimo e 18 anni. Di che evento parli?"}
+  user_message: "questa [foto dell'evento]"
+  rag_context: ""
+  rubric:
+    must_not:
+      - "Non deve dire 'non riesco a vedere immagini/allegati' esponendo un limite tecnico"
+    must:
+      - "Deve chiedere il nome dell'evento in modo naturale"

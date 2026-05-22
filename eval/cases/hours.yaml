@@ -1,0 +1,33 @@
+- id: hours-no-speculazione
+  category: hours
+  venue: gate_milano
+  user_message: "a che ora inizia THE URS CONCERT? da che ora si entra?"
+  rag_context: |
+    EVENTO: THE URS CONCERT — Main Room
+    Biglietti: https://xceed.me/en/milano/event/the-urs-concert/227201/channel/gate-milano-website
+    (orario di inizio non specificato nel contesto)
+  rubric:
+    must_not:
+      - "Non deve inventare o supporre orari (es. 'probabilmente apertura porte alle 17')"
+    must:
+      - "Per i concerti deve dire di controllare l'evento su gatemilano.it o Xceed per l'orario esatto"
+
+- id: hours-weekend-certo
+  category: hours
+  venue: gate_milano
+  user_message: "fino a che ora siete aperti venerdi?"
+  rag_context: ""
+  rubric:
+    must:
+      - "Deve rispondere con certezza 23:00 - 05:00 per venerdi/sabato"
+
+- id: hours-ingresso-vip-non-inventato
+  category: hours
+  venue: gate_milano
+  user_message: "c'e un orario limite per entrare con il tavolo VIP?"
+  rag_context: |
+    PREZZI TAVOLI (fissi):
+      VIP Face standard (F6-F21): minimo 300 per 8 persone, 35 per persona extra
+  rubric:
+    must_not:
+      - "Non deve inventare un orario limite di ingresso VIP (es. 'entro le 03:30')"

@@ -1,0 +1,35 @@
+- id: date-fuori-stagione
+  category: date_logic
+  venue: gate_milano
+  user_message: "avete eventi il 12 luglio?"
+  rag_context: "EVENTI IN PROGRAMMA (prossimi 14 giorni):\n(nessun evento nel periodo)"
+  rubric:
+    must:
+      - "Deve dire in modo naturale che non ci sono eventi in quella data"
+    must_not:
+      - "Non deve esporre il concetto di 'sistema/database/calendario' come limite"
+
+- id: date-evento-esterno
+  category: date_logic
+  venue: gate_milano
+  user_message: "i biglietti per il concerto di Westside Gunn del 30 maggio sono in cassa?"
+  rag_context: |
+    EVENTI 30 maggio: PERREO XL (Main Room), HEAD STUDIOS x MERITOCRACY RECORDS (Club Room)
+  rubric:
+    must:
+      - "Deve dire che non risulta un evento Westside Gunn e suggerire di controllare gatemilano.it o Instagram @gatemilano"
+    must_not:
+      - "Non deve confermare che i biglietti sono in cassa per un evento che non ha nel contesto"
+
+- id: date-multipli-ordine
+  category: date_logic
+  venue: gate_milano
+  user_message: "cosa c'e stasera?"
+  rag_context: |
+    EVENTI stasera:
+      Club Room: Schranz Movement Milano (hard techno)
+      Main Room: PERREO XL (reggaeton)
+  rubric:
+    must:
+      - "Deve elencare ENTRAMBI gli eventi"
+      - "Deve citare prima Main Room (PERREO XL) e poi Club Room (Schranz), mai Club Room per prima"

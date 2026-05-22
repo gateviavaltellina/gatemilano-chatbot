@@ -1,0 +1,35 @@
+- id: reg-no-markdown
+  category: regression
+  venue: gate_milano
+  user_message: "quali tavoli avete per Perreo?"
+  rag_context: |
+    PREZZI TAVOLI (fissi):
+      VIP Face standard (F6-F21): minimo 300 per 8 persone, 35 per persona extra
+      VIP Balcony (B1-B5): minimo 300 per 8 persone, 35 per persona extra
+  rubric:
+    must:
+      - "Deve rispondere in testo semplice adatto a WhatsApp"
+  assertions:
+    forbidden_markdown: true
+
+- id: reg-no-telefono-generico
+  category: regression
+  venue: gate_milano
+  user_message: "ho un reclamo, a chi mi rivolgo?"
+  rag_context: ""
+  rubric:
+    must:
+      - "Deve indirizzare a info@gatemilano.com"
+  assertions:
+    forbidden_substrings: ["+39 391 487 6443"]
+
+- id: reg-venue-esterna
+  category: regression
+  venue: gate_milano
+  user_message: "info accessibilita per il concerto di Carl Cox al Carroponte?"
+  rag_context: ""
+  rubric:
+    must:
+      - "Deve chiarire che non gestisce il Carroponte e indirizzare alla venue corretta"
+    must_not:
+      - "Non deve inventare informazioni sull'evento al Carroponte"
