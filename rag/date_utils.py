@@ -1,8 +1,22 @@
+from __future__ import annotations
 import re
 from datetime import datetime, timezone, timedelta, date as _date
 from zoneinfo import ZoneInfo
 
 _ROME = ZoneInfo("Europe/Rome")
+
+# Le serate vanno fino alle 05:00: tra mezzanotte e le 06:00 la notte del club è
+# ancora quella iniziata la sera prima. Per date/eventi consideriamo quindi il
+# "giorno di servizio", che ruota alle 06:00 e non a mezzanotte.
+CLUB_NIGHT_ROLLOVER_HOUR = 6
+
+
+def business_now(now: datetime | None = None) -> datetime:
+    """Ora 'di servizio': prima delle 06:00 restituisce il giorno precedente,
+    così la serata ancora in corso (es. iniziata alle 23 di ieri) conta come oggi."""
+    now = now or datetime.now(_ROME)
+    return now - timedelta(hours=CLUB_NIGHT_ROLLOVER_HOUR)
+
 
 _TODAY_TERMS = ["stasera", "stanotte", "oggi", "questa sera", "questa notte", "tonight", "hoy", "esta noche"]
 _TOMORROW_TERMS = ["domani", "domani sera", "domani notte", "tomorrow", "mañana", "manana"]
@@ -39,8 +53,8 @@ def _next_weekday(now: datetime, target_weekday: int, force_next: bool = False) 
     return now + timedelta(days=days)
 
 
-def extract_query_dates(text: str) -> list[str]:
-    now = datetime.now(_ROME)
+def extract_query_dates(text: str, now: datetime | None = None) -> list[str]:
+    now = business_now(now)
     lower = text.lower()
     dates = []
 
