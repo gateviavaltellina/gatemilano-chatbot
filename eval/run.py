@@ -1,0 +1,81 @@
+"""Runner dell'eval harness: esegue i casi e salva i risultati."""
+from __future__ import annotations
+import asyncio
+import json
+import sys
+from dataclasses import asdict
+from datetime import datetime, timezone
+from pathlib import Path
+
+from eval.assertions import run_assertions
+from eval.loader import load_cases
+from eval.schema import Case, CaseResult
+
+CASES_DIR = Path(__file__).parent / "cases"
+RESULTS_DIR = Path(__file__).parent / "results"
+
+
+async def run_case(case: Case, *, generate_fn, judge_fn) -> CaseResult:
+    reply = await generate_fn(case.venue, case.user_message, case.rag_context, case.history)
+    failures = run_assertions(reply, case.assertions)
+    if failures:
+        return CaseResult(
+            id=case.id, category=case.category, user_message=case.user_message,
+            reply=reply, assertion_failures=failures, judge=None,
+        )
+    verdict = None if case.rubric.is_empty() else await judge_fn(case, reply)
+    return CaseResult(
+        id=case.id, category=case.category, user_message=case.user_message,
+        reply=reply, assertion_failures=[], judge=verdict,
+    )
+
+
+async def run_all(cases, *, generate_fn, judge_fn, concurrency: int = 5) -> list[CaseResult]:
+    sem = asyncio.Semaphore(concurrency)
+
+    async def _guarded(c):
+        async with sem:
+            return await run_case(c, generate_fn=generate_fn, judge_fn=judge_fn)
+
+    return await asyncio.gather(*(_guarded(c) for c in cases))
+
+
+def save_results(results: list[CaseResult], model: str) -> Path:
+    RESULTS_DIR.mkdir(exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    path = RESULTS_DIR / f"{ts}.json"
+    payload = {
+        "timestamp": ts,
+        "model": model,
+        "cases": [asdict(r) | {"passed": r.passed} for r in results],
+    }
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return path
+
+
+async def main() -> int:
+    from anthropic import AsyncAnthropic
+    from config import settings
+    from ai.claude_client import generate_response
+    from eval.judge import judge_reply
+
+    client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+    judge_model = settings.model  # Sonnet
+
+    async def judge_fn(case, reply):
+        return await judge_reply(case, reply, client=client, model=judge_model)
+
+    cases = load_cases(CASES_DIR)
+    if not cases:
+        print("Nessun caso trovato in", CASES_DIR)
+        return 1
+    print(f"Eseguo {len(cases)} casi...")
+    results = await run_all(cases, generate_fn=generate_response, judge_fn=judge_fn)
+    path = save_results(results, model=settings.model)
+    passed = sum(r.passed for r in results)
+    print(f"Risultati: {passed}/{len(results)} pass — salvati in {path}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(asyncio.run(main()))
