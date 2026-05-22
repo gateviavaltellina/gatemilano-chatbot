@@ -11,9 +11,13 @@ logger = logging.getLogger(__name__)
 
 
 def _today_start_utc() -> int:
-    """Midnight UTC of today's date in Europe/Rome — matches how date_ts is stored."""
-    now_rome = datetime.now(_ROME)
-    return int(datetime(now_rome.year, now_rome.month, now_rome.day, tzinfo=timezone.utc).timestamp())
+    """Midnight UTC del 'giorno di servizio' (rollover alle 06:00, vedi date_utils):
+    tra mezzanotte e le 06:00 conta ancora il giorno precedente, così la serata in
+    corso (eventi fino alle 05:00) non viene scambiata per passata.
+    Matches how date_ts is stored (midnight UTC della data Rome)."""
+    from rag.date_utils import business_now
+    bnow = business_now()
+    return int(datetime(bnow.year, bnow.month, bnow.day, tzinfo=timezone.utc).timestamp())
 
 # venue_key → list of {"id": str, "document": str, "metadata": dict}
 _store: dict[str, list[dict]] = {}
