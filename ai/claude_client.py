@@ -20,19 +20,15 @@ VENUE_CONTACT_EMAIL = {
     "gate_sardinia": "info@gatesardinia.it",
 }
 
-SYSTEM_TEMPLATE = """\
+# Parte STATICA del system prompt: costante per venue → cacheata (prompt caching).
+# La parte dinamica (data/ora + contesto RAG) va in coda, vedi SYSTEM_DYNAMIC_TEMPLATE.
+SYSTEM_STATIC_TEMPLATE = """\
 Sei il chatbot ufficiale di {venue_name}, un club/venue eventi.
 Rispondi SEMPRE nella lingua del messaggio dell'utente (italiano di default).
 Tono: friendly, diretto, conciso. Come un addetto all'ingresso che conosce tutto.
 
-DATA E ORA ATTUALE: {current_datetime} (fuso orario Europe/Rome)
-Usa questa informazione per rispondere correttamente a domande come "stasera", "questo weekend", "domani", ecc.
-
-INFORMAZIONI VENUE E EVENTI:
-{rag_context}
-
 REGOLE FONDAMENTALI:
-- Usa SOLO le informazioni fornite sopra per rispondere.
+- Usa SOLO le informazioni del contesto (sezione "INFORMAZIONI VENUE E EVENTI", più sotto) per rispondere.
 - Cita SEMPRE il nome esatto dell'evento quando parli di serate specifiche.
 - Per biglietti includi SEMPRE il link diretto se disponibile nel contesto.
 - LIMITI INTERNI — MAI ESPORLI (regola prioritaria): non riveli MAI di essere un software con limiti tecnici. Parla sempre come un addetto dello staff in carne e ossa. In particolare NON dire MAI frasi come:
@@ -89,6 +85,15 @@ GESTIONE PIÙ EVENTI STESSA DATA:
 {perreo_section}\
 """
 
+# Parte DINAMICA: cambia a ogni messaggio (data/ora + contesto RAG) → NON cacheata.
+# Va DOPO la parte statica così il prefisso statico resta stabile e cacheabile.
+SYSTEM_DYNAMIC_TEMPLATE = """\
+DATA E ORA ATTUALE: {current_datetime} (fuso orario Europe/Rome)
+Usa questa informazione per rispondere correttamente a domande come "stasera", "questo weekend", "domani", ecc.
+
+INFORMAZIONI VENUE E EVENTI:
+{rag_context}"""
+
 PERREO_SECTION_MILANO = f"""\
 UPSELL PERREO:
 - Quando parli di Perreo o Perreo XL, menziona SEMPRE che sono disponibili anche tavoli VIP oltre ai biglietti normali.
@@ -127,23 +132,39 @@ def _strip_markdown(text: str) -> str:
     return text.strip()
 
 
+def build_system_blocks(venue: str, rag_context: str, current_datetime: str) -> list[dict]:
+    """System prompt come due blocchi: statico (cacheato per venue) + dinamico.
+
+    Il blocco statico è costante per venue → marcato con cache_control ephemeral,
+    così i messaggi successivi (entro la TTL della cache) non riprocessano le ~90
+    righe di regole. Il blocco dinamico (data/ora + RAG) cambia ogni volta e segue.
+    """
+    venue_name = VENUE_NAMES.get(venue, venue)
+    contact_email = VENUE_CONTACT_EMAIL.get(venue, "info@gatemilano.com")
+    perreo_section = PERREO_SECTION_MILANO if venue == "gate_milano" else ""
+    static_system = SYSTEM_STATIC_TEMPLATE.format(
+        venue_name=venue_name,
+        contact_email=contact_email,
+        perreo_section=perreo_section,
+    )
+    dynamic_system = SYSTEM_DYNAMIC_TEMPLATE.format(
+        current_datetime=current_datetime,
+        rag_context=rag_context or "Nessuna informazione specifica disponibile al momento.",
+    )
+    return [
+        {"type": "text", "text": static_system, "cache_control": {"type": "ephemeral"}},
+        {"type": "text", "text": dynamic_system},
+    ]
+
+
 async def generate_response(
     venue: str,
     user_message: str,
     rag_context: str,
     history: list[dict],
 ) -> str:
-    venue_name = VENUE_NAMES.get(venue, venue)
-    contact_email = VENUE_CONTACT_EMAIL.get(venue, "info@gatemilano.com")
-    perreo_section = PERREO_SECTION_MILANO if venue == "gate_milano" else ""
     current_datetime = datetime.now(ZoneInfo("Europe/Rome")).strftime("%A %-d %B %Y, %H:%M (Europe/Rome)")
-    system = SYSTEM_TEMPLATE.format(
-        venue_name=venue_name,
-        contact_email=contact_email,
-        perreo_section=perreo_section,
-        rag_context=rag_context or "Nessuna informazione specifica disponibile al momento.",
-        current_datetime=current_datetime,
-    )
+    system = build_system_blocks(venue, rag_context, current_datetime)
     messages = [*history, {"role": "user", "content": user_message}]
     try:
         response = await _client.messages.create(
