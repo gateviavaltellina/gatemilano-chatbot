@@ -1,0 +1,60 @@
+- id: routing-biglietti-non-ricevuti
+  category: routing
+  venue: gate_milano
+  user_message: "Ho comprato i biglietti per il 5 giugno ma non li ho ricevuti, come faccio?"
+  rag_context: |
+    EVENTO: LILCR — 5 giugno — Main Room
+    Biglietti: https://xceed.me/en/milano/event/lilcr/228983/channel/gate-milano-website
+  rubric:
+    must:
+      - "Deve indirizzare a marketing@gatemilano.com per il problema di biglietti non ricevuti"
+    must_not:
+      - "Non deve mandare a support@xceed.com ne a info@gatemilano.com per i biglietti non ricevuti"
+  assertions:
+    forbidden_substrings: ["support@xceed.com"]
+
+- id: tiers-spiegazione-scaglioni
+  category: tiers
+  venue: gate_milano
+  user_message: "Mi appaiono 3 prezzi diversi per il biglietto, cosa cambia tra di loro?"
+  rag_context: |
+    EVENTO: LILCR — 5 giugno — Main Room
+    Prezzi:
+    - Early Bird: €15 (esaurito)
+    - First Release: €20
+    - Second Release: €25
+    Biglietti: https://xceed.me/en/milano/event/lilcr/228983/channel/gate-milano-website
+  rubric:
+    must:
+      - "Deve spiegare che sono scaglioni temporali: stesso ingresso, cambia solo il prezzo in base a quando compri (prima = meno caro)"
+    must_not:
+      - "Non deve dire che non conosce la differenza o limitarsi a rimandare a Xceed senza spiegare"
+
+- id: vip-non-perreo-con-tavoli
+  category: vip_tables
+  venue: gate_milano
+  user_message: "Posso prenotare un tavolo per LILCR del 5 giugno?"
+  rag_context: |
+    TAVOLI VIP DISPONIBILI:
+    - VIP Table Side: €400 → Prenota: https://booking-plugin.xceed.me/gate-milano/offer/aaa11122-3333-4444-5555-666677778888
+
+    EVENTO: LILCR — 5 giugno — Main Room
+    Biglietti: https://xceed.me/en/milano/event/lilcr/228983/channel/gate-milano-website
+  rubric:
+    must:
+      - "Deve proporre il tavolo disponibile col prezzo (€400) e il link Prenota presente nel contesto"
+    must_not:
+      - "Non deve rimandare a george@ ne dire che non ci sono tavoli, dato che il contesto ne contiene uno disponibile"
+
+- id: vip-non-perreo-senza-tavoli
+  category: vip_tables
+  venue: gate_milano
+  user_message: "Posso prenotare un tavolo per il concerto di Oxxxymiron?"
+  rag_context: |
+    EVENTO: Oxxxymiron — Main Room
+    Biglietti: https://xceed.me/en/milano/event/oxxxymiron/220000/channel/gate-milano-website
+  rubric:
+    must:
+      - "Deve dire che per quell'evento non risultano tavoli online; per gruppi/eventi privati puo indirizzare a george@gatemilano.com"
+    must_not:
+      - "Non deve inventare tavoli, zone o prezzi non presenti nel contesto"
