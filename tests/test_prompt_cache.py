@@ -4,10 +4,19 @@ from ai.claude_client import build_system_blocks
 def test_two_blocks_static_first_with_cache_control():
     blocks = build_system_blocks("gate_milano", "EVENTI: x", "lunedi 1 gennaio 2026, 12:00")
     assert len(blocks) == 2
-    assert blocks[0]["cache_control"] == {"type": "ephemeral"}
+    assert blocks[0]["cache_control"] == {"type": "ephemeral", "ttl": "1h"}
     assert "REGOLE FONDAMENTALI" in blocks[0]["text"]
     assert "UPSELL PERREO" in blocks[0]["text"]  # sezione Perreo (Milano) sta nello statico
     assert "cache_control" not in blocks[1]
+
+
+def test_knowledge_base_is_in_cached_static_block():
+    # La knowledge base (costante per venue) deve stare nel blocco cacheato,
+    # non in quello dinamico — è il fix che porta la quota cacheabile a ~97%.
+    blocks = build_system_blocks("gate_milano", "EVENTI: x", "lunedi 1 gennaio 2026, 12:00")
+    assert "INFORMAZIONI FISSE VENUE" in blocks[0]["text"]
+    # il blocco statico deve essere sostanzioso (rules + KB), non solo le regole
+    assert len(blocks[0]["text"]) > 10000
 
 
 def test_dynamic_block_has_datetime_and_rag():

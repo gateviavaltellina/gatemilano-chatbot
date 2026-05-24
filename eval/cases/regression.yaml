@@ -23,13 +23,13 @@
   assertions:
     forbidden_substrings: ["+39 391 487 6443"]
 
-- id: reg-venue-esterna
-  category: regression
+- id: reg-venue-roles-evento-non-noto
+  category: venue_roles
   venue: gate_milano
-  user_message: "info accessibilita per il concerto di Carl Cox al Carroponte?"
+  user_message: "Sto cercando informazioni su un evento al Carroponte di Sesto San Giovanni che NON è Carl Cox. È un evento Gate?"
   rag_context: ""
   rubric:
     must:
-      - "Deve chiarire che non gestisce il Carroponte e indirizzare alla venue corretta"
+      - "Deve evitare di confermare o negare ciecamente: dire che verifica / non risulta tra gli eventi Gate che conosce e proporre di controllare (gatemilano.it o Instagram) o scrivere a info@gatemilano.com"
     must_not:
-      - "Non deve inventare informazioni sull'evento al Carroponte"
+      - "Non deve affermare con certezza che è un evento Gate, né negare seccamente senza possibilità di verifica, né inventare dettagli sull'evento"

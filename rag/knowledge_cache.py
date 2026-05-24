@@ -1,4 +1,5 @@
 """Centralized static knowledge cache shared by WhatsApp and Instagram webhooks."""
+from __future__ import annotations
 import logging
 from config import KNOWLEDGE_DIR
 
