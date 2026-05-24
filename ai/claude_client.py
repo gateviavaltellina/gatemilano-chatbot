@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from anthropic import AsyncAnthropic
 from rag.prices import build_prices_text
+from rag.knowledge_cache import get as get_static_knowledge
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -146,9 +147,12 @@ def _strip_markdown(text: str) -> str:
 def build_system_blocks(venue: str, rag_context: str, current_datetime: str) -> list[dict]:
     """System prompt come due blocchi: statico (cacheato per venue) + dinamico.
 
-    Il blocco statico è costante per venue → marcato con cache_control ephemeral,
-    così i messaggi successivi (entro la TTL della cache) non riprocessano le ~90
-    righe di regole. Il blocco dinamico (data/ora + RAG) cambia ogni volta e segue.
+    Blocco STATICO (cacheato): intro + regole + sezione Perreo + KNOWLEDGE BASE.
+    Tutto costante per venue → la knowledge base (~7k token, prima nel blocco
+    dinamico e quindi non cacheata) ora entra qui, portando la quota cacheabile
+    da ~36% a ~97%. TTL esteso a 1h perché il traffico è sparso (vedi create()).
+    Blocco DINAMICO (non cacheato): data/ora + eventi (upcoming/date/VIP), cambia
+    a ogni messaggio.
     """
     venue_name = VENUE_NAMES.get(venue, venue)
     contact_email = VENUE_CONTACT_EMAIL.get(venue, "info@gatemilano.com")
@@ -158,12 +162,15 @@ def build_system_blocks(venue: str, rag_context: str, current_datetime: str) -> 
         contact_email=contact_email,
         perreo_section=perreo_section,
     )
+    static_knowledge = get_static_knowledge(venue)
+    if static_knowledge:
+        static_system = f"{static_system}\n\nINFORMAZIONI FISSE VENUE (knowledge base):\n{static_knowledge}"
     dynamic_system = SYSTEM_DYNAMIC_TEMPLATE.format(
         current_datetime=current_datetime,
         rag_context=rag_context or "Nessuna informazione specifica disponibile al momento.",
     )
     return [
-        {"type": "text", "text": static_system, "cache_control": {"type": "ephemeral"}},
+        {"type": "text", "text": static_system, "cache_control": {"type": "ephemeral", "ttl": "1h"}},
         {"type": "text", "text": dynamic_system},
     ]
 
@@ -177,12 +184,36 @@ async def generate_response(
     current_datetime = datetime.now(ZoneInfo("Europe/Rome")).strftime("%A %-d %B %Y, %H:%M (Europe/Rome)")
     system = build_system_blocks(venue, rag_context, current_datetime)
     messages = [*history, {"role": "user", "content": user_message}]
+    # FIX #3: cache anche il prefisso della conversazione. Mettendo un breakpoint
+    # sull'ultimo messaggio della history, i turni successivi della stessa
+    # conversazione (entro 1h) rileggono dalla cache invece di riprocessare la
+    # history che cresce fino a max_history*2 messaggi. Nessun effetto sul turno 1.
+    if history:
+        last = messages[len(history) - 1]
+        messages[len(history) - 1] = {
+            "role": last["role"],
+            "content": [{"type": "text", "text": last["content"],
+                         "cache_control": {"type": "ephemeral", "ttl": "1h"}}],
+        }
     try:
+        # TTL 1h (header beta): il traffico è sparso, una cache 5m scadrebbe tra
+        # una conversazione e l'altra. ROI: la scrittura 1h costa 2x (vs 1.25x a 5m)
+        # ma evita di riscrivere ~11k token cacheati a ogni primo messaggio dopo i
+        # 5 minuti — con clienti in finestre orarie sparse il risparmio è netto.
         response = await _client.messages.create(
             model=settings.model,
             max_tokens=800,
             system=system,
             messages=messages,
+            extra_headers={"anthropic-beta": "extended-cache-ttl-2025-04-11"},
+        )
+        u = response.usage
+        cache_read = getattr(u, "cache_read_input_tokens", 0) or 0
+        cache_write = getattr(u, "cache_creation_input_tokens", 0) or 0
+        logger.info(
+            "Token usage: input_fresh=%d cache_read=%d cache_write=%d output=%d hit_rate=%.1f%%",
+            u.input_tokens, cache_read, cache_write, u.output_tokens,
+            100 * cache_read / max(1, u.input_tokens + cache_read),
         )
         return _strip_markdown(response.content[0].text)
     except Exception as e:

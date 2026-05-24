@@ -11,7 +11,6 @@ from rag.event_store import (
 )
 from rag.date_utils import extract_query_dates
 from rag.vip_tables import get_vip_tables_context
-from rag.knowledge_cache import get as get_static_knowledge
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +86,8 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # 3. Compact upcoming list (title + date + link, 1 line per event, 14 giorni)
     upcoming = get_upcoming_events_compact(venue, days=14)
 
-    # 4. Static knowledge base
-    static_knowledge = get_static_knowledge(venue)
-
-    parts = [p for p in [vip_context, *date_parts, upcoming, static_knowledge] if p]
+    # NB: la knowledge base statica NON è più qui — è costante per venue e viene
+    # iniettata nel blocco system cacheato (vedi ai/claude_client.build_system_blocks).
+    # Qui resta solo il contesto DINAMICO (cambia per messaggio/giorno).
+    parts = [p for p in [vip_context, *date_parts, upcoming] if p]
     return "\n\n---\n\n".join(parts), query_dates
