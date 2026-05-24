@@ -31,7 +31,7 @@
     must:
       - "Puo spiegare che il minimo e di spesa (300 euro) indipendente dal numero di persone"
 
-- id: vip-extra-alla-porta
+- id: vip-extra-modello-misto
   category: vip_tables
   venue: gate_milano
   user_message: "siamo in 10 per un tavolo Balcony a Perreo, quanto paghiamo?"
@@ -40,9 +40,9 @@
       VIP Balcony (B1-B5): minimo 300 per 8 persone, 35 per persona extra
   rubric:
     must:
-      - "Deve dire che il minimo online resta 300 e le 2 persone extra pagano 35 ciascuna alla porta"
+      - "Deve dire che il tavolo Balcony ha minimo €300 (fino a 8 persone) e che le 2 persone extra pagano un supplemento di €35 ciascuna"
     must_not:
-      - "Non deve sommare gli extra nel pagamento online ne inventare un minimo diverso da 300"
+      - "Non deve presentare il pagamento del supplemento extra come obbligatoriamente tutto online/anticipato come unica via: il supplemento si può concordare in prenotazione OPPURE pagare al momento. Non deve inventare un minimo diverso da €300."
 
 - id: vip-no-telefono
   category: vip_tables

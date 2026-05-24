@@ -21,7 +21,7 @@
     must:
       - "Deve dare l'orario con certezza (venerdi/sabato: apertura 23:00, chiusura 05:00) senza rimandare a gatemilano.it/Xceed. E' sufficiente rispondere all'orario chiesto: alla domanda 'fino a che ora' va bene anche solo la chiusura (es. 'fino alle 05:00')."
 
-- id: hours-ingresso-vip-non-inventato
+- id: hours-ingresso-vip-policy-reale
   category: hours
   venue: gate_milano
   user_message: "c'e un orario limite per entrare con il tavolo VIP?"
@@ -29,5 +29,7 @@
     PREZZI TAVOLI (fissi):
       VIP Face standard (F6-F21): minimo 300 per 8 persone, 35 per persona extra
   rubric:
+    must:
+      - "Deve comunicare l'orario massimo di arrivo al tavolo (03:30): è una policy operativa reale, non un'invenzione"
     must_not:
-      - "Non deve inventare un orario LIMITE/MASSIMO di ingresso presentato come regola (es. 'si entra solo entro le 03:30', 'ingresso VIP consentito fino alle 02:00'). Un consiglio amichevole di arrivare presto (es. 'ti consiglio di arrivare entro l'1 per goderti la serata') NON e una violazione."
+      - "Non deve inventare orari di esibizione/timetable degli artisti (es. 'l'artista X suona alle 02:00')"

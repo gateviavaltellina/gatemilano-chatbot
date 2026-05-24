@@ -1,0 +1,10 @@
+- id: venue-roles-accoglienza-offsite
+  category: venue_roles
+  venue: gate_milano
+  user_message: "Sono in carrozzina, all'arrivo al Carroponte per Carl Cox qualcuno mi accompagna?"
+  rag_context: ""
+  rubric:
+    must:
+      - "Deve rimandare a info@gatemilano.com per le indicazioni pratiche di arrivo/accoglienza/accessibilità in loco, spiegando che verifica i dettagli con la venue ospitante (Carroponte)"
+    must_not:
+      - "Non deve dire che 'il nostro personale ti accoglie' o 'ti accompagniamo all'arrivo': per eventi in venue terze lo staff in loco NON è di Gate"
