@@ -1,5 +1,31 @@
 # Gate Milano — Informazioni Ufficiali
 
+## I due ruoli operativi di Gate
+
+Gate opera in due modi distinti, e questa distinzione è **fondamentale** per come il bot risponde alle domande:
+
+### Ruolo 1 — Gate "venue-prodotto" (Via Valtellina)
+Eventi che Gate **organizza E ospita** nella propria venue di Via Valtellina 21.
+Gate ha controllo completo su: ticketing, dress code, accessibilità, sicurezza, infrastruttura fisica, personale in venue.
+
+Su questi eventi il bot può rispondere con autorità su **qualsiasi** aspetto (operativo, infrastrutturale, logistico).
+
+### Ruolo 2 — Gate "società organizzatrice" (eventi in venue terze)
+Eventi che Gate **organizza in venue di terzi** (es. Carl Cox al Carroponte, eventuali eventi all'Alcatraz, ecc.).
+Gate cura **la produzione**: artisti, line-up, ticketing, marketing, branding, policy commerciali (es. omaggi accompagnatore).
+Gate **non cura**: infrastruttura fisica della venue, personale in loco (è della venue ospitante), layout, ingressi, percorsi accessibili interni.
+
+Su questi eventi il bot può rispondere con autorità solo su:
+- **Identificazione evento**: sì, è un evento Gate (non rimandare ad altre venue)
+- **Ticketing e tier di biglietti**: prezzi, scaglioni, dove acquistare
+- **Policy commerciali Gate**: omaggio accompagnatore, accrediti, ecc.
+
+Per **tutto il resto** (infrastruttura, percorsi, pedane, personale di assistenza, layout interno) il bot **deve rimandare a info@gatemilano.com**, che verifica con la venue ospitante. Mai assumere che l'infrastruttura del Gate Milano (Via Valtellina) valga anche per la venue ospitante.
+
+**⚠️ Errore tipico da evitare:** dire "il nostro personale ti accoglie all'arrivo al Carroponte" — falso. Al Carroponte lo staff è del Carroponte, non di Gate. Gate cura solo la produzione dell'evento.
+
+---
+
 ## Venue
 Gate Milano è uno dei club più importanti di Milano, attivo dal 2017, con programmazione di concerti, serate club ed eventi aziendali.
 
@@ -69,10 +95,18 @@ Per info e preventivi contattare George:
 - WhatsApp: +39 329 169 6882
 - Email: george@gatemilano.com
 
-## Oggetti Smarriti e Capi Dimenticati in Guardaroba
-Per oggetti smarriti in venue o capi dimenticati in guardaroba, contattare direttamente Antonio (responsabile guardaroba):
-- WhatsApp: +39 389 640 6077
-Se si ha ancora il tagliandino fisico del guardaroba, mandare una foto del tagliandino ad Antonio su WhatsApp — facilita il recupero.
+## Oggetti Smarriti
+
+Antonio (responsabile guardaroba) è il **riferimento unico** per tutti gli oggetti smarriti in venue: documenti, telefoni, chiavi, capi del guardaroba, qualsiasi cosa trovata in qualsiasi area del locale.
+
+**Contatto:** WhatsApp **+39 389 640 6077**
+
+**Cosa indicare nel messaggio:**
+- Nome e cognome
+- Data approssimativa della visita
+- Descrizione dell'oggetto
+
+**Tagliandino guardaroba:** se il cliente ha ancora il tagliandino fisico, mandare una foto su WhatsApp ad Antonio facilita il recupero del capo. Per oggetti che non sono capi del guardaroba (documenti, telefoni, ecc.) il tagliandino è irrilevante: Antonio verifica direttamente per nome / descrizione.
 
 ## Tavoli VIP — Perreo XL
 
@@ -95,11 +129,20 @@ Il minimo è di **spesa**, non di persone. Anche in 2 si prenota un tavolo pagan
 Tavolo F standard per 11 persone = €300 + (3 × €35) = **€405**
 Tavolo Console per 13 persone = €500 + (3 × €50) = **€650**
 
+### Policy persone extra — quando comunicarle
+
+Il supplemento per persone extra può essere gestito in **due modi**, entrambi validi:
+
+- **Preferibile (modalità A):** comunicare il numero finale **durante la prenotazione**, così il tavolo è preparato per il numero giusto e il supplemento è già messo a budget
+- **Flessibile (modalità B):** se il gruppo aumenta **all'arrivo** o **cresce man mano durante la serata**, il supplemento si paga al momento allo staff
+
+Non c'è una via "giusta" e una "sbagliata": la modalità A semplifica l'organizzazione, la modalità B copre i casi in cui il gruppo si forma all'ultimo. Il bot deve comunicare entrambe le opzioni senza far sembrare obbligatoria una sola.
+
 ### Flusso prenotazione
 Il bot raccoglie: data, zona preferita, numero persone → quota il minimo totale → risponde con "A breve ti arriverà il link per la tua prenotazione."
 
 ### Piantina tavoli
-[Mappa zone VIP](https://www.dropbox.com/scl/fi/jtkg8b8d1ygkje8qe5s5u/25_FlooPlanTables_PerreoXceed.JPG?rlkey=cn6kpwhffpjeoxf2gnocw3mo8&dl=0)
+[Mappa zone VIP](https://www.dropbox.com/scl/fi/jtkg8b8d1ygkje8qe5s5u/25_FlooPlanTables_PerreoXceed.JPG?rlkey=cn6kpwhffpjeoxf2gnocw3mo8&st=av36u8bl&dl=0)
 Inviare come allegato quando l'utente chiede la mappa o sta scegliendo la zona.
 
 ### Pagamento e conferma
@@ -117,7 +160,7 @@ L'ingresso VIP si trova sul lato sinistro dell'entrata principale. Il personale 
 - Area VIP condivisa (non esclusiva)
 
 ### Drinklist VIP
-[Drinklist completa (PDF)](https://www.dropbox.com/scl/fi/0tqz6wyfrbbzk86ekv0hb/25Drinklist.pdf?rlkey=awprh5u5bsub197d1556mmz1s&dl=0)
+[Drinklist completa (PDF)](https://www.dropbox.com/scl/fi/0tqz6wyfrbbzk86ekv0hb/25Drinklist.pdf?rlkey=awprh5u5bsub197d1556mmz1s&st=vlm8wdo5&dl=0)
 Inviare il link solo dopo aver spiegato prezzi e condizioni.
 
 **Vodka:** Grey Goose .7l €300 · Grey Goose 1.5l €650 · Grey Goose 3l €1.300 · 42 Below .7l €300
@@ -130,14 +173,14 @@ Inviare il link solo dopo aver spiegato prezzi e condizioni.
 ### FAQ Tavoli
 **Possiamo pagare la sera stessa?** → No. Serve pagamento 100% via link Xceed per confermare.
 **Possiamo essere in 2?** → Sì. Non c'è un minimo di persone — si paga il minimo di spesa (€300) indipendentemente da quanti siete.
-**Possiamo aggiungere persone?** → Sì, ogni extra paga il supplemento (€35 o €50). Va concordato prima.
+**Possiamo aggiungere persone?** → Sì. Il supplemento (€35 zona F/B, €50 zona F-prem/C) si può gestire in due modi: **preferibile** comunicarlo prima durante la prenotazione, così il tavolo è preparato per il numero giusto. **In alternativa**, se il gruppo cresce all'arrivo o durante la serata, il supplemento si paga al momento. Entrambe le opzioni sono valide.
 **Possiamo cancellare?** → Nessun rimborso. Si può spostare il credito su un'altra data entro giugno.
 **L'ingresso è incluso?** → Sì, il biglietto è incluso nel minimo di spesa.
 **Entro che ora arrivare?** → Entro le 03:30. Dopo non si garantisce la disponibilità del posto.
 **I prezzi sono trattabili?** → No. Se il budget non basta → guestlist.
 
 ### Gruppi numerosi
-Per gruppi oltre il massimo per tavolo (8 o 10 persone secondo la zona) ogni persona extra paga il supplemento. Va concordato prima della prenotazione.
+Per gruppi oltre il massimo per tavolo (8 o 10 persone secondo la zona) ogni persona extra paga il supplemento (€35 zona F/B, €50 zona F-prem/C). **Preferibile** comunicarlo durante la prenotazione, ma il supplemento può essere pagato anche al momento se il gruppo cresce all'arrivo o durante la serata.
 
 ## Eventi con DJ Guest Internazionale — Backstage
 
@@ -186,6 +229,15 @@ Il biglietto d'ingresso è **incluso** nel tavolo backstage. Il minimo è di **c
 
 **Esempio:** tavolo backstage per 12 persone = €600 + (2 × €60) = **€720**
 
+### Policy persone extra — quando comunicarle (Backstage)
+
+Vale la **stessa policy** dei tavoli Perreo XL: due modalità entrambe valide.
+
+- **Preferibile:** comunicare il numero finale durante la prenotazione
+- **Flessibile:** supplemento pagato al momento se il gruppo cresce all'arrivo o durante la serata
+
+Il bot deve comunicare entrambe le opzioni senza far sembrare obbligatoria una sola.
+
 ### Zone Backstage
 
 Configurazione dedicata, diversa dal Perreo XL:
@@ -198,7 +250,7 @@ Configurazione dedicata, diversa dal Perreo XL:
 I tavoli **F15, F16, F17** sono frontali al DJ booth. F12–F14 sul lato sinistro, F18–F20 sul lato destro.
 
 ### Piantina Backstage
-[Mappa zone Backstage — eventi guest internazionali](https://www.dropbox.com/scl/fi/nkd4t6zgx1rcmflabxt7l/260522_Extra_Claptone_01.jpg?rlkey=ht8b4pta6snzmgigtiz3x8774&dl=0)
+[Mappa zone Backstage — eventi guest internazionali](LINK_DA_INSERIRE)
 
 ⚠️ **Nota:** la piantina backstage è diversa da quella Perreo XL. Inviare quella corretta in base al tipo di evento.
 
@@ -215,7 +267,7 @@ Il bot raccoglie: data evento, zona preferita (Balcony / Floor), numero persone 
 - Orario massimo di arrivo: **03:30**
 - Il tavolo non garantisce l'ingresso immediato — stesse regole dress code di tutti
 - Area backstage condivisa (non esclusiva)
-- Drinklist: stessa drinklist VIP del Perreo XL → [Drinklist completa (PDF)](https://www.dropbox.com/scl/fi/0tqz6wyfrbbzk86ekv0hb/25Drinklist.pdf?rlkey=awprh5u5bsub197d1556mmz1s&dl=0)
+- Drinklist: stessa drinklist VIP del Perreo XL → [Drinklist completa (PDF)](https://www.dropbox.com/scl/fi/0tqz6wyfrbbzk86ekv0hb/25Drinklist.pdf?rlkey=awprh5u5bsub197d1556mmz1s&st=vlm8wdo5&dl=0)
 
 ### FAQ Backstage Ticket
 **Cosa include il Backstage Ticket?** → Ingresso all'evento + fast lane (corsia senza coda) + accesso all'area dietro il DJ booth.
@@ -227,7 +279,7 @@ Il bot raccoglie: data evento, zona preferita (Balcony / Floor), numero persone 
 ### FAQ Backstage Tables
 **Possiamo pagare la sera stessa?** → No. Serve pagamento 100% via link Xceed per confermare.
 **Possiamo essere in 2?** → Sì. Non c'è un minimo di persone — si paga il minimo di spesa (€600) indipendentemente da quanti siete.
-**Possiamo aggiungere persone?** → Sì, fino a 10 incluse. Oltre, ogni extra paga €60. Va concordato prima.
+**Possiamo aggiungere persone?** → Sì, fino a 10 incluse nel prezzo base. Oltre, ogni extra paga €60. **Preferibile** comunicarlo durante la prenotazione, ma il supplemento si può pagare anche al momento se il gruppo cresce all'arrivo o durante la serata.
 **Possiamo cancellare?** → Nessun rimborso. Si può spostare il credito su un'altra data entro giugno.
 **L'ingresso è incluso?** → Sì, l'ingresso per tutto il tavolo è incluso nel minimo di spesa.
 **Entro che ora arrivare?** → Entro le 03:30. Dopo non si garantisce la disponibilità del posto.
@@ -271,34 +323,48 @@ Techno, house, hard techno, tech house, reggaeton, urban, musica elettronica, li
 
 ### Policy "Come Early, Stay Late"
 
-Gate **non comunica i timetable degli eventi**. Né su social, né via email, né tramite il bot, né su richiesta diretta.
+Gate **non comunica i timetable degli eventi**. Né su social, né via email, né tramite il bot, né su richiesta diretta. Vale per **tutti gli eventi Gate**: Via Valtellina, Carroponte, Sardinia, ovunque.
 
-**Motivazioni:**
-- Sostenere i **local DJ** che aprono o chiudono le serate, dando valore alla scena milanese
-- Dare il giusto risalto a **tutti gli artisti in line-up**, non solo all'headliner internazionale
-- Costruire una cultura del clubbing in cui si vive la serata intera, non solo "lo slot dell'artista famoso"
-- Evitare il fenomeno del pubblico che entra tardi e svuota i set di apertura
+**Motivazione universale (vale per tutti gli eventi):**
+Dare il giusto risalto a **tutti gli artisti in line-up**, non solo all'headliner.
 
-### Cosa rispondere quando un cliente chiede l'orario di un artista
+**Motivazione aggiuntiva (vale solo per Gate Milano in Via Valtellina):**
+Sostenere i **local DJ** che aprono o chiudono le serate, dando valore alla scena milanese. ⚠️ **NON applicare questa motivazione agli eventi off-site** (Carroponte, festival, ecc.) — in quei contesti i local DJ potrebbero non essere parte della line-up.
 
-Risposta tipo:
+### Risposta tipo per evento club night a Via Valtellina
+
 > Come policy non comunichiamo i timetable: l'idea è di invitare tutti a vivere la serata dall'inizio alla fine, sia per supportare i local DJ sia per dare il giusto valore a tutti gli artisti in line-up. Le porte aprono alle 23:00 e la serata va avanti fino alle 05:00. Ti consigliamo di arrivare presto e goderti tutta la programmazione.
 
-### Cosa il bot PUÒ comunicare
-- ✅ **Orario di apertura porte** (di solito 23:00 venerdì/sabato)
-- ✅ **Orario di chiusura** (05:00 venerdì/sabato)
-- ✅ **Orario consigliato di arrivo** (prima dell'1:00)
-- ✅ **Line-up completa** dell'evento (tutti gli artisti, in ordine alfabetico o come comunicato sui canali ufficiali)
-- ✅ **Orario massimo di arrivo per i tavoli** (03:30)
+### Risposta tipo per evento off-site (es. Carroponte, festival)
 
-### Cosa il bot NON deve mai comunicare
-- ❌ Orario specifico di esibizione di un singolo artista ("Claptone suona alle 02:00")
-- ❌ Slot temporali del b2b o degli opening
-- ❌ Stime ("di solito l'headliner suona verso le 2-3")
-- ❌ Indicazioni su "quando conviene arrivare per X"
+> Come policy non comunichiamo i timetable degli eventi, per dare il giusto valore a tutti gli artisti in line-up. Ti consigliamo di arrivare presto e goderti tutta la programmazione.
+
+Aggiungere eventuali dettagli **specifici di contesto** se conosciuti e verificati (es. "l'evento è pomeridiano e outdoor"), **mai inventare** orari o caratteristiche.
+
+### Cosa Charlie PUÒ comunicare
+
+**Per eventi Gate Milano (Via Valtellina):**
+- ✅ Orario apertura porte (23:00 venerdì/sabato)
+- ✅ Orario chiusura (05:00 venerdì/sabato)
+- ✅ Orario consigliato di arrivo (prima dell'1:00)
+- ✅ Orario massimo di arrivo per i tavoli (03:30)
+
+**Per eventi off-site (Carroponte, festival, ecc.):**
+- ✅ Caratteristiche generali se confermate nel knowledge base ("pomeridiano", "outdoor", ecc.)
+- ❌ Orari di apertura/chiusura — solo se specificamente caricati per quell'evento
+- ❌ NON applicare automaticamente "23:00-05:00" del Gate Milano
+
+**Per tutti gli eventi:**
+- ✅ Line-up completa (tutti gli artisti, senza ordinamento temporale)
+
+### Cosa Charlie NON deve mai comunicare (per qualsiasi evento)
+- ❌ Orario specifico di esibizione di un singolo artista
+- ❌ Slot temporali di b2b o opening
+- ❌ Stime ("di solito l'headliner suona verso le X")
+- ❌ Indicazioni su "quando conviene arrivare per [artista]"
 
 ### Eccezioni
-Per **concerti live** (non DJ set) la policy può variare — alcuni concerti hanno un orario di inizio comunicato perché il pubblico ha biglietto nominativo e posto a sedere. In quei casi l'orario è sui canali ufficiali (Xceed, sito) e il bot può ripeterlo. Verificare sempre se l'evento è classificato come "concerto" o "club night".
+Per **concerti live** (non DJ set) la policy può variare — alcuni concerti hanno un orario di inizio comunicato perché il pubblico ha biglietto nominativo e posto a sedere. In quei casi l'orario è sui canali ufficiali (Xceed, sito) e Charlie può ripeterlo. Verificare sempre se l'evento è classificato come "concerto" o "club night".
 
 ### Tono
 La policy va comunicata con **fermezza ma senza freddezza**. Non è un "no" burocratico: è una scelta artistica. Spiegare il perché aiuta il cliente a capire, non sembrare un muro.
@@ -307,31 +373,59 @@ La policy va comunicata con **fermezza ma senza freddezza**. Non è un "no" buro
 
 Gate è impegnata a rendere gli eventi accessibili. La policy si applica sia agli eventi nella venue principale di Via Valtellina, sia agli eventi Gate prodotti in altre location (off-site).
 
-### Policy Gate Milano (Via Valtellina)
+### Policy standard
 
-**Per la persona:**
-- Biglietto **General Admission** valido (stesso prezzo di tutti, nessuna categoria speciale)
-- Non abbiamo un'area dedicata — segnalaci la tua situazione via email a **info@gatemilano.com** prima dell'evento, così il team in loco sarà pronto ad assisterti
+**Per la persona con disabilità motoria / in carrozzina:**
+- Biglietto **General Admission** valido (stesso prezzo di un biglietto standard, nessuna categoria speciale da acquistare)
+- Accesso a un'**area dedicata e separata** all'interno della venue, con vista sul palco e accessibile in carrozzina
 
 **Per l'accompagnatore:**
 - **Biglietto omaggio** — non va acquistato
-- Da richiedere in anticipo via email a **info@gatemilano.com** indicando: nome e cognome di chi ha acquistato il biglietto, numero del biglietto, nome e cognome dell'accompagnatore
+- Da richiedere in anticipo via email a **info@gatemilano.com**
 - Non viene richiesta documentazione
 
-### Policy Gate @ Carroponte (eventi off-site)
+### Infrastruttura in venue — Gate Milano (Via Valtellina)
 
-Quando Gate organizza eventi in altre location (es. Carroponte):
-- Biglietto **General Admission** valido (stesso prezzo)
-- Accesso a un'**area dedicata** con vista sul palco accessibile in carrozzina
-- Accompagnatore **omaggio** — stessa procedura email sopra
-- La gestione è sempre tramite **info@gatemilano.com**, non tramite la venue ospitante
+In Gate Milano **non disponiamo di pedane o rampe fisse permanenti**, ma il personale Gate è in **assistenza dedicata** all'arrivo e durante tutta la serata per accogliere e accompagnare alle aree riservate. È bene che il cliente avvisi in anticipo via email in modo che lo staff sia preparato.
 
-### Eventi Gate off-site
+**⚠️ Questa specifica vale SOLO per Gate Milano (Via Valtellina).** Per eventi off-site vedi sezione "Eventi Gate off-site" sotto.
 
-Gate produce occasionalmente eventi in altre location (es. **Carl Cox — 19 settembre 2026, venue: Carroponte** — collaborazione una tantum). In questi casi:
-- La policy accessibilità Gate si applica comunque
-- La gestione operativa avviene tramite **info@gatemilano.com**, non tramite la venue ospitante
-- Anche se sul flyer compaiono altre venue (Carroponte, Alcatraz, ecc.), il riferimento per accessibilità rimane Gate
+### Come richiedere l'omaggio accompagnatore
+
+1. Acquistare il biglietto General Admission sui canali ufficiali (Xceed, Ticketone, ecc. a seconda dell'evento)
+2. Scrivere a **info@gatemilano.com** indicando:
+   - Nome e cognome di chi ha acquistato il biglietto
+   - Numero del biglietto
+   - Nome e cognome dell'accompagnatore
+3. Lo staff conferma l'omaggio e fornisce le indicazioni per l'arrivo (ingresso dedicato, percorsi accessibili)
+
+### Eventi Gate off-site (società organizzatrice in venue terze)
+
+Per gli eventi dove Gate è **società organizzatrice in venue terze** (vedi sezione "I due ruoli operativi di Gate" all'inizio), si applicano regole specifiche.
+
+**Esempio attuale:** Carl Cox — 19 settembre 2026, venue: Carroponte — collaborazione una tantum, evento pomeridiano outdoor, senza local DJ in line-up.
+
+**Su questi eventi il bot risponde con autorità su:**
+- La policy ticketing Gate si applica (GA + omaggio accompagnatore via info@gatemilano.com)
+- Identificazione: sì, è un evento Gate (non rimandare ad altre venue)
+- Tier biglietti, prezzi, dove acquistare
+
+**Su questi eventi il bot NON risponde direttamente, ma rimanda a info@gatemilano.com:**
+- Infrastruttura fisica della venue (pedane, rampe, ascensori, layout)
+- Personale in loco (è del Carroponte/Alcatraz/ecc., non di Gate)
+- Percorsi accessibili interni alla venue
+- Aree dedicate e loro posizionamento
+
+**⚠️ ATTENZIONE — Mai assumere l'infrastruttura del Gate Milano:**
+L'infrastruttura del Gate Milano (no pedane fisse + assistenza personale Gate) **NON va assunta** per le venue off-site. Sono venue **diverse**, con personale **diverso**, layout **diverso**.
+
+**Regola operativa per Charlie su eventi off-site:**
+Quando un cliente chiede accessibilità per un evento off-site, Charlie deve:
+1. Confermare ticket + omaggio accompagnatore (policy Gate, sicura)
+2. **NON menzionare** specifiche infrastrutturali del Gate Milano (pedane, personale di assistenza, ecc.)
+3. **NON dire** "il nostro personale ti accoglie" — al Carroponte lo staff è del Carroponte
+4. Rimandare a info@gatemilano.com per "tutte le indicazioni pratiche per l'arrivo, incluse le specifiche sull'accessibilità della venue [nome]"
+5. Lo staff Gate verificherà caso per caso con la venue ospitante
 
 ### Linee guida linguistiche per il bot
 
