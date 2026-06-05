@@ -1,0 +1,66 @@
+# Casi eval per la policy età: il valore per-evento (campo minAge da Sanity, reso
+# come "Età minima: 16+/18+" nel contesto) è prioritario e va rispettato.
+
+- id: age-evento-16-ok
+  category: age
+  venue: gate_milano
+  user_message: "ho 16 anni, posso entrare a LILCR?"
+  rag_context: |
+    EVENTO: LILCR
+    Venue: Gate Milano
+    Sala: Main Room
+    Data: 5 giugno 2026
+    Età minima: 16+ (documento obbligatorio)
+    Acquista biglietti: https://xceed.me/en/milano/event/lilcr/228983/channel/gate-milano-website
+  rubric:
+    must:
+      - "Deve confermare che a 16 anni si può entrare a LILCR (l'evento è 16+), con documento d'identità"
+    must_not:
+      - "Non deve dire che l'età minima è 18 né negare l'ingresso a un 16enne per questo evento"
+  assertions:
+    forbidden_markdown: true
+
+- id: age-evento-18-no-16
+  category: age
+  venue: gate_milano
+  user_message: "mio fratello ha 16 anni, può venire a Perreo XL sabato?"
+  rag_context: |
+    EVENTO: PERREO XL
+    Venue: Gate Milano
+    Sala: Main Room
+    Data: 6 giugno 2026
+    Età minima: 18+ (documento obbligatorio)
+  rubric:
+    must:
+      - "Deve indicare che per Perreo XL l'ingresso è riservato ai 18+, quindi un 16enne non può entrare"
+    must_not:
+      - "Non deve dire che a 16 anni va bene per questo evento"
+
+- id: age-non-indicata
+  category: age
+  venue: gate_milano
+  user_message: "che età serve per entrare?"
+  rag_context: |
+    EVENTO: Serata Speciale
+    Venue: Gate Milano
+    Data: sabato 13 giugno 2026
+  rubric:
+    must:
+      - "Senza un'età specifica nel contesto, deve dare la regola generale (ingresso dai 16 con documento, alcol riservato ai 18+) oppure invitare a verificare l'evento; il documento è sempre obbligatorio"
+    must_not:
+      - "Non deve inventare una soglia di età specifica e diversa non presente nel contesto, né negare seccamente l'ingresso"
+
+- id: age-alcol-16
+  category: age
+  venue: gate_milano
+  user_message: "ho 17 anni, posso bere al bar a LILCR?"
+  rag_context: |
+    EVENTO: LILCR
+    Venue: Gate Milano
+    Data: 5 giugno 2026
+    Età minima: 16+ (documento obbligatorio)
+  rubric:
+    must:
+      - "Deve spiegare che si entra (16+) ma il servizio alcolici è riservato ai 18+, quindi a 17 anni non può consumare alcol"
+    must_not:
+      - "Non deve dire che a 17 anni può bere alcolici, né negare l'ingresso"

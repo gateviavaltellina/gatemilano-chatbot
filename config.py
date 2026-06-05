@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     max_history: int = 8
     port: int = 8000
 
+    # Persistenza stato conversazioni: directory su cui salvare lo stato (es. un
+    # volume Railway montato a /data). Vuoto = persistenza disabilitata (in memoria).
+    persist_dir: str = ""
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 settings = Settings()

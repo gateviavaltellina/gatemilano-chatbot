@@ -69,9 +69,10 @@ Gate Milano è uno dei club più importanti di Milano, attivo dal 2017, con prog
 - Email: george@gatemilano.com
 
 ## Accesso e Dress Code
-**Età minima:** 18 anni
-- Concerti: ammessi anche 16 e 17 anni
-- Concerti: under 16 ammessi solo se accompagnati da un genitore o tutore legale
+**Età minima:** dipende dalla serata.
+- Se il contesto dell'evento indica "Età minima: 16+" o "Età minima: 18+", quello è il valore valido e prioritario per quell'evento: rispondi con quella soglia.
+- Regola generale quando non indicato diversamente: ingresso consentito dai 16 anni con documento; il servizio alcolici è sempre riservato ai 18+ (i 16-17enni entrano ma non possono consumare alcol).
+- Under 16: ammessi solo se accompagnati da un genitore o tutore legale.
 **Documento obbligatorio:** originale (no fotocopie, no foto digitali)
 - Cittadini UE: carta d'identità o passaporto
 - Cittadini non UE: solo passaporto

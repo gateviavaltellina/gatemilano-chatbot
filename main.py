@@ -14,6 +14,7 @@ from instagram.webhook import router as ig_router
 from sync.sanity_sync import sync_all_venues as _sanity_sync
 from sync.xceed_sync import sync_all_venues as _xceed_sync
 from notifications.discord_bot import start as start_discord_bot
+import persistence
 
 
 async def sync_all_venues():
@@ -41,6 +42,9 @@ _ready = False
 async def _init_background():
     global _ready
     logger.info("Avvio inizializzazione in background...")
+    # Ripristina lo stato conversazioni salvato (se PERSIST_DIR è configurato),
+    # così un riavvio/deploy non azzera storia chat e human takeover.
+    persistence.load_state()
     try:
         # Sync ogni 2 ore durante la giornata (08-23)
         scheduler.add_job(
@@ -60,6 +64,13 @@ async def _init_background():
             nightly_cleanup,
             CronTrigger(hour=4, minute=5),
             id="nightly_cleanup",
+            replace_existing=True,
+        )
+        # Salvataggio periodico dello stato conversazioni (no-op se PERSIST_DIR vuoto)
+        scheduler.add_job(
+            persistence.save_state,
+            CronTrigger(minute="*/5"),
+            id="persist_state",
             replace_existing=True,
         )
         scheduler.add_job(
@@ -82,6 +93,7 @@ async def _init_background():
 async def lifespan(app: FastAPI):
     asyncio.create_task(_init_background())
     yield
+    persistence.save_state()  # snapshot finale prima dello stop (deploy/riavvio)
     scheduler.shutdown()
     logger.info("Bot fermato.")
 

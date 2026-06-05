@@ -12,8 +12,9 @@ from whatsapp.client import send_message, send_document, mark_as_read
 from venue.detector import VenueDetector
 from rag.context_builder import build_rag_context
 from ai.claude_client import generate_response
-from notifications.discord import notify_conversation, notify_human_message
+from notifications.discord import notify_conversation, notify_human_message, notify_escalation
 from notifications.discord_bot import is_human_takeover
+from notifications.escalation import detect_sensitive
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -131,18 +132,50 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
         for change in entry.get("changes", []):
             value = change.get("value", {})
             for msg in value.get("messages", []):
-                if msg.get("type") != "text":
-                    continue
                 msg_id = msg.get("id", "")
                 if not _mark_processed(msg_id):
                     continue
                 phone = msg.get("from", "")
-                text = msg.get("text", {}).get("body", "").strip()
-                if not phone or not text:
+                if not phone:
                     continue
-                background_tasks.add_task(process_message, phone, msg_id, text)
+                if msg.get("type") == "text":
+                    text = msg.get("text", {}).get("body", "").strip()
+                    if not text:
+                        continue
+                    background_tasks.add_task(process_message, phone, msg_id, text)
+                else:
+                    # vocali/foto/video/ecc.: niente più silenzio — fallback gentile
+                    background_tasks.add_task(process_non_text, phone, msg_id, msg.get("type", ""))
 
     return {"status": "ok"}
+
+
+# --- Messaggi non testuali (vocali, foto, video, documenti...) ---
+_NON_TEXT_LABEL = {
+    "audio": "vocale", "voice": "vocale", "image": "foto", "video": "video",
+    "document": "documento", "sticker": "sticker", "location": "posizione",
+    "contacts": "contatto",
+}
+_NON_TEXT_FALLBACK = {
+    "audio": "Ciao! Qui in chat ti rispondo via testo 🙂 Scrivimi pure la tua domanda (eventi, biglietti, tavoli, orari) e ti aiuto subito.",
+    "voice": "Ciao! Qui in chat ti rispondo via testo 🙂 Scrivimi pure la tua domanda (eventi, biglietti, tavoli, orari) e ti aiuto subito.",
+}
+_NON_TEXT_DEFAULT = "Ciao! Scrivimi pure a parole cosa ti serve (evento, biglietti, tavoli, info) e ti rispondo subito 🙂"
+
+
+async def process_non_text(phone: str, msg_id: str, mtype: str) -> None:
+    if phone in _get_ignored_phones():
+        return
+    await mark_as_read(msg_id)
+    conv = _get_conversation(phone)
+    venue = conv.get("venue") or "gate_milano"
+    label = _NON_TEXT_LABEL.get(mtype, mtype or "allegato")
+    if is_human_takeover(phone):
+        await notify_human_message(phone, venue, f"[{label}]")
+        return
+    reply = _NON_TEXT_FALLBACK.get(mtype, _NON_TEXT_DEFAULT)
+    await send_message(phone, reply)
+    await notify_conversation(phone, venue, f"[{label} ricevuto]", reply)
 
 
 async def process_message(phone: str, msg_id: str, text: str) -> None:
@@ -174,6 +207,11 @@ async def process_message(phone: str, msg_id: str, text: str) -> None:
     _add_to_history(conv, "assistant", reply, settings.max_history)
 
     await send_message(phone, reply)
+
+    # Tema sensibile (accessibilità/rimborsi/salute/reclami) → alert staff in parallelo
+    sensitive = detect_sensitive(text)
+    if sensitive:
+        await notify_escalation(phone, venue, text, sensitive)
 
     lower_text = text.lower()
     lower_reply = reply.lower()

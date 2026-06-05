@@ -10,8 +10,9 @@ from config import settings
 from webhook_security import verify_meta_signature
 from rag.context_builder import build_rag_context
 from ai.claude_client import generate_response
-from notifications.discord import notify_conversation, notify_human_message
+from notifications.discord import notify_conversation, notify_human_message, notify_escalation
 from notifications.discord_bot import is_human_takeover
+from notifications.escalation import detect_sensitive
 from instagram.client import send_ig_message
 
 router = APIRouter()
@@ -120,7 +121,7 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
 
             if msg.get("is_echo"):
                 continue
-            if not sender_id or not text or not msg_id:
+            if not sender_id or not msg_id:
                 continue
             all_bot_ids = _SARDINIA_IDS | _MILANO_IDS
             if sender_id in all_bot_ids:
@@ -128,7 +129,11 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
             if not _mark_processed(msg_id):
                 continue
 
-            background_tasks.add_task(process_ig_message, ig_account_id, sender_id, text)
+            if text:
+                background_tasks.add_task(process_ig_message, ig_account_id, sender_id, text)
+            elif msg.get("attachments"):
+                # foto/vocale/condivisione senza testo → fallback gentile invece del silenzio
+                background_tasks.add_task(process_ig_non_text, ig_account_id, sender_id)
 
     return {"status": "ok"}
 
@@ -155,4 +160,24 @@ async def process_ig_message(ig_account_id: str, sender_id: str, text: str) -> N
     _add_to_history(conv, "assistant", reply)
 
     await send_ig_message(ig_account_id, sender_id, reply)
+
+    sensitive = detect_sensitive(text)
+    if sensitive:
+        await notify_escalation(phone, venue, text, sensitive, context)
+
     await notify_conversation(phone, venue, text, reply, context)
+
+
+async def process_ig_non_text(ig_account_id: str, sender_id: str) -> None:
+    """Allegato IG senza testo (foto/vocale/condivisione): risponde a parole
+    invece di lasciare l'utente nel vuoto."""
+    venue = _venue_for_account(ig_account_id)
+    conv = _get_conversation(ig_account_id, sender_id)
+    phone = f"ig:{sender_id[:12]}"
+    context = {"ig_account_id": ig_account_id, "sender_id": sender_id}
+    if is_human_takeover(phone):
+        await notify_human_message(phone, venue, "[allegato]", context)
+        return
+    reply = "Ciao! Scrivimi pure a parole cosa ti serve (evento, biglietti, tavoli, info) e ti rispondo subito 🙂"
+    await send_ig_message(ig_account_id, sender_id, reply)
+    await notify_conversation(phone, venue, "[allegato ricevuto]", reply, context)
