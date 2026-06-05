@@ -38,16 +38,15 @@ async def notify_conversation(phone: str, venue: str, user_msg: str, bot_reply: 
         "embeds": [
             {
                 "color": 0xE1306C if is_ig else 0x7C3AED,
+                "description": f"{emoji} {venue_label} · {source} · {masked}",
                 "fields": [
-                    {"name": f"{emoji} {venue_label} · {source} · {masked}", "value": "", "inline": False},
-                    {"name": "👤 Utente", "value": user_msg[:1024], "inline": False},
-                    {"name": "🤖 Bot", "value": bot_reply[:1024], "inline": False},
+                    {"name": "👤 Utente", "value": user_msg[:1024] or "​", "inline": False},
+                    {"name": "🤖 Bot", "value": bot_reply[:1024] or "​", "inline": False},
                 ],
             }
         ]
     }
     # ?wait=true → Discord restituisce il messaggio con l'ID (necessario per human takeover)
-    url = _webhook_url_for(phone)
     async with httpx.AsyncClient(timeout=10) as client:
         try:
             r = await client.post(url, json=payload)
@@ -71,10 +70,10 @@ async def notify_human_message(phone: str, venue: str, user_msg: str, context: d
         "embeds": [
             {
                 "color": 0xF59E0B,
+                "description": f"{emoji} {venue_label} · {masked} — ⏸️ STAFF MODE",
                 "fields": [
-                    {"name": f"{emoji} {venue_label} · {masked} — ⏸️ STAFF MODE", "value": "", "inline": False},
-                    {"name": "👤 Utente", "value": user_msg[:1024], "inline": False},
-                    {"name": "", "value": "Rispondi con `!r <testo>` oppure `!rel` per riattivare il bot.", "inline": False},
+                    {"name": "👤 Utente", "value": user_msg[:1024] or "​", "inline": False},
+                    {"name": "ℹ️ Azioni", "value": "Rispondi con `!r <testo>` oppure `!rel` per riattivare il bot.", "inline": False},
                 ],
             }
         ]

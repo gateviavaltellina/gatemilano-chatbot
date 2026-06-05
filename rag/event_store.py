@@ -3,6 +3,8 @@ Simple in-memory event store. No embedding, no vector DB.
 Populated on startup by Sanity/Xceed sync, reset on each restart.
 """
 import logging
+import re
+import unicodedata
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
@@ -25,6 +27,46 @@ _store: dict[str, list[dict]] = {}
 
 def _get(venue: str) -> list[dict]:
     return _store.setdefault(venue, [])
+
+
+def _norm_name(name: str) -> str:
+    """Normalizza un nome evento per il confronto cross-source (Sanity vs Xceed):
+    minuscolo, accenti rimossi (via NFKD), apostrofi rimossi, resto non-alfanumerico
+    → spazio. Così 'Don't Tell Mama' (apostrofo curvo) e \"DON'T TELL MAMA\"
+    (apostrofo dritto) collassano sullo stesso valore."""
+    s = unicodedata.normalize("NFKD", name or "").lower()
+    s = re.sub(r"[’‘'`]", "", s)
+    s = re.sub(r"[^a-z0-9]+", " ", s)
+    return s.strip()
+
+
+_DATE_MATCH_TOLERANCE = 86400  # ±1 giorno: assorbe differenze di orario tra fonti
+
+
+def has_matching_event(venue: str, date_ts: int, name: str, exclude_source: str | None = None) -> bool:
+    """True se esiste già un evento per lo stesso venue con data entro ±1 giorno e
+    nome equivalente (uguale o con prefisso comune), proveniente da una fonte diversa
+    da exclude_source.
+
+    Serve a evitare doppioni quando più sync popolano lo stesso store: Sanity è la
+    fonte primaria (dati più ricchi: sala, generi, sold-out, descrizioni, e copre
+    anche biglietterie non-Xceed), Xceed Open API viene usato solo come fallback per
+    eventi che Sanity non ha ancora."""
+    target = _norm_name(name)
+    if not target:
+        return False
+    for e in _get(venue):
+        meta = e["metadata"]
+        if meta.get("type") != "event":
+            continue
+        if exclude_source and meta.get("source") == exclude_source:
+            continue
+        if abs(meta.get("date_ts", 0) - date_ts) > _DATE_MATCH_TOLERANCE:
+            continue
+        existing = _norm_name(meta.get("event_name", ""))
+        if existing and (existing == target or existing.startswith(target) or target.startswith(existing)):
+            return True
+    return False
 
 
 def upsert_event(venue: str, event_id: str, document: str, metadata: dict):

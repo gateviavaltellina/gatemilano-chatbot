@@ -5,7 +5,7 @@ import time
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from config import settings
-from rag.event_store import upsert_event, delete_stale_events
+from rag.event_store import upsert_event, delete_stale_events, has_matching_event
 from rag.vip_tables import invalidate_vip_cache
 
 _ROME = ZoneInfo("Europe/Rome")
@@ -167,6 +167,10 @@ def _build_event_document(event: dict, venue_label: str, offers: dict) -> tuple[
         "date_ts": date_ts,
         "venue": venue_label,
         "uuid": uuid,
+        # Allinea il metadata a quello del sync Sanity: context_builder ed
+        # event_store leggono "ticket_url" per il link nella lista compatta e
+        # per il lookup automatico dei tavoli VIP.
+        "ticket_url": xceed_url,
     }
     return document, metadata
 
@@ -182,9 +186,19 @@ async def sync_all_venues():
         events = await _fetch_open_events(channel_slug)
         logger.info("Xceed Open API: %d eventi ricevuti per %s", len(events), venue_label)
 
+        skipped = 0
         for event in events:
             event_uuid = str(event.get("id", event.get("uuid", "")))
             if not event_uuid:
+                continue
+
+            # Dedup PRIMA della Partner API: Sanity è la fonte primaria (gira per
+            # prima in main.sync_all_venues). Se l'evento è già presente da Sanity
+            # lo saltiamo, evitando sia il doppione sia una chiamata Partner inutile.
+            _, meta_probe = _build_event_document(event, venue_label, {})
+            if has_matching_event(venue_key, meta_probe["date_ts"], meta_probe["event_name"], exclude_source="xceed"):
+                logger.debug("Xceed: salto doppione già presente da altra fonte: %s", meta_probe["event_name"])
+                skipped += 1
                 continue
 
             # Fetch offers via Partner API if key available
@@ -197,7 +211,10 @@ async def sync_all_venues():
             venue_event_ids[venue_key].append(event_uuid)
 
         delete_stale_events(venue_key, venue_event_ids[venue_key], source="xceed")
-        logger.info("Sync completato per %s: %d eventi", venue_label, len(venue_event_ids[venue_key]))
+        logger.info(
+            "Sync completato per %s: %d eventi aggiunti (fallback), %d doppioni saltati (già da Sanity)",
+            venue_label, len(venue_event_ids[venue_key]), skipped,
+        )
 
     invalidate_vip_cache()
     logger.info("Sync Xceed completato.")

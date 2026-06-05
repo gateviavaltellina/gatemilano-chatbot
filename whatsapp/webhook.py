@@ -1,3 +1,4 @@
+import json
 import logging
 import random
 import time
@@ -6,6 +7,7 @@ from collections import OrderedDict
 from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
 
 from config import settings
+from webhook_security import verify_meta_signature
 from whatsapp.client import send_message, send_document, mark_as_read
 from venue.detector import VenueDetector
 from rag.context_builder import build_rag_context
@@ -98,8 +100,9 @@ async def verify_webhook(request: Request) -> Response:
 
 @router.post("")
 async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -> dict:
+    raw = await verify_meta_signature(request)
     try:
-        body = await request.json()
+        body = json.loads(raw)
     except Exception:
         raise HTTPException(status_code=400, detail="Body non valido")
 

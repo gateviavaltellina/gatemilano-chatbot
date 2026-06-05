@@ -4,7 +4,6 @@ import logging
 from rag.event_store import (
     get_upcoming_events_compact,
     get_events_for_date,
-    get_ticket_url_for_date,
     get_all_ticket_urls_for_date,
     _store,
     _today_start_utc,
@@ -21,6 +20,8 @@ _VIP_TRIGGERS = {
 }
 _OTHER_VENUE = {"gate_milano": "gate_sardinia", "gate_sardinia": "gate_milano"}
 _OTHER_VENUE_NAME = {"gate_milano": "Gate Sardinia", "gate_sardinia": "Gate Milano"}
+# Slug canale Xceed per i link di checkout dei tavoli VIP (per venue).
+_VENUE_CHANNEL = {"gate_milano": "gate-milano", "gate_sardinia": "gate-sardinia"}
 
 
 async def build_rag_context(venue: str, text: str, history: list[dict] | None = None) -> tuple[str, list[str]]:
@@ -35,6 +36,7 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     query_dates = extract_query_dates(text)
     other_venue = _OTHER_VENUE.get(venue, "gate_milano")
     other_venue_name = _OTHER_VENUE_NAME.get(venue, "Gate Milano")
+    channel = _VENUE_CHANNEL.get(venue, "gate-milano")
 
     # Check history for VIP topic — last 6 messages (3 turns)
     history_text = " ".join(
@@ -49,7 +51,7 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
             # (multiple events on same day e.g. THE URS CONCERT + PERREO XL → try each in order)
             for ticket_url in get_all_ticket_urls_for_date(venue, query_dates[0]):
                 logger.debug("VIP lookup triggered for ticket_url=%s", ticket_url[:60])
-                result = await get_vip_tables_context(ticket_url)
+                result = await get_vip_tables_context(ticket_url, channel)
                 if result:
                     vip_context = result
                     break
@@ -68,7 +70,7 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
             ]
             for url in candidates:
                 logger.debug("VIP lookup trying ticket_url=%s", url[:60])
-                result = await get_vip_tables_context(url)
+                result = await get_vip_tables_context(url, channel)
                 if result:
                     vip_context = result
                     break

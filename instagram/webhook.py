@@ -1,3 +1,4 @@
+import json
 import logging
 import random
 import time
@@ -6,6 +7,7 @@ from collections import OrderedDict
 from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
 
 from config import settings
+from webhook_security import verify_meta_signature
 from rag.context_builder import build_rag_context
 from ai.claude_client import generate_response
 from notifications.discord import notify_conversation, notify_human_message
@@ -91,8 +93,9 @@ async def verify_ig_webhook(request: Request) -> Response:
 
 @router.post("")
 async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks) -> dict:
+    raw = await verify_meta_signature(request)
     try:
-        body = await request.json()
+        body = json.loads(raw)
     except Exception:
         raise HTTPException(status_code=400, detail="Body non valido")
 

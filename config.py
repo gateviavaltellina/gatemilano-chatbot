@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     wa_business_account_id: str = "959741779797746"
     wa_api_url: str = "https://graph.facebook.com/v25.0"
 
+    # Meta app secret per la verifica firma webhook (X-Hub-Signature-256).
+    # Se vuoto, la verifica è disabilitata (retro-compatibile, ma sconsigliato in prod).
+    meta_app_secret: str = ""
+
     # Instagram
     ig_api_url: str = "https://graph.instagram.com/v22.0"
     ig_gatemilano_id: str = "35517015101275600"

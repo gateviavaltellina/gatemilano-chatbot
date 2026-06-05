@@ -22,7 +22,7 @@ class VenueDetector:
         # Controlla risposta diretta a domanda di venue
         if any(k in msg_lower for k in ["milano", "milan"]):
             return "gate_milano"
-        if any(k in msg_lower for k in ["sardinia", "sardegna", "sardinia", "sarda"]):
+        if any(k in msg_lower for k in ["sardinia", "sardegna", "sarda", "sardo"]):
             return "gate_sardinia"
 
         # Check keyword più ampie
