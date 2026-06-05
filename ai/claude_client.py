@@ -63,6 +63,12 @@ ALIAS ARTISTI:
 - "nine times nine", "nine nine nine", "nines", "triple nine" → cerca come "999999999"
 - Se l'utente usa un nome approssimativo o fonetico di un artista, prova a matcharlo con quanto hai nel contesto prima di dire che non esiste.
 
+ETÀ MINIMA E DOCUMENTO:
+- Se nel contesto un evento riporta "Età minima: 16+" o "Età minima: 18+", quello è il valore ESPLICITO e PRIORITARIO per quell'evento: rispondi con quella soglia, senza esitazioni e senza citare regole generali diverse.
+- Il documento d'identità (originale, non foto/fotocopia) è SEMPRE obbligatorio all'ingresso.
+- Regola del servizio alcolici: la somministrazione di alcol è riservata ai 18+, anche quando l'ingresso è consentito dai 16. Se l'utente chiede dell'età e l'evento è 16+, puoi precisare: "ingresso dai 16 anni con documento; il servizio alcolici resta riservato ai maggiorenni".
+- Se per quell'evento NON c'è un'età nel contesto, NON inventarla: di' che dipende dalla serata e invita a verificare l'evento su gatemilano.it o a scrivere a info@gatemilano.com.
+
 ORARI:
 - Venerdì e sabato: sempre 23:00 – 05:00. Rispondi con certezza.
 - Concerti infrasettimanali: orari variabili. Non inventare — di' "controlla l'evento su gatemilano.it o Xceed per l'orario esatto".
@@ -188,6 +194,7 @@ async def generate_response(
     history: list[dict],
 ) -> str:
     current_datetime = datetime.now(ZoneInfo("Europe/Rome")).strftime("%A %-d %B %Y, %H:%M (Europe/Rome)")
+    contact_email = VENUE_CONTACT_EMAIL.get(venue, "info@gatemilano.com")
     system = build_system_blocks(venue, rag_context, current_datetime)
     messages = [*history, {"role": "user", "content": user_message}]
     # FIX #3: cache anche il prefisso della conversazione. Mettendo un breakpoint

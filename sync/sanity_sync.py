@@ -36,7 +36,8 @@ GROQ_EVENTS = """*[_type == "event" && date >= $today && defined(title) && title
   ticketUrl,
   isSoldOut,
   isSellingFast,
-  genres
+  genres,
+  minAge
 }"""
 
 GROQ_SITE_SETTINGS = """*[_type == "siteSettings"][0] {
@@ -192,10 +193,17 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
     is_sold_out = event.get("isSoldOut") or False
     is_selling_fast = event.get("isSellingFast") or False
     genres = event.get("genres") or []
+    min_age = event.get("minAge")
 
     date_fmt = _format_date(date_str)
     room_str = f"\nSala: {room}" if room else ""
     genres_str = f"\nGeneri: {', '.join(genres)}" if genres else ""
+    # Età minima per-evento da Sanity. Accetta numero (16/18) o stringa ("16+", "18+").
+    # Se valorizzata è ESPLICITA e prioritaria per il bot (vedi regola ETÀ nel system prompt).
+    age_str = ""
+    if min_age not in (None, "", 0):
+        age_label = f"{min_age}+" if isinstance(min_age, (int, float)) else str(min_age).strip()
+        age_str = f"\nEtà minima: {age_label} (documento obbligatorio)"
 
     ticket_str = ""
     if ticket_url:
@@ -217,6 +225,7 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
         f"{room_str}\n"
         f"Data: {date_fmt}"
         f"{genres_str}"
+        f"{age_str}"
         f"{about_str}"
         f"{prices_str}"
         f"{ticket_str}"
