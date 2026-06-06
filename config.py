@@ -32,7 +32,9 @@ class Settings(BaseSettings):
     discord_ig_webhook_url: str = ""
     discord_bot_token: str = ""
     discord_channel_id: int = 0
-    # Canale Discord dedicato all'agent di gruppo WhatsApp (il bot posta qui per ID).
+    # Canale Discord dedicato all'agent di gruppo WhatsApp.
+    # Preferito: webhook URL (robusto). In alternativa: channel id (post via bot).
+    discord_group_webhook_url: str = ""
     discord_group_channel_id: int = 0
 
     # Bot loop prevention — numeri WhatsApp (E.164, es. "393331234567") da ignorare

@@ -155,20 +155,29 @@ async def notify_group_event(group_id: str, sender: str, user_msg: str, bot_repl
             {"name": "💬 Messaggio", "value": user_msg[:300] or "​", "inline": False},
         ]
 
-    # 1) Canale Discord dedicato (via bot, per ID) se configurato
+    payload = {"embeds": [{"color": color, "description": description, "fields": fields}]}
+
+    # 1) Webhook dedicato del canale gruppo (preferito, più robusto)
+    if settings.discord_group_webhook_url:
+        if await _post_webhook(settings.discord_group_webhook_url, payload):
+            return
+    # 2) Canale dedicato via bot (per channel id)
     if settings.discord_group_channel_id:
         from notifications.discord_bot import post_embed_to_channel
         if await post_embed_to_channel(settings.discord_group_channel_id, description, fields, color):
             return
+    # 3) Fallback: webhook del canale WA
+    if settings.discord_webhook_url:
+        await _post_webhook(settings.discord_webhook_url, payload)
 
-    # 2) Fallback: webhook del canale WA
-    if not settings.discord_webhook_url:
-        return
-    url = settings.discord_webhook_url.split("?")[0] + "?wait=true"
-    payload = {"embeds": [{"color": color, "description": description, "fields": fields}]}
+
+async def _post_webhook(url: str, payload: dict) -> bool:
+    url = url.split("?")[0] + "?wait=true"
     async with httpx.AsyncClient(timeout=10) as client:
         try:
             r = await client.post(url, json=payload)
             r.raise_for_status()
+            return True
         except Exception as e:
-            logger.warning("Discord notify_group_event failed: %s", e)
+            logger.warning("Discord webhook post failed: %s", e)
+            return False
