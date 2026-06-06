@@ -135,6 +135,16 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
                 msg_id = msg.get("id", "")
                 if not _mark_processed(msg_id):
                     continue
+                # Messaggio di gruppo (Cloud API Groups): ha un campo group_id.
+                # Ramo separato: solo comandi staff con prefisso, niente flusso 1-1.
+                group_id = msg.get("group_id", "")
+                if group_id:
+                    from whatsapp.group import process_group_message
+                    g_text = msg.get("text", {}).get("body", "") if msg.get("type") == "text" else ""
+                    background_tasks.add_task(
+                        process_group_message, group_id, msg.get("from", ""), msg_id, g_text
+                    )
+                    continue
                 phone = msg.get("from", "")
                 if not phone:
                     continue

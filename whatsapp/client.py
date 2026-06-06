@@ -32,6 +32,34 @@ async def send_message(to: str, text: str) -> bool:
             logger.error("Errore invio WhatsApp: %s", e)
             return False
 
+
+async def send_group_message(group_id: str, text: str) -> bool:
+    """Invia un messaggio di testo a un gruppo WhatsApp (Cloud API Groups).
+    Stesso endpoint dei DM, ma recipient_type='group' e to=<GROUP_ID>."""
+    headers = {
+        "Authorization": f"Bearer {settings.wa_access_token}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "group",
+        "to": group_id,
+        "type": "text",
+        "text": {"preview_url": False, "body": text},
+    }
+    async with httpx.AsyncClient(timeout=15) as client:
+        try:
+            r = await client.post(f"{_wa_base()}/messages", headers=headers, json=payload)
+            r.raise_for_status()
+            logger.info("Messaggio inviato al gruppo %s", group_id[:16])
+            return True
+        except httpx.HTTPStatusError as e:
+            logger.error("Errore invio gruppo %s: %s — %s", group_id[:16], e, e.response.text)
+            return False
+        except Exception as e:
+            logger.error("Errore invio gruppo: %s", e)
+            return False
+
 async def send_document(to: str, url: str, filename: str, caption: str = "") -> bool:
     headers = {
         "Authorization": f"Bearer {settings.wa_access_token}",

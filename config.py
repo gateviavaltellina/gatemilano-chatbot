@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     # Bot loop prevention — numeri WhatsApp (E.164, es. "393331234567") da ignorare
     wa_ignored_phones: str = ""
 
+    # Agent staff nei gruppi WhatsApp: group_id consentiti (CSV). Vuoto = nessun
+    # gruppo abilitato (l'agent di gruppo non risponde finché non li elenchi).
+    wa_group_allowlist: str = ""
+
     # App
     max_history: int = 8
     port: int = 8000
