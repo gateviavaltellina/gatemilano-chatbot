@@ -13,7 +13,7 @@ from ai.claude_client import generate_response
 from notifications.discord import notify_conversation, notify_human_message, notify_escalation
 from notifications.discord_bot import is_human_takeover
 from notifications.escalation import detect_sensitive
-from instagram.client import send_ig_message
+from instagram.client import send_ig_message, react_to_message
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -115,24 +115,39 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
                 or entry.get("id", "")
             )
             sender_id = event.get("sender", {}).get("id", "")
-            msg = event.get("message", {})
-            text = msg.get("text", "").strip()
-            msg_id = msg.get("mid", "")
-
-            if msg.get("is_echo"):
-                continue
-            if not sender_id or not msg_id:
+            if not sender_id:
                 continue
             all_bot_ids = _SARDINIA_IDS | _MILANO_IDS
             if sender_id in all_bot_ids:
                 continue
+
+            # Reaction a una nostra storia/messaggio → reagiamo a nostra volta (no testo)
+            reaction = event.get("reaction")
+            if reaction:
+                rid = reaction.get("mid", "")
+                if reaction.get("action") == "react" and rid and _mark_processed(f"rx:{rid}:{sender_id}"):
+                    background_tasks.add_task(process_ig_reaction, ig_account_id, sender_id, rid)
+                continue
+
+            msg = event.get("message", {})
+            if msg.get("is_echo"):
+                continue
+            text = msg.get("text", "").strip()
+            msg_id = msg.get("mid", "")
+            if not msg_id:
+                continue
             if not _mark_processed(msg_id):
                 continue
 
+            attachments = msg.get("attachments") or []
+            att_type = attachments[0].get("type", "") if attachments else ""
             if text:
                 background_tasks.add_task(process_ig_message, ig_account_id, sender_id, text)
-            elif msg.get("attachments"):
-                # foto/vocale/condivisione senza testo → fallback gentile invece del silenzio
+            elif att_type in ("story_mention", "share"):
+                # menzione/post nella storia → mettiamo un like ❤️ invece di un testo
+                background_tasks.add_task(process_ig_story_mention, ig_account_id, sender_id, msg_id)
+            elif attachments:
+                # foto/vocale/video in DM → fallback testuale (qui il cliente cerca aiuto)
                 background_tasks.add_task(process_ig_non_text, ig_account_id, sender_id)
 
     return {"status": "ok"}
@@ -181,3 +196,29 @@ async def process_ig_non_text(ig_account_id: str, sender_id: str) -> None:
     reply = "Ciao! Scrivimi pure a parole cosa ti serve (evento, biglietti, tavoli, info) e ti rispondo subito 🙂"
     await send_ig_message(ig_account_id, sender_id, reply)
     await notify_conversation(phone, venue, "[allegato ricevuto]", reply, context)
+
+
+async def process_ig_story_mention(ig_account_id: str, sender_id: str, msg_id: str) -> None:
+    """Menzione o post che cita @gatemilano nella storia → mettiamo un like ❤️
+    invece di un messaggio di testo (più naturale e meno invadente)."""
+    venue = _venue_for_account(ig_account_id)
+    phone = f"ig:{sender_id[:12]}"
+    context = {"ig_account_id": ig_account_id, "sender_id": sender_id}
+    if is_human_takeover(phone):
+        await notify_human_message(phone, venue, "[menzione storia]", context)
+        return
+    await react_to_message(ig_account_id, sender_id, msg_id, "love")
+    await notify_conversation(phone, venue, "[menzione/post in storia]", "❤️ (reaction)", context)
+
+
+async def process_ig_reaction(ig_account_id: str, sender_id: str, msg_id: str) -> None:
+    """L'utente ha reagito a una nostra storia/messaggio → reagiamo a nostra volta
+    con un ❤️, senza inviare testo."""
+    venue = _venue_for_account(ig_account_id)
+    phone = f"ig:{sender_id[:12]}"
+    context = {"ig_account_id": ig_account_id, "sender_id": sender_id}
+    if is_human_takeover(phone):
+        await notify_human_message(phone, venue, "[reaction storia]", context)
+        return
+    await react_to_message(ig_account_id, sender_id, msg_id, "love")
+    await notify_conversation(phone, venue, "[reaction su storia]", "❤️ (reaction)", context)
