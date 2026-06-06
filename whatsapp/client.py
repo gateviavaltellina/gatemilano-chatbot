@@ -33,6 +33,34 @@ async def send_message(to: str, text: str) -> bool:
             return False
 
 
+async def create_group(subject: str, description: str = "", join_approval_mode: str = "") -> dict:
+    """Crea un gruppo WhatsApp (Cloud API Groups), di proprietà del numero business.
+    Ritorna la risposta API (contiene l'id del gruppo). L'invite_link da mandare
+    allo staff arriva poi via webhook. Ritorna {} in caso di errore."""
+    headers = {
+        "Authorization": f"Bearer {settings.wa_access_token}",
+        "Content-Type": "application/json",
+    }
+    payload = {"messaging_product": "whatsapp", "subject": subject}
+    if description:
+        payload["description"] = description
+    if join_approval_mode:
+        payload["join_approval_mode"] = join_approval_mode
+    async with httpx.AsyncClient(timeout=15) as client:
+        try:
+            r = await client.post(f"{_wa_base()}/groups", headers=headers, json=payload)
+            r.raise_for_status()
+            data = r.json()
+            logger.info("Gruppo creato: %s", data)
+            return data
+        except httpx.HTTPStatusError as e:
+            logger.error("Errore creazione gruppo: %s — %s", e, e.response.text)
+            return {}
+        except Exception as e:
+            logger.error("Errore creazione gruppo: %s", e)
+            return {}
+
+
 async def send_group_message(group_id: str, text: str) -> bool:
     """Invia un messaggio di testo a un gruppo WhatsApp (Cloud API Groups).
     Stesso endpoint dei DM, ma recipient_type='group' e to=<GROUP_ID>."""
