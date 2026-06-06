@@ -22,8 +22,13 @@ from rag.event_store import get_upcoming_events_compact, get_events_for_date, _s
 from rag.date_utils import business_now
 from rag.context_builder import build_rag_context
 from ai.claude_client import generate_response
+from notifications.discord import notify_group_event
 
 logger = logging.getLogger(__name__)
+
+# group_id già segnalati su Discord come "non abilitati" (evita di floodare il
+# canale a ogni messaggio in un gruppo non in allowlist).
+_notified_unknown: set = set()
 
 # Per ora un solo venue staff (Milano). Estendibile a un mapping gruppo→venue.
 _VENUE = "gate_milano"
@@ -48,8 +53,12 @@ async def process_group_message(group_id: str, sender: str, msg_id: str, text: s
     allow = _allowlist()
     if group_id not in allow:
         # Default chiuso: l'agent risponde solo nei gruppi esplicitamente abilitati.
-        # Loggo il group_id (intero) così puoi copiarlo in WA_GROUP_ALLOWLIST.
+        # Loggo il group_id (intero) e lo pubblico su Discord UNA volta, così lo
+        # copi in WA_GROUP_ALLOWLIST senza scavare nei log.
         logger.info("Messaggio gruppo IGNORATO (group_id non in allowlist): %s", group_id)
+        if group_id not in _notified_unknown:
+            _notified_unknown.add(group_id)
+            await notify_group_event(group_id, sender, text or "", enabled=False)
         return
     t = (text or "").strip()
     if not t.lower().startswith(_PREFIXES):
@@ -58,6 +67,7 @@ async def process_group_message(group_id: str, sender: str, msg_id: str, text: s
     reply = await _handle_command(t)
     if reply:
         await send_group_message(group_id, reply)
+        await notify_group_event(group_id, sender, t, reply, enabled=True)
 
 
 async def _handle_command(t: str) -> str:

@@ -130,3 +130,40 @@ async def notify_escalation(
                 register_message(msg_id, phone, context)
         except Exception as e:
             logger.warning("Discord notify_escalation failed: %s", e)
+
+
+async def notify_group_event(group_id: str, sender: str, user_msg: str, bot_reply: str = None, enabled: bool = True) -> None:
+    """Pubblica su Discord l'attività dell'agent di gruppo WhatsApp (canale WA).
+
+    - enabled=False: gruppo NON ancora in allowlist → mostra il group_id INTERO in
+      un blocco di codice, così lo copi in WA_GROUP_ALLOWLIST (niente caccia ai log).
+    - enabled=True: mostra comando staff + risposta del bot.
+    """
+    if not settings.discord_webhook_url:
+        return
+    url = settings.discord_webhook_url.split("?")[0] + "?wait=true"
+    masked = _mask_phone(sender)
+    if enabled:
+        payload = {"embeds": [{
+            "color": 0x16A34A,
+            "description": f"👥 Gruppo staff · WA · {masked}",
+            "fields": [
+                {"name": "💬 Comando", "value": user_msg[:1024] or "​", "inline": False},
+                {"name": "🤖 Bot", "value": (bot_reply or "")[:1024] or "​", "inline": False},
+            ],
+        }]}
+    else:
+        payload = {"embeds": [{
+            "color": 0x9CA3AF,
+            "description": "👥 Nuovo gruppo WhatsApp NON abilitato — copia il group_id in `WA_GROUP_ALLOWLIST`",
+            "fields": [
+                {"name": "group_id", "value": f"```{group_id}```", "inline": False},
+                {"name": "💬 Messaggio", "value": user_msg[:300] or "​", "inline": False},
+            ],
+        }]}
+    async with httpx.AsyncClient(timeout=10) as client:
+        try:
+            r = await client.post(url, json=payload)
+            r.raise_for_status()
+        except Exception as e:
+            logger.warning("Discord notify_group_event failed: %s", e)
