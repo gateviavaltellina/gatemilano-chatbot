@@ -49,13 +49,18 @@ async def on_ready():
 async def on_message(message: discord.Message):
     if message.author.bot:
         return
-    if settings.discord_channel_id and message.channel.id != settings.discord_channel_id:
-        return
 
     content = message.content.strip()
+    phone, ctx = _phone_from_reply(message)
+
+    # Le notifiche WhatsApp e Instagram vivono su canali Discord DIVERSI. Una reply
+    # a una notifica registrata del bot va gestita in QUALUNQUE canale (altrimenti
+    # il takeover IG non funziona se discord_channel_id punta al canale WA). Il
+    # filtro su discord_channel_id resta solo per il rumore non-reply.
+    if settings.discord_channel_id and message.channel.id != settings.discord_channel_id and not phone:
+        return
 
     if content.startswith("!r "):
-        phone, ctx = _phone_from_reply(message)
         if not phone:
             await message.reply("❌ Rispondi a una notifica del bot per usare !r", mention_author=False)
             return
@@ -72,7 +77,6 @@ async def on_message(message: discord.Message):
         await message.add_reaction("✅")
 
     elif content == "!t":
-        phone, _ = _phone_from_reply(message)
         if not phone:
             await message.reply("❌ Rispondi a una notifica del bot per usare !t", mention_author=False)
             return
@@ -84,7 +88,6 @@ async def on_message(message: discord.Message):
         )
 
     elif content in ("!rel", "!release"):
-        phone, _ = _phone_from_reply(message)
         if phone and phone in _human_sessions:
             del _human_sessions[phone]
             await message.add_reaction("🤖")
