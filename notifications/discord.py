@@ -139,28 +139,33 @@ async def notify_group_event(group_id: str, sender: str, user_msg: str, bot_repl
       un blocco di codice, così lo copi in WA_GROUP_ALLOWLIST (niente caccia ai log).
     - enabled=True: mostra comando staff + risposta del bot.
     """
+    masked = _mask_phone(sender)
+    if enabled:
+        color = 0x16A34A
+        description = f"👥 Gruppo staff · WA · {masked}"
+        fields = [
+            {"name": "💬 Comando", "value": user_msg[:1024] or "​", "inline": False},
+            {"name": "🤖 Bot", "value": (bot_reply or "")[:1024] or "​", "inline": False},
+        ]
+    else:
+        color = 0x9CA3AF
+        description = "👥 Nuovo gruppo WhatsApp NON abilitato — copia il group_id in `WA_GROUP_ALLOWLIST`"
+        fields = [
+            {"name": "group_id", "value": f"```{group_id}```", "inline": False},
+            {"name": "💬 Messaggio", "value": user_msg[:300] or "​", "inline": False},
+        ]
+
+    # 1) Canale Discord dedicato (via bot, per ID) se configurato
+    if settings.discord_group_channel_id:
+        from notifications.discord_bot import post_embed_to_channel
+        if await post_embed_to_channel(settings.discord_group_channel_id, description, fields, color):
+            return
+
+    # 2) Fallback: webhook del canale WA
     if not settings.discord_webhook_url:
         return
     url = settings.discord_webhook_url.split("?")[0] + "?wait=true"
-    masked = _mask_phone(sender)
-    if enabled:
-        payload = {"embeds": [{
-            "color": 0x16A34A,
-            "description": f"👥 Gruppo staff · WA · {masked}",
-            "fields": [
-                {"name": "💬 Comando", "value": user_msg[:1024] or "​", "inline": False},
-                {"name": "🤖 Bot", "value": (bot_reply or "")[:1024] or "​", "inline": False},
-            ],
-        }]}
-    else:
-        payload = {"embeds": [{
-            "color": 0x9CA3AF,
-            "description": "👥 Nuovo gruppo WhatsApp NON abilitato — copia il group_id in `WA_GROUP_ALLOWLIST`",
-            "fields": [
-                {"name": "group_id", "value": f"```{group_id}```", "inline": False},
-                {"name": "💬 Messaggio", "value": user_msg[:300] or "​", "inline": False},
-            ],
-        }]}
+    payload = {"embeds": [{"color": color, "description": description, "fields": fields}]}
     async with httpx.AsyncClient(timeout=10) as client:
         try:
             r = await client.post(url, json=payload)

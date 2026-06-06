@@ -99,6 +99,26 @@ async def on_message(message: discord.Message):
             await message.reply("❌ Conversazione non in takeover", mention_author=False)
 
 
+async def post_embed_to_channel(channel_id: int, description: str, fields: list, color: int) -> bool:
+    """Posta un embed in un canale per ID usando il bot (per i canali dedicati,
+    es. l'agent di gruppo WhatsApp). Ritorna False se il bot non è pronto / non
+    vede il canale, così il chiamante può fare fallback al webhook."""
+    if not channel_id or not bot.is_ready():
+        return False
+    channel = bot.get_channel(channel_id)
+    if channel is None:
+        return False
+    try:
+        embed = discord.Embed(description=description, color=color)
+        for f in fields:
+            embed.add_field(name=f.get("name") or "​", value=f.get("value") or "​", inline=f.get("inline", False))
+        await channel.send(embed=embed)
+        return True
+    except Exception as e:
+        logger.warning("post_embed_to_channel fallito (%s): %s", channel_id, e)
+        return False
+
+
 async def start() -> None:
     if not settings.discord_bot_token:
         logger.info("DISCORD_BOT_TOKEN non configurato — human takeover disabilitato")
