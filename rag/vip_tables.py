@@ -17,6 +17,9 @@ _PARTNER_BASE = "https://partner.xceed.me"
 _cache: dict[int, dict] = {}
 _CACHE_TTL = 300  # 5 minuti
 
+# Cache per il path via-sito (Milano): (name, date_iso) → {"text": str, "ts": float}
+_site_cache: dict[tuple[str, str], dict] = {}
+
 
 def _extract_slug_id(ticket_url: str) -> tuple[str, int] | tuple[None, None]:
     m = _XCEED_URL_RE.search(ticket_url or "")
@@ -134,4 +137,61 @@ async def get_vip_tables_context(ticket_url: str, channel: str = "gate-milano") 
 def invalidate_vip_cache() -> None:
     """Clear the VIP tables cache — call after Xceed sync so sold-out status is fresh."""
     _cache.clear()
+    _site_cache.clear()
     logger.debug("VIP tables cache invalidata")
+
+
+async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
+    """
+    Disponibilità tavoli VIP via endpoint pubblico del sito (Milano):
+        GET {site_base_url}/api/vip-availability?name=...&date=YYYY-MM-DD
+    L'endpoint risolve l'evento Xceed, applica il channel gate-milano e restituisce
+    i tavoli sanificati (codice, zona, prezzo, coperti, stato, checkoutUrl) — stessa
+    fonte della mappa di prenotazione. Niente XCEED_API_KEY qui.
+    Ritorna il blocco "TAVOLI VIP DISPONIBILI" per il RAG, o "" se nessun tavolo.
+    """
+    date_iso = (date_str or "")[:10]
+    if not event_name or not date_iso:
+        return ""
+
+    key = (event_name, date_iso)
+    cached = _site_cache.get(key)
+    if cached and time.time() - cached["ts"] < _CACHE_TTL:
+        return cached["text"]
+
+    url = f"{settings.site_base_url.rstrip('/')}/api/vip-availability"
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            r = await client.get(url, params={"name": event_name, "date": date_iso})
+            if r.status_code != 200:
+                logger.debug("VIP via sito: HTTP %s per %s %s", r.status_code, event_name, date_iso)
+                return ""
+            data = r.json()
+    except Exception as e:
+        logger.debug("VIP via sito: errore per %s %s: %s", event_name, date_iso, e)
+        return ""
+
+    tables = data.get("tables", []) if isinstance(data, dict) else []
+    if not tables:
+        _site_cache[key] = {"text": "", "ts": time.time()}
+        return ""
+
+    available = [t for t in tables if t.get("stato") == "libero"]
+    unavailable = [t for t in tables if t.get("stato") != "libero"]
+
+    def _row(t: dict) -> str:
+        zona = t.get("zona", "VIP")
+        cod = t.get("codice", "")
+        cop = t.get("coperti")
+        cop_str = f" — max {cop} persone" if cop else ""
+        return f"{zona} {cod}{cop_str}".strip()
+
+    lines = ["TAVOLI VIP DISPONIBILI:"]
+    for t in available:
+        lines.append(f"- {_row(t)}: €{t.get('prezzo')} → Prenota: {t.get('checkoutUrl')}")
+    for t in unavailable:
+        lines.append(f"- {_row(t)}: €{t.get('prezzo')} — NON DISPONIBILE")
+
+    text = "TAVOLI VIP: tutti esauriti per questo evento." if not available else "\n".join(lines)
+    _site_cache[key] = {"text": text, "ts": time.time()}
+    return text

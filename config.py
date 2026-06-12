@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     # Xceed
     xceed_api_key: str = ""
 
+    # Sito Gate Milano: endpoint pubblico disponibilità tavoli VIP (single source of
+    # truth, lo stesso usato dalla mappa di prenotazione). Per Milano si usa questo
+    # invece della pipeline Xceed diretta.
+    site_base_url: str = "https://gatemilano.it"
+
     # Notifications
     discord_webhook_url: str = ""
     discord_ig_webhook_url: str = ""

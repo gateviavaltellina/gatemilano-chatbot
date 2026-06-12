@@ -4,12 +4,10 @@ import logging
 from rag.event_store import (
     get_upcoming_events_compact,
     get_events_for_date,
-    get_all_ticket_urls_for_date,
-    _store,
-    _today_start_utc,
+    get_vip_candidates,
 )
 from rag.date_utils import extract_query_dates
-from rag.vip_tables import get_vip_tables_context
+from rag.vip_tables import get_vip_tables_context, get_vip_tables_via_site
 
 logger = logging.getLogger(__name__)
 
@@ -43,37 +41,25 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
         m.get("content", "") for m in (history or [])[-6:]
     ).lower()
 
-    # 1. VIP context — when VIP keywords in current message OR recent history
+    # 1. VIP context — when VIP keywords in current message OR recent history.
+    # Candidati: eventi della data richiesta, oppure i prossimi in programma (in ordine);
+    # ci si ferma al primo che ha tavoli. Milano usa l'endpoint del sito (single source
+    # of truth, name+date); le altre venue restano sulla pipeline Xceed diretta (per ora).
     vip_context = ""
     if any(t in lower_text for t in _VIP_TRIGGERS) or any(t in history_text for t in _VIP_TRIGGERS):
-        if query_dates:
-            # User asked about a specific date — try all events on that date until one has VIP tables
-            # (multiple events on same day e.g. THE URS CONCERT + PERREO XL → try each in order)
-            for ticket_url in get_all_ticket_urls_for_date(venue, query_dates[0]):
-                logger.debug("VIP lookup triggered for ticket_url=%s", ticket_url[:60])
+        candidates = get_vip_candidates(venue, query_dates[0] if query_dates else None)
+        for name, date_iso, ticket_url in candidates:
+            if venue == "gate_milano":
+                logger.debug("VIP lookup (sito) per %s %s", name, date_iso)
+                result = await get_vip_tables_via_site(name, date_iso)
+            else:
+                if "xceed" not in (ticket_url or ""):
+                    continue
+                logger.debug("VIP lookup (xceed) per ticket_url=%s", ticket_url[:60])
                 result = await get_vip_tables_context(ticket_url, channel)
-                if result:
-                    vip_context = result
-                    break
-        else:
-            # No specific date — try all upcoming Xceed events until one returns VIP tables
-            # Use today_start_utc (midnight Rome) not now_ts — date_ts is stored as midnight UTC
-            today_ts = _today_start_utc()
-            candidates = [
-                e["metadata"]["ticket_url"]
-                for e in sorted(_store.get(venue, []), key=lambda x: x["metadata"].get("date_ts", 0))
-                if (
-                    e["metadata"].get("type") == "event"
-                    and e["metadata"].get("date_ts", 0) >= today_ts
-                    and "xceed" in e["metadata"].get("ticket_url", "")
-                )
-            ]
-            for url in candidates:
-                logger.debug("VIP lookup trying ticket_url=%s", url[:60])
-                result = await get_vip_tables_context(url, channel)
-                if result:
-                    vip_context = result
-                    break
+            if result:
+                vip_context = result
+                break
 
     # 2. Full event details for specifically queried dates
     date_parts = []
