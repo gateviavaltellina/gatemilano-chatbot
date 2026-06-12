@@ -15,6 +15,7 @@ _VIP_TRIGGERS = {
     "tavolo", "tavoli", "vip", "bottle", "bottiglia", "bottiglie", "minimo",
     "table", "tables", "backstage", "disponibil", "prenotare", "prenot",
     "zona f", "zona b", "zona c", "balcony", "console",
+    "mappa", "piantina", "planimetria",
 }
 _OTHER_VENUE = {"gate_milano": "gate_sardinia", "gate_sardinia": "gate_milano"}
 _OTHER_VENUE_NAME = {"gate_milano": "Gate Sardinia", "gate_sardinia": "Gate Milano"}

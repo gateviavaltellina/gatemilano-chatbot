@@ -6,6 +6,7 @@ import re
 import time
 import logging
 import httpx
+from urllib.parse import urlencode
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -186,12 +187,18 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
         cop_str = f" — max {cop} persone" if cop else ""
         return f"{zona} {cod}{cop_str}".strip()
 
+    # Link alla mappa interattiva 3D della serata (da inviare quando chiedono "la mappa",
+    # al posto del vecchio JPG Dropbox).
+    map_url = f"{settings.site_base_url.rstrip('/')}/mappa-vip?{urlencode({'name': event_name, 'date': date_iso})}"
+    map_line = f"MAPPA TAVOLI 3D ({date_iso}): {map_url}"
+
     lines = ["TAVOLI VIP DISPONIBILI:"]
     for t in available:
         lines.append(f"- {_row(t)}: €{t.get('prezzo')} → Prenota: {t.get('checkoutUrl')}")
     for t in unavailable:
         lines.append(f"- {_row(t)}: €{t.get('prezzo')} — NON DISPONIBILE")
 
-    text = "TAVOLI VIP: tutti esauriti per questo evento." if not available else "\n".join(lines)
+    body = "TAVOLI VIP: tutti esauriti per questo evento." if not available else "\n".join(lines)
+    text = f"{map_line}\n{body}"
     _site_cache[key] = {"text": text, "ts": time.time()}
     return text

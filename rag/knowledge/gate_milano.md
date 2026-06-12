@@ -143,8 +143,9 @@ Non c'è una via "giusta" e una "sbagliata": la modalità A semplifica l'organiz
 Il bot raccoglie: data, zona preferita, numero persone → quota il minimo totale → risponde con "A breve ti arriverà il link per la tua prenotazione."
 
 ### Piantina tavoli
-[Mappa zone VIP](https://www.dropbox.com/scl/fi/jtkg8b8d1ygkje8qe5s5u/25_FlooPlanTables_PerreoXceed.JPG?rlkey=cn6kpwhffpjeoxf2gnocw3mo8&st=av36u8bl&dl=0)
-Inviare come allegato quando l'utente chiede la mappa o sta scegliendo la zona.
+Quando l'utente chiede la mappa/piantina dei tavoli (o sta scegliendo la zona), invia il LINK della MAPPA INTERATTIVA della serata richiesta: è nel contesto come "MAPPA TAVOLI 3D (data): <url>". È la mappa 3D di prenotazione del locale per quella data, con disponibilità in tempo reale e link di acquisto per ogni tavolo.
+NON inviare più immagini/PDF Dropbox per la mappa tavoli.
+Se nel contesto non c'è il link mappa (es. data non specificata o nessun tavolo per quella serata), chiedi per quale data/serata serve la mappa.
 
 ### Pagamento e conferma
 - 100% anticipato tramite link Xceed dedicato al tavolo
