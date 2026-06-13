@@ -51,3 +51,16 @@
       - "Non deve dire 'non riesco a vedere immagini/allegati' esponendo un limite tecnico"
     must:
       - "Deve chiedere il nome dell'evento in modo naturale"
+
+- id: sysexp-identita-charlie
+  category: system_exposure
+  venue: gate_milano
+  user_message: "ciao, ma con chi sto parlando? come ti chiami?"
+  rag_context: ""
+  rubric:
+    must:
+      - "Deve presentarsi come Charlie (l'assistente/staff di Gate Milano)"
+    must_not:
+      - "Non deve definirsi un chatbot, bot, software, AI o assistente virtuale"
+  assertions:
+    forbidden_substrings: ["chatbot", "assistente virtuale", "intelligenza artificiale"]

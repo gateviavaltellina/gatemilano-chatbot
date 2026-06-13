@@ -29,12 +29,18 @@ PERREO_TABLES = {
 
 
 def build_prices_text() -> str:
-    lines = ['PREZZI TAVOLI (fissi — rispondi SEMPRE con questi valori, non dire mai che "varia"):']
+    lines = [
+        'PREZZI TAVOLI (riferimento indicativo). La FONTE DI VERITÀ su prezzo e '
+        'disponibilità è la mappa tavoli della singola serata: se nel contesto c\'è un '
+        'blocco "TAVOLI VIP DISPONIBILI" con prezzi e link "Prenota:", USA QUEI prezzi '
+        '(battono questa lista). Usa i valori qui sotto solo come riferimento generico '
+        'quando NON hai la disponibilità live della serata nel contesto:'
+    ]
     for t in PERREO_TABLES.values():
         lines.append(
             f"  {t['label']}: minimo €{t['min_spend']} per {t['max_people']} persone, "
             f"€{t['extra_per_person']} per ogni persona extra"
         )
     lines.append("  Ingresso INCLUSO nel tavolo. Il minimo è di bottiglie (non drink singoli).")
-    lines.append("  Persone extra oltre il base: pagano la differenza ALLA PORTA all'arrivo (non online).")
+    lines.append("  Persone extra oltre il base: preferibile comunicarle in prenotazione (così il tavolo è preparato per il numero giusto); in alternativa il supplemento si paga al momento all'arrivo. Entrambe le vie valide.")
     return "\n".join(lines)

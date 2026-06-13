@@ -58,7 +58,7 @@ Gate Milano è uno dei club più importanti di Milano, attivo dal 2017, con prog
 - Acquisto consigliato in anticipo per prezzi migliori
 - eTicket digitale da mostrare su smartphone — non serve stampare nulla
 - Il biglietto è valido per la sala specifica (Main Room o Club Room) — ogni sala ha il suo ingresso dedicato
-- Problemi con l'acquisto: support@xceed.com
+- Problemi tecnici di pagamento/checkout durante l'acquisto su Xceed: support@xceed.me. NB: biglietti regolarmente acquistati ma NON ricevuti → marketing@gatemilano.com (Andrea Esposito), MAI support@xceed.me né info@gatemilano.com per questo caso.
 - I biglietti non sono rimborsabili. È possibile rivenderli tramite i canali di rivendita Xceed.
 - Rimborsi post-evento: ammessi solo in casi eccezionali, con richiesta entro e non oltre il lunedì successivo all'evento a info@gatemilano.com. Documentazione obbligatoria: nome e cognome intestatario del biglietto, email usata per l'acquisto, screenshot del biglietto, screenshot della prova di pagamento. In assenza di anche uno solo di questi elementi la richiesta non verrà presa in carico.
 - **Nessun rientro** dopo l'uscita: serve un nuovo biglietto
@@ -111,16 +111,19 @@ Antonio (responsabile guardaroba) è il **riferimento unico** per tutti gli ogge
 
 ## Tavoli VIP — Perreo XL
 
-I tavoli VIP sono disponibili per le serate Perreo XL (Main Room).
+I tavoli VIP sono disponibili per le serate Perreo XL (Main Room) e anche per altri eventi (concerti, serate non-Perreo) quando la mappa tavoli della serata li prevede.
+REGOLA SOVRANA: se nel contesto di QUALSIASI evento — anche non-Perreo, anche un concerto — compare un blocco "TAVOLI VIP DISPONIBILI" con prezzi e link "Prenota:", allora i tavoli ESISTONO per quell'evento. Proponili SUBITO coi prezzi e i link del contesto e NON dire MAI "non ci sono tavoli per questo evento". Solo se NON c'è nessun blocco tavoli né backstage nel contesto, di' che per quella serata non risultano tavoli online (e per gruppi/eventi privati indirizza a george@gatemilano.com).
 Il biglietto d'ingresso è INCLUSO nel tavolo — nessun costo aggiuntivo.
 Il minimo è consumazione (bottiglie e drink dalla drinklist VIP). Mixers inclusi.
 
 ### Zone e prezzi minimi
 
+> ⚠️ La FONTE DI VERITÀ su prezzo e disponibilità è la **mappa tavoli della singola serata** (endpoint del sito / mappa 3D). Quando nel contesto c'è un blocco "TAVOLI VIP DISPONIBILI" con prezzi e link, quei prezzi battono questa tabella. La tabella qui sotto è un riferimento indicativo per quando non c'è la disponibilità live della serata.
+
 | Zona | Tavoli | Descrizione | Minimo spesa | Max. persone | Extra pax |
 |------|--------|-------------|--------------|--------------|-----------|
-| F standard | F5–F21, F17bis | Face Area, floor principale | €300 | 8 | €35/persona |
-| F premium | F1–F4 | Face Area, prima fila | €500 | 10 | €50/persona |
+| F standard | F6–F21, F17bis | Face Area, floor principale | €300 | 8 | €35/persona |
+| F premium | F1–F5 | Face Area, prima fila | €600 | 10 | €50/persona |
 | B — Balcony | B1–B5 | Vista palco | €300 | 8 | €35/persona |
 | C — Console | C1–C3 | Vicino al DJ | €500 | 10 | €50/persona |
 
@@ -140,7 +143,7 @@ Il supplemento per persone extra può essere gestito in **due modi**, entrambi v
 Non c'è una via "giusta" e una "sbagliata": la modalità A semplifica l'organizzazione, la modalità B copre i casi in cui il gruppo si forma all'ultimo. Il bot deve comunicare entrambe le opzioni senza far sembrare obbligatoria una sola.
 
 ### Flusso prenotazione
-Il bot raccoglie: data, zona preferita, numero persone → quota il minimo totale → risponde con "A breve ti arriverà il link per la tua prenotazione."
+Il bot raccoglie: data, zona preferita, numero persone → quota il minimo totale → fornisce SUBITO il link di prenotazione del tavolo se presente nel contesto (link Xceed / booking-plugin.xceed.me). Se il link del tavolo non è nel contesto ma c'è il link Xceed dell'evento, dà quello indicando "scegli Bottle Service". MAI promettere un link futuro ("a breve ti arriverà il link"): se non c'è un link ora, non prometterlo.
 
 ### Piantina tavoli
 Quando l'utente chiede la mappa/piantina dei tavoli (o sta scegliendo la zona), invia il LINK della MAPPA INTERATTIVA della serata richiesta: è nel contesto come "MAPPA TAVOLI 3D (data): <url>". È la mappa 3D di prenotazione del locale per quella data, con disponibilità in tempo reale e link di acquisto per ogni tavolo.
@@ -257,7 +260,7 @@ I tavoli **F15, F16, F17** sono frontali al DJ booth. F12–F14 sul lato sinistr
 ⚠️ **Nota:** la piantina backstage è diversa da quella Perreo XL. Inviare quella corretta in base al tipo di evento.
 
 ### Flusso prenotazione tavolo backstage
-Il bot raccoglie: data evento, zona preferita (Balcony / Floor), numero persone → quota il totale (€600 + eventuali extra) → risponde con "A breve ti arriverà il link per la tua prenotazione."
+Il bot raccoglie: data evento, zona preferita (Balcony / Floor), numero persone → quota il totale (€600 + eventuali extra) → fornisce SUBITO il link di prenotazione del tavolo se presente nel contesto (link Xceed / booking-plugin.xceed.me), altrimenti il link Xceed dell'evento indicando "scegli Bottle Service". MAI promettere un link futuro ("a breve ti arriverà il link").
 
 ### Pagamento e conferma
 - 100% anticipato tramite link Xceed dedicato al tavolo

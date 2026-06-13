@@ -9,9 +9,9 @@
     must:
       - "Deve indirizzare a marketing@gatemilano.com per il problema di biglietti non ricevuti"
     must_not:
-      - "Non deve mandare a support@xceed.com ne a info@gatemilano.com per i biglietti non ricevuti"
+      - "Non deve mandare a support@xceed.me ne a info@gatemilano.com per i biglietti non ricevuti"
   assertions:
-    forbidden_substrings: ["support@xceed.com"]
+    forbidden_substrings: ["support@xceed.me"]
 
 - id: tiers-spiegazione-scaglioni
   category: tiers
@@ -33,12 +33,12 @@
 - id: vip-non-perreo-con-tavoli
   category: vip_tables
   venue: gate_milano
-  user_message: "Posso prenotare un tavolo per LILCR del 5 giugno?"
+  user_message: "Posso prenotare un tavolo per LILCR del 26 settembre?"
   rag_context: |
     TAVOLI VIP DISPONIBILI:
     - VIP Table Side: €400 → Prenota: https://booking-plugin.xceed.me/gate-milano/offer/aaa11122-3333-4444-5555-666677778888
 
-    EVENTO: LILCR — 5 giugno — Main Room
+    EVENTO: LILCR — 26 settembre — Main Room
     Biglietti: https://xceed.me/en/milano/event/lilcr/228983/channel/gate-milano-website
   rubric:
     must:
