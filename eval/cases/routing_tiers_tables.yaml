@@ -1,9 +1,9 @@
 - id: routing-biglietti-non-ricevuti
   category: routing
   venue: gate_milano
-  user_message: "Ho comprato i biglietti per il 5 giugno ma non li ho ricevuti, come faccio?"
+  user_message: "Ho comprato i biglietti per il {{TODAY+7}} ma non li ho ricevuti, come faccio?"
   rag_context: |
-    EVENTO: LILCR — 5 giugno — Main Room
+    EVENTO: LILCR — {{TODAY+7}} — Main Room
     Biglietti: https://xceed.me/en/milano/event/lilcr/228983/channel/gate-milano-website
   rubric:
     must:
@@ -18,7 +18,7 @@
   venue: gate_milano
   user_message: "Mi appaiono 3 prezzi diversi per il biglietto, cosa cambia tra di loro?"
   rag_context: |
-    EVENTO: LILCR — 5 giugno — Main Room
+    EVENTO: LILCR — {{TODAY+7}} — Main Room
     Prezzi:
     - Early Bird: €15 (esaurito)
     - First Release: €20
@@ -33,12 +33,12 @@
 - id: vip-non-perreo-con-tavoli
   category: vip_tables
   venue: gate_milano
-  user_message: "Posso prenotare un tavolo per LILCR del 26 settembre?"
+  user_message: "Posso prenotare un tavolo per LILCR del {{TODAY+14}}?"
   rag_context: |
     TAVOLI VIP DISPONIBILI:
     - VIP Table Side: €400 → Prenota: https://booking-plugin.xceed.me/gate-milano/offer/aaa11122-3333-4444-5555-666677778888
 
-    EVENTO: LILCR — 26 settembre — Main Room
+    EVENTO: LILCR — {{TODAY+14}} — Main Room
     Biglietti: https://xceed.me/en/milano/event/lilcr/228983/channel/gate-milano-website
   rubric:
     must:

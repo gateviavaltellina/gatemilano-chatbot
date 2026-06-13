@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 import logging
 from datetime import datetime, timezone
@@ -97,6 +99,7 @@ I DUE RUOLI OPERATIVI DI GATE (concetto fondamentale):
 - Ruolo 2 — SOCIETÀ ORGANIZZATRICE (eventi in venue terze: Carroponte, Alcatraz, ecc.): Gate cura SOLO produzione, biglietteria e policy commerciali. NON gestisce l'infrastruttura fisica né il personale in loco (sono della venue ospitante). Esempio: Carl Cox @ Carroponte (19 settembre 2026) è ruolo 2.
 - Per un evento prodotto da Gate, anche se si svolge in una venue terza, NON rimandare ad altre venue per biglietti/policy commerciali: li gestiamo noi.
 - MA per gli eventi in venue terze: MAI dire "il nostro personale ti accoglie" o "ti accompagniamo all'arrivo" — lo staff in loco NON è di Gate. Per indicazioni pratiche di arrivo, accessibilità in loco, infrastruttura e personale rimanda SEMPRE a info@gatemilano.com (verifichiamo i dettagli con la venue ospitante).
+- EVENTO NON IDENTIFICABILE (non sai se è un evento Gate): non confermare né negare ciecamente. Di' che non ti risulta tra gli eventi Gate che conosci e INCLUDI SEMPRE nella risposta almeno un canale di verifica — esattamente: "controlla gatemilano.it o Instagram @gatemilano, oppure scrivi a info@gatemilano.com". Solo IN AGGIUNTA puoi chiedere il nome dell'evento/artista per verificare tu stesso, ma il canale di verifica NON va mai omesso.
 
 GESTIONE PIÙ EVENTI STESSA DATA:
 - Se nel contesto ci sono 2+ eventi nella stessa data, DEVI elencarli TUTTI, anche se l'utente ha chiesto di uno specifico — così sa cosa c'è quella sera.
@@ -193,7 +196,10 @@ async def generate_response(
     user_message: str,
     rag_context: str,
     history: list[dict],
+    temperature: float | None = None,
 ) -> str:
+    # temperature: None = default API (produzione). L'eval passa 0 per risposte
+    # deterministiche e riproducibili (gate affidabile, niente flakiness).
     current_datetime = datetime.now(ZoneInfo("Europe/Rome")).strftime("%A %-d %B %Y, %H:%M (Europe/Rome)")
     contact_email = VENUE_CONTACT_EMAIL.get(venue, "info@gatemilano.com")
     system = build_system_blocks(venue, rag_context, current_datetime)
@@ -214,13 +220,16 @@ async def generate_response(
         # una conversazione e l'altra. ROI: la scrittura 1h costa 2x (vs 1.25x a 5m)
         # ma evita di riscrivere ~11k token cacheati a ogni primo messaggio dopo i
         # 5 minuti — con clienti in finestre orarie sparse il risparmio è netto.
-        response = await _client.messages.create(
+        create_kwargs = dict(
             model=settings.model,
             max_tokens=800,
             system=system,
             messages=messages,
             extra_headers={"anthropic-beta": "extended-cache-ttl-2025-04-11"},
         )
+        if temperature is not None:
+            create_kwargs["temperature"] = temperature
+        response = await _client.messages.create(**create_kwargs)
         u = response.usage
         cache_read = getattr(u, "cache_read_input_tokens", 0) or 0
         cache_write = getattr(u, "cache_creation_input_tokens", 0) or 0

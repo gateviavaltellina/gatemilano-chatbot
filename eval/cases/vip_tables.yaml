@@ -26,10 +26,10 @@
       VIP Face standard (F6-F21): minimo 300 per 8 persone, 35 per persona extra
       VIP Balcony (B1-B5): minimo 300 per 8 persone, 35 per persona extra
   rubric:
+    must:
+      - "Deve rassicurare che anche in 2 si può prenotare un tavolo (nessun minimo di persone). È sufficiente questo; va bene sia spiegare che il minimo è di spesa (es. €300) sia indirizzare a trovare il tavolo della serata col link."
     must_not:
       - "Non deve dire che esiste un numero minimo di persone per avere un tavolo (es. 'minimo 8 persone')"
-    must:
-      - "Puo spiegare che il minimo e di spesa (300 euro) indipendente dal numero di persone"
 
 - id: vip-extra-modello-misto
   category: vip_tables

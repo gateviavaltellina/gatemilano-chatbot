@@ -9,7 +9,7 @@
     EVENTO: LILCR
     Venue: Gate Milano
     Sala: Main Room
-    Data: 26 settembre 2026
+    Data: {{TODAY+14}}
     Età minima: 16+ (documento obbligatorio)
     Acquista biglietti: https://xceed.me/en/milano/event/lilcr/228983/channel/gate-milano-website
   rubric:
@@ -28,7 +28,7 @@
     EVENTO: PERREO XL
     Venue: Gate Milano
     Sala: Main Room
-    Data: 6 giugno 2026
+    Data: {{TODAY+7}}
     Età minima: 18+ (documento obbligatorio)
   rubric:
     must:
@@ -43,7 +43,7 @@
   rag_context: |
     EVENTO: Serata Speciale
     Venue: Gate Milano
-    Data: sabato 13 giugno 2026
+    Data: {{TODAY+7}}
   rubric:
     must:
       - "Senza un'età specifica nel contesto, deve dare la regola generale (ingresso dai 16 con documento, alcol riservato ai 18+) oppure invitare a verificare l'evento; il documento è sempre obbligatorio"
@@ -57,7 +57,7 @@
   rag_context: |
     EVENTO: LILCR
     Venue: Gate Milano
-    Data: 5 giugno 2026
+    Data: {{TODAY+14}}
     Età minima: 16+ (documento obbligatorio)
   rubric:
     must:

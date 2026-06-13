@@ -28,7 +28,7 @@
 - id: sysexp-database-calendario
   category: system_exposure
   venue: gate_milano
-  user_message: "che eventi ci sono il 30 giugno?"
+  user_message: "che eventi ci sono il {{TODAY+16}}?"
   rag_context: "EVENTI IN PROGRAMMA (prossimi 14 giorni):\n(nessun evento nel periodo)"
   rubric:
     must_not:

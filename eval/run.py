@@ -77,6 +77,10 @@ async def main() -> int:
     async def judge_fn(case, reply):
         return await judge_reply(case, reply, client=client, model=judge_model)
 
+    # temperature=0: risposte deterministiche → la suite è riproducibile (no flakiness).
+    async def generate_fn(venue, user_message, rag_context, history):
+        return await generate_response(venue, user_message, rag_context, history, temperature=0)
+
     cases = load_cases(CASES_DIR)
     if not cases:
         print("Nessun caso trovato in", CASES_DIR)
@@ -84,7 +88,7 @@ async def main() -> int:
     # Concorrenza bassa di default per non sforare il rate limit; override via env.
     concurrency = int(os.getenv("EVAL_CONCURRENCY", "2"))
     print(f"Eseguo {len(cases)} casi (concurrency={concurrency})...")
-    results = await run_all(cases, generate_fn=generate_response, judge_fn=judge_fn, concurrency=concurrency)
+    results = await run_all(cases, generate_fn=generate_fn, judge_fn=judge_fn, concurrency=concurrency)
     path = save_results(results, model=settings.model)
     passed = sum(r.passed for r in results)
     print(f"Risultati: {passed}/{len(results)} pass — salvati in {path}")
