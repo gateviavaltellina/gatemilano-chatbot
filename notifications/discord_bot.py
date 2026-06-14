@@ -107,6 +107,13 @@ async def on_message(message: discord.Message):
     if settings.discord_channel_id and message.channel.id != settings.discord_channel_id and not phone:
         return
 
+    cmd, payload = parse_correction_command(content)
+    if cmd:
+        reply = handle_correction_command(cmd, payload, ctx, message.author.display_name)
+        if reply:
+            await message.reply(reply, mention_author=False)
+        return
+
     if content.startswith("!r "):
         if not phone:
             await message.reply("❌ Rispondi a una notifica del bot per usare !r", mention_author=False)
