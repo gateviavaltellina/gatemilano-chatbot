@@ -179,5 +179,16 @@ async def correction_cases_export(key: str = ""):
     return {"cases": corrections.get_approved_cases()}
 
 
+@app.get("/eval/corrections")
+async def corrections_export(key: str = ""):
+    """Espone le correzioni approvate (regole) per il consolidamento locale. Protetto da token."""
+    from rag import corrections
+    if not settings.eval_export_token:
+        raise HTTPException(status_code=404)
+    if key != settings.eval_export_token:
+        raise HTTPException(status_code=403)
+    return {"corrections": corrections.get_approved_corrections()}
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=settings.port, reload=False)

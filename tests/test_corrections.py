@@ -84,3 +84,13 @@ def test_approve_case_requires_a_case(monkeypatch, tmp_path):
     cid = c.add_correction("gate_milano", "senza bozza", {}, "George")
     # nessuna bozza attaccata → approve_case fallisce
     assert c.approve_case(cid) is False
+
+
+def test_get_approved_corrections(monkeypatch, tmp_path):
+    c = _fresh(monkeypatch, tmp_path)
+    cid = c.add_correction("gate_milano", "manda a marketing@", {}, "George")
+    c.add_correction("gate_milano", "regola senza caso", {}, "George")  # non approvata
+    c.set_case(cid, {"id": f"corr-{cid}", "rubric": {"must": ["x"], "must_not": []}})
+    c.approve_case(cid)
+    approved = c.get_approved_corrections()
+    assert approved == [{"id": cid, "venue": "gate_milano", "rule": "manda a marketing@"}]
