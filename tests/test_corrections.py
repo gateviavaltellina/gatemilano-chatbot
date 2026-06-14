@@ -43,3 +43,13 @@ def test_in_memory_without_persist_dir(monkeypatch):
     assert "solo memoria" in cm.get_rules_text("gate_milano")
     cm.reset()  # senza file, il reset perde tutto
     assert cm.get_rules_text("gate_milano") == ""
+
+
+def test_correction_reaches_system_prompt(monkeypatch, tmp_path):
+    monkeypatch.setattr("config.settings.persist_dir", str(tmp_path))
+    cm.reset()
+    cm.add_correction("gate_milano", "REGOLA E2E: di' sempre ciao", {}, "George")
+    from ai.claude_client import build_system_blocks
+    blocks = build_system_blocks("gate_milano", "ctx", "lunedì 14 giugno 2026, 22:00")
+    assert "REGOLA E2E: di' sempre ciao" in blocks[1]["text"]
+    assert "REGOLA E2E" not in blocks[0]["text"]
