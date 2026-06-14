@@ -96,6 +96,48 @@ def remove_correction(correction_id: str) -> bool:
     return False
 
 
+def get_correction(correction_id: str) -> dict | None:
+    _ensure_loaded()
+    for items in _store.values():
+        for c in items:
+            if c["id"] == correction_id:
+                return c
+    return None
+
+
+def set_case(correction_id: str, case: dict) -> bool:
+    _ensure_loaded()
+    for items in _store.values():
+        for c in items:
+            if c["id"] == correction_id:
+                c["case"] = case
+                c["case_status"] = "pending"
+                _save()
+                return True
+    return False
+
+
+def approve_case(correction_id: str) -> bool:
+    _ensure_loaded()
+    for items in _store.values():
+        for c in items:
+            if c["id"] == correction_id and c.get("case"):
+                c["case_status"] = "approved"
+                _save()
+                return True
+    return False
+
+
+def get_approved_cases() -> list[dict]:
+    _ensure_loaded()
+    out: list[dict] = []
+    for items in _store.values():
+        for c in items:
+            if c.get("case_status") == "approved" and c.get("case"):
+                out.append(c["case"])
+    return out
+
+
 def get_rules_text(venue: str) -> str:
     _ensure_loaded()
     items = _store.get(venue, [])
