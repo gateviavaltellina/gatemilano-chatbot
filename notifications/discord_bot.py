@@ -40,6 +40,53 @@ def _phone_from_reply(message: discord.Message):
     return _msg_to_phone.get(mid), _msg_context.get(mid)
 
 
+def parse_correction_command(text: str):
+    """Riconosce i comandi correzione. Ritorna (cmd, payload) o (None, '').
+
+    Comandi case-sensitive (come il resto del bot: !r/!t/!rel). Non collidono coi
+    comandi takeover: !regola/!rimuovi iniziano per !re/!ri, !regole è esatto."""
+    t = (text or "").strip()
+    if t.startswith("!regola "):
+        return "regola", t[len("!regola "):].strip()
+    if t == "!regole":
+        return "regole", ""
+    if t.startswith("!rimuovi "):
+        return "rimuovi", t[len("!rimuovi "):].strip()
+    return None, ""
+
+
+def handle_correction_command(cmd: str, payload: str, ctx: dict, author: str) -> str:
+    """Esegue il comando correzione e ritorna il testo di conferma per Discord."""
+    from rag import corrections
+    if cmd == "regola":
+        if not ctx or not ctx.get("venue"):
+            return "❌ Rispondi a un messaggio di conversazione del bot per usare !regola"
+        if not payload:
+            return "❌ Scrivi la regola dopo !regola (es. !regola per i rimborsi manda sempre a info@)"
+        venue = ctx["venue"]
+        example = {"user_msg": ctx.get("user_msg", ""), "wrong_reply": ctx.get("bot_reply", "")}
+        cid = corrections.add_correction(venue, payload, example, author)
+        count = len(corrections.list_corrections(venue))
+        msg = f"✅ Regola salvata (#{cid}) per {venue}. Si applica da subito."
+        if count > corrections.SOFT_CAP:
+            msg += f"\n⚠️ {count} correzioni per {venue}: conviene consolidarle nella KB."
+        return msg
+    if cmd == "regole":
+        items = corrections.list_corrections()
+        if not items:
+            return "Nessuna correzione attiva."
+        lines = ["Correzioni attive:"]
+        for c in items:
+            lines.append(f"#{c['id']} [{c['venue']}] {c['rule']}")
+        return "\n".join(lines)
+    if cmd == "rimuovi":
+        if not payload:
+            return "❌ Indica l'id: !rimuovi <id>"
+        ok = corrections.remove_correction(payload)
+        return f"🗑️ Rimossa #{payload}." if ok else f"❌ Nessuna correzione con id {payload}."
+    return ""
+
+
 @bot.event
 async def on_ready():
     logger.info("Discord bot connesso come %s", bot.user)
