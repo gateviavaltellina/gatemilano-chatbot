@@ -1,4 +1,5 @@
 """Shared RAG context builder for WhatsApp and Instagram webhooks."""
+from __future__ import annotations
 import logging
 
 from rag.event_store import (

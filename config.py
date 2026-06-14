@@ -49,6 +49,10 @@ class Settings(BaseSettings):
     # gruppo abilitato (l'agent di gruppo non risponde finché non li elenchi).
     wa_group_allowlist: str = ""
 
+    # Token per l'endpoint di export degli eval case generati dalle correzioni.
+    # Vuoto = endpoint disabilitato (404).
+    eval_export_token: str = ""
+
     # App
     max_history: int = 8
     port: int = 8000
