@@ -138,6 +138,16 @@ def get_approved_cases() -> list[dict]:
     return out
 
 
+def get_approved_corrections() -> list[dict]:
+    _ensure_loaded()
+    out: list[dict] = []
+    for items in _store.values():
+        for c in items:
+            if c.get("case_status") == "approved":
+                out.append({"id": c["id"], "venue": c["venue"], "rule": c["rule"]})
+    return out
+
+
 def get_rules_text(venue: str) -> str:
     _ensure_loaded()
     items = _store.get(venue, [])
