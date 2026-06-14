@@ -2,6 +2,7 @@
 Simple in-memory event store. No embedding, no vector DB.
 Populated on startup by Sanity/Xceed sync, reset on each restart.
 """
+from __future__ import annotations
 import logging
 import re
 import unicodedata

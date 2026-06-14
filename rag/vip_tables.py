@@ -2,6 +2,7 @@
 VIP table availability and checkout links via Xceed Partner API.
 URL pattern: https://booking-plugin.xceed.me/{channel-slug}/offer/{offer_uuid}
 """
+from __future__ import annotations
 import re
 import time
 import logging

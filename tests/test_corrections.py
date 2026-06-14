@@ -53,3 +53,34 @@ def test_correction_reaches_system_prompt(monkeypatch, tmp_path):
     blocks = build_system_blocks("gate_milano", "ctx", "lunedì 14 giugno 2026, 22:00")
     assert "REGOLA E2E: di' sempre ciao" in blocks[1]["text"]
     assert "REGOLA E2E" not in blocks[0]["text"]
+
+
+def test_set_and_approve_case(monkeypatch, tmp_path):
+    c = _fresh(monkeypatch, tmp_path)
+    cid = c.add_correction("gate_milano", "regola Z", {}, "George")
+    case = {"id": f"corr-{cid}", "category": "corrections", "venue": "gate_milano",
+            "user_message": "u", "rag_context": "", "rubric": {"must": ["x"], "must_not": []},
+            "assertions": {"forbidden_substrings": []}}
+    assert c.set_case(cid, case) is True
+    assert c.set_case("inesistente", case) is False
+    # pending → non ancora negli approvati
+    assert c.get_approved_cases() == []
+    assert c.approve_case(cid) is True
+    assert c.approve_case("inesistente") is False
+    approved = c.get_approved_cases()
+    assert len(approved) == 1 and approved[0]["id"] == f"corr-{cid}"
+
+
+def test_get_correction(monkeypatch, tmp_path):
+    c = _fresh(monkeypatch, tmp_path)
+    cid = c.add_correction("gate_milano", "regola W", {}, "George")
+    rec = c.get_correction(cid)
+    assert rec is not None and rec["rule"] == "regola W"
+    assert c.get_correction("nope") is None
+
+
+def test_approve_case_requires_a_case(monkeypatch, tmp_path):
+    c = _fresh(monkeypatch, tmp_path)
+    cid = c.add_correction("gate_milano", "senza bozza", {}, "George")
+    # nessuna bozza attaccata → approve_case fallisce
+    assert c.approve_case(cid) is False

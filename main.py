@@ -3,7 +3,7 @@ import logging
 import uvicorn
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.staticfiles import StaticFiles
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -166,6 +166,17 @@ async def debug_vip_raw():
         "first_offer": offers[0] if offers else None,
         "api_key_set": bool(settings.xceed_api_key),
     }
+
+
+@app.get("/eval/correction-cases")
+async def correction_cases_export(key: str = ""):
+    """Espone gli eval case approvati (per l'importer locale). Protetto da token."""
+    from rag import corrections
+    if not settings.eval_export_token:
+        raise HTTPException(status_code=404)
+    if key != settings.eval_export_token:
+        raise HTTPException(status_code=403)
+    return {"cases": corrections.get_approved_cases()}
 
 
 if __name__ == "__main__":
