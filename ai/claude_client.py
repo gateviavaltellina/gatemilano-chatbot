@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from anthropic import AsyncAnthropic
 from rag.prices import build_prices_text
 from rag.knowledge_cache import get as get_static_knowledge
+from rag import corrections
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -185,6 +186,9 @@ def build_system_blocks(venue: str, rag_context: str, current_datetime: str) -> 
         current_datetime=current_datetime,
         rag_context=rag_context or "Nessuna informazione specifica disponibile al momento.",
     )
+    corrections_text = corrections.get_rules_text(venue)
+    if corrections_text:
+        dynamic_system = f"{corrections_text}\n\n{dynamic_system}"
     return [
         {"type": "text", "text": static_system, "cache_control": {"type": "ephemeral", "ttl": "1h"}},
         {"type": "text", "text": dynamic_system},

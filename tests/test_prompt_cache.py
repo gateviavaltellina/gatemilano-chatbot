@@ -38,3 +38,28 @@ def test_static_block_has_no_dynamic_leak():
 def test_sardinia_static_has_no_perreo():
     blocks = build_system_blocks("gate_sardinia", "", "lunedi 1 gennaio 2026, 12:00")
     assert "UPSELL PERREO" not in blocks[0]["text"]
+
+
+def test_corrections_injected_in_dynamic_block(monkeypatch):
+    seen = []
+    monkeypatch.setattr(
+        "rag.corrections.get_rules_text",
+        lambda venue: seen.append(venue) or "CORREZIONI STAFF (priorità massima):\n- regola di test",
+    )
+    blocks = build_system_blocks("gate_milano", "contesto rag", "lunedì 14 giugno 2026, 22:00")
+    static_text, dynamic_text = blocks[0]["text"], blocks[1]["text"]
+    # le correzioni stanno nel blocco dinamico, NON in quello statico cacheato
+    assert "regola di test" in dynamic_text
+    assert "regola di test" not in static_text
+    # il blocco statico resta cacheato
+    assert blocks[0]["cache_control"]["type"] == "ephemeral"
+    # il venue viene inoltrato a get_rules_text
+    assert seen == ["gate_milano"]
+
+
+def test_no_corrections_no_block(monkeypatch):
+    monkeypatch.setattr("rag.corrections.get_rules_text", lambda venue: "")
+    blocks = build_system_blocks("gate_milano", "contesto rag", "lunedì 14 giugno 2026, 22:00")
+    # niente sezione correzioni e nessun prefisso accidentale "\n\n"
+    assert "CORREZIONI STAFF" not in blocks[1]["text"]
+    assert blocks[1]["text"].startswith("DATA E ORA ATTUALE:")

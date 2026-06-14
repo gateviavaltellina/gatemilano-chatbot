@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import httpx
 import logging
 from config import settings
@@ -21,6 +23,19 @@ def _webhook_url_for(phone: str) -> str:
     if is_ig and settings.discord_ig_webhook_url:
         return settings.discord_ig_webhook_url.split("?")[0] + "?wait=true"
     return settings.discord_webhook_url.split("?")[0] + "?wait=true"
+
+
+def _conversation_context(context: dict | None, venue: str, user_msg: str, bot_reply: str) -> dict:
+    """Context registrato per il messaggio Discord: include venue + esempio, così
+    una reply !regola può catturare domanda e risposta sbagliata da correggere.
+    user_msg/bot_reply sono troncati a 1024 (come l'embed) per non gonfiare la
+    persistenza con messaggi lunghi."""
+    return {
+        **(context or {}),
+        "venue": venue,
+        "user_msg": (user_msg or "")[:1024],
+        "bot_reply": (bot_reply or "")[:1024],
+    }
 
 
 async def notify_conversation(phone: str, venue: str, user_msg: str, bot_reply: str, context: dict = None) -> None:
@@ -54,7 +69,7 @@ async def notify_conversation(phone: str, venue: str, user_msg: str, bot_reply: 
             msg_id = r.json().get("id")
             if msg_id:
                 from notifications.discord_bot import register_message
-                register_message(msg_id, phone, context)
+                register_message(msg_id, phone, _conversation_context(context, venue, user_msg, bot_reply))
         except Exception as e:
             logger.warning("Discord notify failed: %s", e)
 
