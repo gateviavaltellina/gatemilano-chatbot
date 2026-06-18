@@ -72,8 +72,13 @@ def _add_to_history(conv: dict, role: str, content: str, max_history: int) -> No
         conv["history"] = conv["history"][-max_history * 2:]
 
 
-# --- Drinklist ---
-_DRINKLIST_URL = "https://gatemilano-chatbot-production.up.railway.app/static/drinklist_perreo.pdf"
+# --- Drinklist (venue-aware) ---
+_DRINKLIST_BASE = "https://gatemilano-chatbot-production.up.railway.app/static"
+# venue → (url PDF, filename mostrato all'utente). Venue assente → nessun invio.
+_DRINKLISTS: dict[str, tuple[str, str]] = {
+    "gate_milano": (f"{_DRINKLIST_BASE}/drinklist_perreo.pdf", "Drinklist VIP Perreo.pdf"),
+    "gate_sardinia": (f"{_DRINKLIST_BASE}/drinklist_sardegna.pdf", "Drinklist VIP Gate Sardinia.pdf"),
+}
 _DRINKLIST_TRIGGERS = ["tavolo", "tavoli", "vip", "drinklist", "bottle", "bottiglia", "minimo", "perreo xl"]
 _drinklist_sent: set[str] = set()
 
@@ -226,8 +231,10 @@ async def process_message(phone: str, msg_id: str, text: str) -> None:
 
     lower_text = text.lower()
     lower_reply = reply.lower()
-    if phone not in _drinklist_sent and any(t in lower_text or t in lower_reply for t in _DRINKLIST_TRIGGERS):
-        await send_document(phone, _DRINKLIST_URL, "Drinklist VIP Perreo.pdf")
+    drinklist = _DRINKLISTS.get(venue)
+    if drinklist and phone not in _drinklist_sent and any(t in lower_text or t in lower_reply for t in _DRINKLIST_TRIGGERS):
+        url, filename = drinklist
+        await send_document(phone, url, filename)
         _drinklist_sent.add(phone)
 
     await notify_conversation(phone, venue, text, reply)
