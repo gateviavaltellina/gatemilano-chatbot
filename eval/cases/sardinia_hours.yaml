@@ -1,0 +1,225 @@
+- id: sard-hours-season-1
+  category: hours-season
+  venue: gate_sardinia
+  user_message: ciao a che ora chiudete?
+  rubric:
+    must:
+    - Indica che la chiusura è alle 04:00 (le quattro del mattino)
+    - Può aggiungere che l'apertura è alle 22:00, indicando l'orario di tutte le sere come 22:00–04:00
+    - Tono cordiale da staff (Charlie) di Gate Sardinia
+    must_not:
+    - NON dire che si chiude alle 05:00 (è l'orario di Milano, errato per la Sardegna)
+    - NON dire che si apre alle 23:00
+    - NON dichiararsi bot/AI/assistente virtuale
+  assertions:
+    forbidden_substrings:
+    - '23:00'
+    - 05:00
+- id: sard-hours-season-2
+  category: hours-season
+  venue: gate_sardinia
+  user_message: siete aperti a febbraio? volevo passare a trovarvi
+  rubric:
+    must:
+    - Chiarisce che a febbraio NON si è aperti
+    - Indica che la stagione va dal 3 luglio al 30 agosto 2026
+    - Eventualmente invita a tornare in estate / durante la stagione
+    - Tono cordiale da staff di Gate Sardinia
+    must_not:
+    - NON dire che a febbraio è aperto
+    - NON inventare date di stagione diverse da 3 luglio–30 agosto 2026
+    - NON dichiararsi bot/AI
+- id: sard-hours-season-3
+  category: hours-season
+  venue: gate_sardinia
+  user_message: fino a che ora si entra? rischio di arrivare tardi
+  rubric:
+    must:
+    - Indica che l'apertura è alle 22:00 e si entra durante la serata fino alla chiusura alle 04:00
+    - Se la domanda riguarda l'arrivo al tavolo VIP, specifica che l'orario massimo di arrivo al tavolo è le 02:30
+    - Tono cordiale e rassicurante
+    must_not:
+    - NON indicare orari 23:00–05:00
+    - NON inventare un orario limite di ingresso diverso dai fatti ufficiali
+    - NON dichiararsi bot/AI
+  assertions:
+    forbidden_substrings:
+    - '23:00'
+    - 05:00
+- id: sard-hours-season-4
+  category: hours-season
+  venue: gate_sardinia
+  user_message: ma stanotte siete ancora aperti? sono le 2 di notte, faccio in tempo a venire?
+  rubric:
+    must:
+    - Conferma che alle 02:00 di notte la serata iniziata la sera prima è ancora in corso (rollover notte) e si chiude alle 04:00
+    - Conferma quindi che fa ancora in tempo a entrare prima delle 04:00
+    - Se menziona il tavolo, ricorda che l'arrivo massimo al tavolo è le 02:30
+    - Tono cordiale
+    must_not:
+    - NON dire che è già chiuso
+    - NON indicare chiusura alle 05:00
+    - NON dichiararsi bot/AI
+  assertions:
+    forbidden_substrings:
+    - 05:00
+- id: sard-hours-season-5
+  category: hours-season
+  venue: gate_sardinia
+  user_message: che orari fate di solito? a che ora aprite e chiudete?
+  rubric:
+    must:
+    - 'Indica chiaramente l''orario di tutte le sere: apertura 22:00, chiusura 04:00'
+    - Tono cordiale da staff di Gate Sardinia
+    must_not:
+    - NON indicare gli orari di Milano 23:00–05:00
+    - NON comunicare orari di esibizione dei singoli artisti o scalette
+    - NON dichiararsi bot/AI
+  assertions:
+    forbidden_substrings:
+    - '23:00'
+    - 05:00
+    - Main Room
+    - Club Room
+- id: sard-hours-season-6
+  category: hours-season
+  venue: gate_sardinia
+  user_message: fino a quando va avanti la stagione? a settembre ci siete ancora?
+  rubric:
+    must:
+    - Indica che la stagione termina a fine agosto (30 agosto 2026)
+    - Chiarisce che a settembre non si è più aperti / si chiude a fine agosto
+    - Può ricordare che la stagione è iniziata il 3 luglio 2026
+    - Tono cordiale
+    must_not:
+    - NON dire che si è aperti a settembre
+    - NON inventare date di stagione diverse da 3 luglio–30 agosto 2026
+    - NON dichiararsi bot/AI
+- id: sard-timetable-1
+  category: timetable
+  venue: gate_sardinia
+  user_message: raga a che ora suona l'headliner stasera? non voglio perdermelo
+  rag_context: "EVENTO: Sunset Festival\nVenue: Gate Sardinia\nData: 18 June 2026\nDescrizione: Una notte di musica sotto le stelle a Budoni con la nostra line-up\nLine-up: Marco Carola, Joseph Capriati, Anfisa Letyago\nPrezzi:\n  a partire da €15.00\n  - Posto Unico: a partire da €15.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Sunset-Festival-Budoni-Gate-Sardinia-18-06-2026"
+  rubric:
+    must:
+    - Spiega che non comunichiamo gli orari di esibizione dei singoli artisti (incluso l'headliner)
+    - Conferma che la serata apre alle 22:00 e chiude alle 04:00
+    - Mantiene un tono cordiale da staff (Charlie / Gate Sardinia), suggerendo di arrivare presto / godersi tutta la serata nello spirito 'Come Early, Stay Late'
+    must_not:
+    - Non inventa un orario di esibizione dell'headliner (es. 'suona alle 02:00')
+    - Non comunica una scaletta o slot orari
+    - Non dichiara orari 23:00–05:00 (sono di Milano)
+  assertions:
+    forbidden_substrings:
+    - '23:00'
+    - 05:00
+    - Xceed
+    - gatemilano
+- id: sard-timetable-2
+  category: timetable
+  venue: gate_sardinia
+  user_message: mi dite la scaletta della serata? tipo chi suona e a che ora
+  rag_context: "EVENTO: Sunset Festival\nVenue: Gate Sardinia\nData: 18 June 2026\nDescrizione: Una notte di musica sotto le stelle a Budoni con la nostra line-up\nLine-up: Marco Carola, Joseph Capriati, Anfisa Letyago\nPrezzi:\n  a partire da €15.00\n  - Posto Unico: a partire da €15.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Sunset-Festival-Budoni-Gate-Sardinia-18-06-2026"
+  rubric:
+    must:
+    - Chiarisce che non diffondiamo la scaletta / gli slot orari dei singoli artisti
+    - Può fornire la line-up completa presente nel contesto (Marco Carola, Joseph Capriati, Anfisa Letyago)
+    - Può indicare apertura 22:00 e chiusura 04:00 come orari della serata
+    must_not:
+    - Non fornisce una scaletta con orari per artista
+    - Non inventa l'ordine di esibizione né orari di slot
+    - Non usa orari di Milano (23:00–05:00)
+  assertions:
+    forbidden_substrings:
+    - '23:00'
+    - 05:00
+- id: sard-timetable-3
+  category: timetable
+  venue: gate_sardinia
+  user_message: verso che ora conviene arrivare se voglio vedere Anfisa Letyago? a che ora fa il suo set?
+  rag_context: "EVENTO: Sunset Festival\nVenue: Gate Sardinia\nData: 18 June 2026\nDescrizione: Una notte di musica sotto le stelle a Budoni con la nostra line-up\nLine-up: Marco Carola, Joseph Capriati, Anfisa Letyago\nPrezzi:\n  a partire da €15.00\n  - Posto Unico: a partire da €15.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Sunset-Festival-Budoni-Gate-Sardinia-18-06-2026"
+  rubric:
+    must:
+    - Spiega che non comunichiamo l'orario del set del singolo artista (Anfisa Letyago)
+    - Conferma che la serata va dalle 22:00 alle 04:00
+    - Consiglia di arrivare presto / godersi l'intera serata per non rischiare di perdere l'artista, in linea con 'Come Early, Stay Late'
+    must_not:
+    - Non fornisce un orario preciso per il set di Anfisa Letyago
+    - Non inventa uno slot orario
+    - Non dichiara orari 23:00–05:00
+  assertions:
+    forbidden_substrings:
+    - '23:00'
+    - 05:00
+- id: sard-timetable-4
+  category: timetable
+  venue: gate_sardinia
+  user_message: a che ora apre e a che ora chiude la serata? e c'e un orario entro cui devo arrivare?
+  rubric:
+    must:
+    - Comunica con certezza che si apre alle 22:00 e si chiude alle 04:00, tutte le sere
+    - Indica che l'orario massimo di arrivo al tavolo è le 02:30
+    must_not:
+    - Non comunica orari di esibizione dei singoli artisti
+    - Non dichiara orari 23:00–05:00 (sono di Milano)
+    - Non dichiara di essere un bot / AI / assistente virtuale
+  assertions:
+    forbidden_substrings:
+    - '23:00'
+    - 05:00
+    - gatemilano
+- id: sard-timetable-5
+  category: timetable
+  venue: gate_sardinia
+  user_message: ciao! chi c'e nella line up del 4 luglio? e a che ora salgono in console uno per uno?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nLine-up: Rauw Alejandro (DJ set), Mora, Young Miko\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - Fornisce la line-up completa presente nel contesto (Rauw Alejandro, Mora, Young Miko)
+    - Chiarisce che non comunichiamo gli orari di esibizione uno per uno
+    - Può indicare apertura 22:00 e chiusura 04:00
+    - 'Gira il link diretto ticketsms dell''evento copiandolo per intero: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026'
+    must_not:
+    - Non assegna orari ai singoli artisti
+    - Non inventa una scaletta
+    - Non rimanda a Xceed o a una generica biglietteria diversa da ticketsms
+    - Non usa orari 23:00–05:00
+  assertions:
+    forbidden_substrings:
+    - Xceed
+    - '23:00'
+    - 05:00
+- id: sard-timetable-6
+  category: timetable
+  venue: gate_sardinia
+  user_message: ma quindi non mi dite proprio a che ora suona nessuno?? almeno l'ultimo dj a che ora stacca?
+  rubric:
+    must:
+    - Conferma con tono cordiale che non diffondiamo gli orari di esibizione dei singoli artisti né le scalette
+    - Indica che la serata chiude alle 04:00 (e apre alle 22:00) come unico riferimento orario certo
+    - Spiega lo spirito 'Come Early, Stay Late' / invita a vivere tutta la serata
+    must_not:
+    - Non fornisce un orario di chiusura del set dell'ultimo dj
+    - Non inventa slot o scalette
+    - Non dichiara di avere limiti tecnici o di essere un'AI
+    - Non usa orari 23:00–05:00
+  assertions:
+    forbidden_substrings:
+    - '23:00'
+    - 05:00
+- id: sard-extra-rollover-tonight-1
+  category: hours-season
+  venue: gate_sardinia
+  user_message: sono le 01:30, stasera che evento c'e da voi? faccio in tempo a prendere il biglietto e venire?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: {{TODAY}} (serata iniziata ieri sera, ancora in corso)\nDescrizione: Perreo XL, la serata e in corso\nPrezzi:\n  a partire da €11.50\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia"
+  rubric:
+    must:
+    - Deve indicare che la serata e ancora in corso (chiusura alle 04:00) quindi si fa in tempo a venire
+    - Deve ricordare la chiusura alle 04:00
+    must_not:
+    - Non deve dire che e gia chiuso
+    - Non deve usare gli orari di Milano 23:00-05:00
+  assertions:
+    forbidden_substrings:
+    - '23:00'
+    - 05:00

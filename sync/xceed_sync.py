@@ -16,15 +16,17 @@ PARTNER_BASE = "https://partner.xceed.me"
 EVENTS_BASE = "https://events.xceed.me"
 OFFER_BASE = "https://offer.xceed.me"
 
-# Open Event API channel slugs per venue (public API, no auth required)
+# Open Event API channel slugs per venue (public API, no auth required).
+# NB: Gate Sardinia NON è qui di proposito — la sua biglietteria è ticketsms
+# (eventi via Sanity). Tenerla fuori dal sync Xceed evita che eventi/link Xceed
+# (o tavoli booking-plugin.xceed.me) finiscano nel contesto Sardegna: per la
+# Sardegna sarebbe un'informazione ERRATA (mai Xceed).
 XCEED_CHANNELS = {
     "gate_milano": "gate-milano",
-    "gate_sardinia": "gate-sardinia",  # seasonal — may return 0 events off-season
 }
 
 XCEED_VENUE_LABELS = {
     "gate_milano": "Gate Milano",
-    "gate_sardinia": "Gate Sardinia",
 }
 
 

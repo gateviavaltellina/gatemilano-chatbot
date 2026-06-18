@@ -54,6 +54,11 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
             if venue == "gate_milano":
                 logger.debug("VIP lookup (sito) per %s %s", name, date_iso)
                 result = await get_vip_tables_via_site(name, date_iso)
+            elif venue == "gate_sardinia":
+                # Sardegna: nessun lookup tavoli live. Biglietteria su ticketsms,
+                # tavoli prenotabili solo via vip@gatesardinia.it / WhatsApp (mappa
+                # online non ancora attiva). MAI link tavolo Xceed nel contesto.
+                continue
             else:
                 if "xceed" not in (ticket_url or ""):
                     continue
