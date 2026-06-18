@@ -1,4 +1,5 @@
 import re
+import json
 import httpx
 import logging
 from datetime import datetime, timezone
@@ -96,6 +97,94 @@ async def _fetch_dice_description(ticket_url: str) -> str:
     except Exception as e:
         logger.debug("Dice scrape failed for %s: %s", ticket_url, e)
     return ""
+
+
+# --- TicketSMS (biglietteria Gate Sardinia) ---
+# TicketSMS non ha un'API pubblica documentata, ma il backend che alimenta la SPA
+# è raggiungibile in lettura senza auth: GET /api/v3/events/<codeUrl> restituisce
+# descrizione + tipi biglietto con prezzi. codeUrl = slug nell'URL .../event/<slug>.
+_TICKETSMS_API = "https://backend.ticketsms.it/api/v3/events"
+_TICKETSMS_SLUG_RE = re.compile(r"ticketsms\.it/event/([^/?#]+)")
+
+
+def _extract_ticketsms_slug(ticket_url: str) -> str:
+    m = _TICKETSMS_SLUG_RE.search(ticket_url or "")
+    return m.group(1) if m else ""
+
+
+def _quill_to_text(raw: str) -> str:
+    """Quill Delta JSON ({"ops":[{"insert":...}]}) → testo semplice. "" se non parsa."""
+    if not raw:
+        return ""
+    try:
+        ops = json.loads(raw).get("ops", [])
+    except Exception:
+        return raw if isinstance(raw, str) else ""
+    return "".join(
+        o.get("insert", "") for o in ops
+        if isinstance(o, dict) and isinstance(o.get("insert"), str)
+    ).strip()
+
+
+def _parse_ticketsms_event(data: dict) -> dict:
+    """Estrae {about, prices_str} dalla risposta v3 di TicketSMS. Non solleva.
+
+    prices_str: la stringa 'a partire da €X' di TicketSMS + il prezzo minimo per
+    settore (sempre un 'a partire da', quindi onesto anche se gli scaglioni cambiano).
+    """
+    result = {"about": "", "prices_str": ""}
+    body = (data or {}).get("body") or []
+    about = ""
+    price_min_str = ""
+    sector_min: dict[str, tuple[int, str]] = {}  # settore -> (centesimi, formatted)
+    for comp in body:
+        if not isinstance(comp, dict):
+            continue
+        if not price_min_str and comp.get("ticketsPriceMin"):
+            price_min_str = str(comp["ticketsPriceMin"]).strip()
+        for it in comp.get("list") or []:
+            if not isinstance(it, dict):
+                continue
+            ct = it.get("componentType")
+            if ct == "eventDetails" and not about:
+                about = _quill_to_text(it.get("description") or "")
+            elif ct == "ticket":
+                price = it.get("price") or {}
+                try:
+                    cents = int(price.get("amount"))
+                except (TypeError, ValueError):
+                    continue
+                fmt = price.get("formatted") or f"€{cents / 100:.2f}"
+                sector = ((it.get("sector") or {}).get("name") or "Generale").strip() or "Generale"
+                if sector not in sector_min or cents < sector_min[sector][0]:
+                    sector_min[sector] = (cents, fmt)
+    lines = []
+    if price_min_str:
+        lines.append(f"  {price_min_str}")
+    for sector, (_cents, fmt) in sorted(sector_min.items(), key=lambda kv: kv[1][0]):
+        lines.append(f"  - {sector}: a partire da {fmt}")
+    result["about"] = about
+    result["prices_str"] = "\n".join(lines)
+    return result
+
+
+async def _fetch_ticketsms_enrichment(ticket_url: str) -> dict:
+    """Returns {about, prices_str} per un evento TicketSMS. Non solleva mai."""
+    result = {"about": "", "prices_str": ""}
+    slug = _extract_ticketsms_slug(ticket_url)
+    if not slug:
+        return result
+    try:
+        async with httpx.AsyncClient(
+            timeout=10, headers={"User-Agent": "Mozilla/5.0", "Accept-Language": "it"}
+        ) as client:
+            r = await client.get(f"{_TICKETSMS_API}/{slug}")
+            if r.status_code != 200:
+                return result
+            return _parse_ticketsms_event(r.json().get("data", {}))
+    except Exception as e:
+        logger.debug("TicketSMS enrichment failed for %s: %s", slug, e)
+        return result
 
 
 async def _fetch_xceed_enrichment(xceed_id: str, xceed_api_key: str) -> dict:
@@ -353,6 +442,8 @@ async def sync_all_venues():
             elif "dice.fm" in ticket_url:
                 desc = await _fetch_dice_description(ticket_url)
                 xceed_data = {"about": desc, "prices_str": ""}
+            elif "ticketsms" in ticket_url:
+                xceed_data = await _fetch_ticketsms_enrichment(ticket_url)
             else:
                 xceed_data = {"about": "", "prices_str": ""}
             doc, meta = _build_document(event, label, xceed_data)
