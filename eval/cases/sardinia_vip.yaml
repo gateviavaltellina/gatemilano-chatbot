@@ -1,0 +1,155 @@
+- id: sard-vip-tables-1
+  category: vip-tables
+  venue: gate_sardinia
+  user_message: ciao volevo prenotare un tavolo ma posso pagarlo direttamente la sera stessa quando arrivo?
+  rubric:
+    must:
+    - Chiarisce che il pagamento del tavolo è 100% anticipato, non si paga la sera stessa in venue
+    - Indirizza alla prenotazione tramite vip@gatesardinia.it o WhatsApp +39 391 487 6443
+    - Mantiene un tono cordiale da staff (Charlie)
+    must_not:
+    - Afferma che si può pagare il tavolo all'arrivo o la sera stessa
+    - Promette un rimborso in caso di cancellazione
+    - Inventa un link di prenotazione del tavolo
+    - Si dichiara bot/AI/assistente virtuale
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - Xceed
+- id: sard-vip-tables-2
+  category: vip-tables
+  venue: gate_sardinia
+  user_message: per prendere un tavolo serve essere almeno in 10 persone giusto?
+  rubric:
+    must:
+    - Chiarisce che il minimo NON è di persone ma di SPESA (consumazioni)
+    - Spiega che si può prenotare anche in pochi (es. in 2) pagando comunque il minimo di spesa
+    - 'Indica i minimi di spesa: €600 (max 10 persone) per i tavoli T1-T10/V1-V10 e €300 (max 6 persone) per T11-T20/V11-V20'
+    - Indirizza a vip@gatesardinia.it o WhatsApp +39 391 487 6443 per prenotare
+    must_not:
+    - Afferma che serve un minimo di persone (es. minimo 10 o minimo 6 persone)
+    - Confonde il minimo di spesa con un minimo di persone
+    - Inventa un link di prenotazione del tavolo
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+- id: sard-vip-tables-3
+  category: vip-tables
+  venue: gate_sardinia
+  user_message: mi mandi il link per prenotare il tavolo online?
+  rubric:
+    must:
+    - Spiega che la mappa/prenotazione online dei tavoli NON è ancora attiva
+    - Indirizza la prenotazione a vip@gatesardinia.it oppure WhatsApp +39 391 487 6443
+    - Non fornisce alcun link di prenotazione del tavolo
+    must_not:
+    - Fornisce o inventa un link per prenotare il tavolo
+    - Afferma che la mappa online è attiva
+    - Si dichiara bot/AI/assistente virtuale
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - '@gatemilano'
+- id: sard-vip-tables-4
+  category: vip-tables
+  venue: gate_sardinia
+  user_message: ciao siamo solo in 2, possiamo lo stesso prenotare un tavolo o niente?
+  rubric:
+    must:
+    - Conferma che si può prenotare un tavolo anche in 2 persone
+    - Spiega che il vincolo è il minimo di SPESA (consumazioni), non un numero minimo di persone
+    - Cita un minimo di spesa concreto (€600 o €300 a seconda del tavolo)
+    - Indirizza a vip@gatesardinia.it o WhatsApp +39 391 487 6443
+    must_not:
+    - Dice che non si può prenotare in 2 / che serve un numero minimo di persone
+    - Inventa un link di prenotazione del tavolo
+    - Si dichiara bot/AI/assistente virtuale
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+- id: sard-vip-tables-5
+  category: vip-tables
+  venue: gate_sardinia
+  user_message: scusa che differenza c'è tra la zona Terrace e la zona VIP? e l'ingresso è incluso nel tavolo o lo pago a parte?
+  rubric:
+    must:
+    - 'Spiega che ci sono due zone tavoli: Terrace (la migliore, rialzata, con vista sul palco) e VIP'
+    - Chiarisce che l'ingresso è INCLUSO nel tavolo
+    - Indirizza a vip@gatesardinia.it o WhatsApp +39 391 487 6443 per prenotare un tavolo
+    must_not:
+    - Afferma che l'ingresso al tavolo si paga a parte
+    - Usa nomi di sale di Milano come Main Room o Club Room
+    - Inventa un link di prenotazione del tavolo
+  assertions:
+    forbidden_substrings:
+    - Main Room
+    - Club Room
+    - gatemilano
+- id: sard-vip-tables-6
+  category: vip-tables
+  venue: gate_sardinia
+  user_message: ho preso un tavolo per sabato 4 luglio per Perreo XL ma alla fine non ci posso andare, mi rimborsate? e a che ora max devo arrivare? c'è differenza tra tavolo e ticket vip?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - Chiarisce che NON c'è rimborso, ma il credito è spostabile entro fine stagione (fine agosto)
+    - Indica che l'orario massimo di arrivo al tavolo è le 02:30
+    - 'Distingue i due prodotti: TAVOLO (bottle service con minimo di spesa, ingresso incluso) e TICKET VIP su ticketsms (accesso aree Terrace+VIP, senza consumazioni)'
+    - 'Per il ticket VIP gira il link diretto ticketsms dell''evento: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026'
+    must_not:
+    - Promette un rimborso del tavolo
+    - Indica un orario di arrivo diverso dalle 02:30
+    - Dice che ticket VIP e tavolo sono la stessa cosa
+    - Usa orari di Milano (23:00-05:00)
+    - Rimanda a Xceed per i biglietti
+  assertions:
+    forbidden_substrings:
+    - Xceed
+    - '23:00'
+    - 05:00
+    - gatemilano
+- id: sard-extra-tables-extra-cost-1
+  category: vip-tables
+  venue: gate_sardinia
+  user_message: vorrei un tavolo terrace vicino al palco ma siamo in 12, quanto si paga in piu per le 2 persone oltre?
+  rubric:
+    must:
+    - Deve indicare che i tavoli Terrace avanti (T1-T10) hanno minimo spesa €600 e max 10 persone
+    - Deve indicare che ogni persona extra oltre le 10 costa €60
+    - Deve indirizzare la prenotazione a vip@gatesardinia.it o WhatsApp +39 391 487 6443
+    must_not:
+    - Non deve indicare €50 come quota extra per i tavoli avanti (€50 e per i tavoli dietro T11-T20)
+    - Non deve promettere un link di prenotazione online del tavolo
+- id: sard-extra-tables-credit-1
+  category: vip-tables
+  venue: gate_sardinia
+  user_message: ho gia pagato il tavolo per il 18 luglio ma quella sera non possiamo piu venire, perdiamo tutti i soldi?
+  rubric:
+    must:
+    - Deve spiegare che non c'e rimborso ma il credito si puo spostare su un'altra data entro fine stagione
+    - Deve indicare il pagamento 100% anticipato come gia avvenuto
+    must_not:
+    - Non deve promettere un rimborso del tavolo
+    - Non deve dire che il credito e illimitato nel tempo (e entro fine stagione)
+- id: sard-extra-tables-drinklist-1
+  category: vip-tables
+  venue: gate_sardinia
+  user_message: mi mandi il link della drink list dei tavoli cosi scelgo le bottiglie prima?
+  rubric:
+    must:
+    - Deve indicare che la drinklist VIP viene inviata come documento PDF
+    - Deve indirizzare al contatto tavoli vip@gatesardinia.it o WhatsApp +39 391 487 6443
+    must_not:
+    - Non deve fornire o promettere un link alla drinklist (e un PDF, non un link)
+    - Non deve inventare prezzi delle bottiglie
+- id: sard-extra-tables-age-1
+  category: vip-tables
+  venue: gate_sardinia
+  user_message: se prendiamo un tavolo mia sorella che ha 17 anni puo stare al tavolo con noi?
+  rubric:
+    must:
+    - Deve indicare che l'eta minima al tavolo e 18 anni (come per l'ingresso)
+    - Deve indicare che serve il documento d'identita originale
+    must_not:
+    - Non deve permettere l'accesso al tavolo a un minore di 18 anni
+    - Non deve accettare la patente come documento

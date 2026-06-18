@@ -1,0 +1,639 @@
+- id: sard-age-document-1
+  category: age-document
+  venue: gate_sardinia
+  user_message: ciao raga, ma accettate la patente come documento per entrare?
+  rubric:
+    must:
+    - Dichiara chiaramente che la patente di guida NON e accettata come documento d'identita per l'ingresso
+    - 'Indica i documenti validi: per cittadini UE carta d''identita o passaporto, per extra-UE solo passaporto'
+    - Specifica che il documento deve essere originale
+    - Mantiene il tono di Charlie dello staff di Gate Sardinia
+    must_not:
+    - Afferma o lascia intendere che la patente sia accettata
+    - Si dichiara bot, AI, assistente virtuale o software
+    - Cita dati o contatti di Gate Milano
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - '@gatemilano'
+- id: sard-age-document-2
+  category: age-document
+  venue: gate_sardinia
+  user_message: ho 17 anni posso entrare?
+  rubric:
+    must:
+    - Dichiara che l'ingresso e riservato ai maggiorenni (18+)
+    - Spiega che con 17 anni non e possibile entrare
+    - Mantiene un tono cortese da staff di Gate Sardinia
+    must_not:
+    - Afferma che un diciassettenne puo entrare liberamente
+    - Inventa un'eccezione 16+ non dichiarata nel contesto
+    - Si dichiara bot, AI o assistente virtuale
+- id: sard-age-document-3
+  category: age-document
+  venue: gate_sardinia
+  user_message: scusa basta una foto della carta d'identita sul telefono o serve l'originale?
+  rubric:
+    must:
+    - Dichiara che serve il documento d'identita ORIGINALE
+    - Chiarisce che una foto o copia digitale della carta d'identita NON e sufficiente
+    - Mantiene il tono di Charlie dello staff di Gate Sardinia
+    must_not:
+    - Afferma che una foto o screenshot del documento sia accettato
+    - Accetta la patente come documento valido
+    - Si dichiara bot, AI o assistente virtuale
+    - Cita dati o contatti di Gate Milano
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+- id: sard-age-document-4
+  category: age-document
+  venue: gate_sardinia
+  user_message: sono francese, ho solo la carta d'identita francese, va bene per entrare?
+  rubric:
+    must:
+    - Conferma che per i cittadini UE la carta d'identita e un documento valido (oltre al passaporto)
+    - Specifica che deve essere il documento originale
+    - Mantiene il tono di Charlie dello staff di Gate Sardinia
+    must_not:
+    - Afferma che a un cittadino UE serva obbligatoriamente il passaporto
+    - Dichiara che la carta d'identita di un cittadino UE non sia valida
+    - Si dichiara bot, AI o assistente virtuale
+- id: sard-age-document-5
+  category: age-document
+  venue: gate_sardinia
+  user_message: vengo dalla svizzera, posso entrare con la mia carta d'identita svizzera?
+  rubric:
+    must:
+    - Spiega che per i cittadini extra-UE e accettato solo il passaporto
+    - Indica che la carta d'identita svizzera non basta e serve il passaporto
+    - Ricorda che il documento deve essere originale
+    must_not:
+    - Afferma che la carta d'identita extra-UE sia accettata per l'ingresso
+    - Accetta la patente come alternativa
+    - Si dichiara bot, AI o assistente virtuale
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+- id: sard-age-document-6
+  category: age-document
+  venue: gate_sardinia
+  user_message: mio figlio ha 16 anni, per il Perreo XL del 4 luglio puo venire?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - Dichiara che l'ingresso e 18+
+    - Spiega che il contesto dell'evento Perreo XL non dichiara un'eccezione 16+, quindi un sedicenne non puo entrare
+    - Mantiene il tono cortese di Charlie dello staff di Gate Sardinia
+    must_not:
+    - Afferma che un sedicenne possa entrare a questo evento
+    - Inventa un'eccezione 16+ non presente nel contesto dell'evento
+    - Si dichiara bot, AI o assistente virtuale
+  assertions:
+    forbidden_substrings:
+    - Xceed
+    - gatemilano
+- id: sard-dresscode-access-1
+  category: dresscode-access
+  venue: gate_sardinia
+  user_message: ciao raga ma c'è un dress code per entrare? non vorrei sbagliare outfit
+  rubric:
+    must:
+    - Deve indicare che il dress code è smart casual estivo
+    - 'Deve elencare i capi vietati: costumi, ciabatte, canottiere, t-shirt con stampe offensive e cappellini'
+    - Tono cordiale da staff Gate Sardinia (Charlie)
+    must_not:
+    - Non deve inventare capi vietati o regole non presenti nei fatti ufficiali
+    - Non deve dichiararsi bot, AI o assistente virtuale
+    - Non deve usare dati o sale di Milano (Main Room/Club Room) né guardaroba a pagamento
+  assertions:
+    forbidden_substrings:
+    - Main Room
+    - Club Room
+    - gatemilano
+- id: sard-dresscode-access-2
+  category: dresscode-access
+  venue: gate_sardinia
+  user_message: posso entrare in infradito? sn comode
+  rubric:
+    must:
+    - Deve chiarire che le ciabatte/infradito NON sono ammesse
+    - Può ricordare che il dress code è smart casual estivo e suggerire una calzatura chiusa/più adeguata
+    must_not:
+    - Non deve dire che le infradito o ciabatte vanno bene
+    - Non deve dichiararsi bot, AI o assistente virtuale
+- id: sard-dresscode-access-3
+  category: dresscode-access
+  venue: gate_sardinia
+  user_message: vengo direttamente dalla spiaggia in costume, tanto è all'aperto no? ci sta?
+  rubric:
+    must:
+    - Deve chiarire che il costume NON è ammesso anche se il locale è outdoor
+    - Deve ricordare che il dress code è smart casual estivo
+    must_not:
+    - Non deve dire che entrare in costume è ok perché il venue è all'aperto
+    - Non deve dichiararsi bot, AI o assistente virtuale
+- id: sard-dresscode-access-4
+  category: dresscode-access
+  venue: gate_sardinia
+  user_message: posso mettere il cappellino? ho i capelli un disastro lol
+  rubric:
+    must:
+    - Deve chiarire che i cappellini NON sono ammessi
+    - Tono cordiale ed empatico
+    must_not:
+    - Non deve dire che il cappellino è consentito
+    - Non deve dichiararsi bot, AI o assistente virtuale
+- id: sard-dresscode-access-5
+  category: dresscode-access
+  venue: gate_sardinia
+  user_message: scusate per il concerto di sabato devo vestirmi elegante o posso venire come voglio?
+  rag_context: "EVENTO: Concerto Live Estate\nVenue: Gate Sardinia\nData: 11 July 2026\nDescrizione: Sabato 11 luglio concerto live a Gate Sardinia\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\nAcquista biglietti: https://www.ticketsms.it/event/Concerto-Live-Estate-Budoni-Gate-Sardinia-11-07-2026"
+  rubric:
+    must:
+    - Deve spiegare che per i concerti l'abbigliamento è libero
+    - Se cita il link biglietti deve riportare per intero quello ticketsms presente nel contesto
+    must_not:
+    - Non deve applicare ai concerti le restrizioni del dress code smart casual
+    - Non deve rimandare a Xceed per i biglietti
+    - Non deve dichiararsi bot, AI o assistente virtuale
+  assertions:
+    forbidden_substrings:
+    - Xceed
+    - gatemilano
+    - xceed.com
+- id: sard-dresscode-access-6
+  category: dresscode-access
+  venue: gate_sardinia
+  user_message: all'ingresso fate controlli tipo perquisizioni? si passa il metal detector?
+  rubric:
+    must:
+    - Deve confermare che all'ingresso c'è la security e il metal detector
+    - Tono rassicurante da staff Gate Sardinia
+    must_not:
+    - Non deve negare la presenza dei controlli di sicurezza/metal detector
+    - Non deve dichiararsi bot, AI o assistente virtuale
+    - Non deve fornire contatti o riferimenti di Milano
+  assertions:
+    forbidden_substrings:
+    - Antonio
+    - 389 640
+    - 329 169
+- id: sard-payments-1
+  category: payments
+  venue: gate_sardinia
+  user_message: ciao raga, ma in cassa/ai bar accettate contanti? o devo per forza avere la carta?
+  rubric:
+    must:
+    - Conferma che in venue si paga sia in CONTANTI sia con CARTA (non solo carta)
+    - 'Indica che sono accettate le carte: Visa, Mastercard, Maestro, American Express e i pagamenti contactless'
+    - Tono cordiale da staff Gate Sardinia (Charlie)
+    must_not:
+    - Non deve dire che si paga SOLO con carta o SOLO con contanti
+    - Non deve dire che i contanti non sono accettati
+    - Non deve inventare metodi non confermati (es. solo bancomat, assegni, criptovalute)
+    - Non deve dichiararsi bot/AI/assistente virtuale
+- id: sard-payments-2
+  category: payments
+  venue: gate_sardinia
+  user_message: scusate ma si paga solo con carta da voi? perché io di solito giro coi soldi in tasca
+  rubric:
+    must:
+    - 'Smentisce che si paghi solo con carta: chiarisce che si accettano ANCHE i contanti'
+    - Conferma che si possono usare anche le carte (Visa, Mastercard, Maestro, American Express) e il contactless
+    - Rassicura il cliente che può pagare in contanti senza problemi
+    must_not:
+    - Non deve affermare che è obbligatoria la carta / che i contanti non sono accettati
+    - Non deve inventare limiti o soglie sui contanti non presenti nei fatti
+    - Non deve dichiararsi bot/AI
+- id: sard-payments-3
+  category: payments
+  venue: gate_sardinia
+  user_message: posso pagare i drink con la mia amex? e col telefono in contactless si può?
+  rubric:
+    must:
+    - Conferma che American Express (Amex) è accettata
+    - Conferma che il pagamento contactless è accettato (quindi anche da telefono/smartphone)
+    - 'Può ricordare l''elenco completo: contactless, Visa, Mastercard, Maestro, American Express e contanti'
+    must_not:
+    - Non deve dire che Amex NON è accettata
+    - Non deve dire che il contactless non è disponibile
+    - Non deve inventare commissioni/sovrapprezzi su Amex o contactless non confermati
+- id: sard-payments-4
+  category: payments
+  venue: gate_sardinia
+  user_message: che carte prendete ai bar? ho una maestro, va bene?
+  rubric:
+    must:
+    - Conferma che Maestro è accettata
+    - 'Elenca le carte/metodi accettati: contactless, Visa, Mastercard, Maestro, American Express (e contanti)'
+    must_not:
+    - Non deve dire che Maestro non è accettata
+    - Non deve inventare metodi o circuiti non confermati
+    - Non deve dichiararsi bot/AI
+- id: sard-payments-5
+  category: payments
+  venue: gate_sardinia
+  user_message: ho prenotato un tavolo terrace per perreo xl, il conto del tavolo lo salda lì col pos quando arrivo?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - Chiarisce che il TAVOLO si paga al 100% in anticipo (non si salda al POS all'arrivo)
+    - Per la prenotazione/pagamento del tavolo indirizza a vip@gatesardinia.it oppure WhatsApp +39 391 487 6443
+    - Può precisare che il POS/contanti in venue valgono per le consumazioni extra ai bar, ma il minimo del tavolo è anticipato
+    must_not:
+    - Non deve dire che il tavolo si paga sul posto / all'arrivo col POS
+    - Non deve inventare un link di prenotazione tavolo online
+    - Non deve usare contatti o dati di Milano
+    - Non deve dichiararsi bot/AI
+  assertions:
+    forbidden_substrings:
+    - Xceed
+    - gatemilano
+    - marketing@
+- id: sard-payments-6
+  category: payments
+  venue: gate_sardinia
+  user_message: all'ingresso c'è da pagare qualcosa in cash? tipo il guardaroba o roba così
+  rubric:
+    must:
+    - Spiega che in venue si può pagare sia in contanti sia con carta (contactless, Visa, Mastercard, Maestro, American Express) per le consumazioni ai bar
+    - Chiarisce che la venue è outdoor, quindi non c'è un guardaroba a pagamento
+    - Per dubbi specifici sull'ingresso/biglietti rimanda correttamente (gatesardinia.it o Instagram @gatesardinia, dato che l'evento non è nel contesto)
+    must_not:
+    - Non deve dichiarare un guardaroba a €5 (è un dato di Milano, Sardegna è outdoor)
+    - Non deve dire che si paga solo con carta o solo in contanti
+    - Non deve usare contatti/dati di Milano
+  assertions:
+    forbidden_substrings:
+    - guardaroba a €5
+    - gatemilano
+    - '23:00'
+- id: sard-contacts-escalation-1
+  category: contacts-escalation
+  venue: gate_sardinia
+  user_message: raga ho perso il telefono ieri sera da voi, a chi devo scrivere per riaverlo?
+  rubric:
+    must:
+    - Deve indirizzare a info@gatesardinia.it come contatto per gli oggetti smarriti
+    - Deve mantenere un tono cordiale/disponibile da staff (Charlie) di Gate Sardinia
+    - Puo' suggerire di indicare nome e cognome, data della visita e descrizione dell'oggetto
+    must_not:
+    - Non deve fornire contatti di Milano (email gatemilano, Antonio, numeri di Milano)
+    - Non deve indirizzare a vip@gatesardinia.it o booking@gatesardinia.it per gli oggetti smarriti
+    - Non deve dare il WhatsApp +39 391 487 6443 come contatto per oggetti smarriti
+    - Non deve dichiararsi bot/AI/assistente virtuale ne' dichiarare limiti tecnici (memoria, accesso email)
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - Antonio
+    - 389 640
+    - 329 169
+    - marketing@
+- id: sard-contacts-escalation-2
+  category: contacts-escalation
+  venue: gate_sardinia
+  user_message: ciao, sono una giornalista e vorrei fare un accredito stampa per uno dei vostri eventi, come faccio?
+  rubric:
+    must:
+    - Deve indirizzare gli accrediti stampa a info@gatesardinia.it
+    - Deve mantenere tono professionale e disponibile da staff di Gate Sardinia
+    must_not:
+    - Non deve indirizzare gli accrediti stampa a booking@gatesardinia.it o vip@gatesardinia.it
+    - Non deve fornire il WhatsApp +39 391 487 6443 per l'accredito stampa
+    - Non deve fornire contatti di Milano (email gatemilano, marketing@gatemilano, numeri di Milano)
+    - Non deve dichiararsi bot/AI/assistente virtuale
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - marketing@
+    - Antonio
+    - 389 640
+    - 329 169
+- id: sard-contacts-escalation-3
+  category: contacts-escalation
+  venue: gate_sardinia
+  user_message: vorrei organizzare il mio compleanno da voi a fine luglio, con chi posso parlare?
+  rubric:
+    must:
+    - Deve indirizzare l'organizzazione di un evento privato/compleanno a booking@gatesardinia.it
+    - Puo' fornire anche il WhatsApp +39 391 487 6443 (ammesso per eventi privati)
+    - Deve mantenere tono cordiale e disponibile da staff di Gate Sardinia
+    must_not:
+    - Non deve indirizzare l'evento privato a info@ o vip@ come unico/principale contatto
+    - Non deve fornire contatti di Milano (email gatemilano, numeri di Milano)
+    - Non deve dichiararsi bot/AI/assistente virtuale
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - Antonio
+    - 389 640
+    - 329 169
+    - marketing@
+- id: sard-contacts-escalation-4
+  category: contacts-escalation
+  venue: gate_sardinia
+  user_message: vorrei prenotare un tavolo per il 18 luglio, a chi mi rivolgo?
+  rubric:
+    must:
+    - Deve indirizzare la prenotazione tavoli a vip@gatesardinia.it oppure al WhatsApp +39 391 487 6443
+    - Deve mantenere tono disponibile da staff di Gate Sardinia
+    must_not:
+    - Non deve indirizzare la prenotazione tavoli a info@ o booking@ come contatto del tavolo
+    - Non deve promettere o inventare un link di prenotazione tavolo online (la mappa non e' ancora attiva)
+    - Non deve fornire contatti di Milano (email gatemilano, Antonio, numeri di Milano)
+    - Non deve dichiararsi bot/AI/assistente virtuale
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - Antonio
+    - 389 640
+    - 329 169
+    - marketing@
+- id: sard-contacts-escalation-5
+  category: contacts-escalation
+  venue: gate_sardinia
+  user_message: mi date un numero di telefono per qualsiasi info generale sul locale?
+  rubric:
+    must:
+    - 'Deve indirizzare le info generali ai canali corretti: email info@gatesardinia.it e/o i social (Instagram @gatesardinia, sito gatesardinia.it)'
+    - Deve chiarire che il WhatsApp +39 391 487 6443 e' dedicato solo a tavoli ed eventi privati, non come contatto generico
+    - Deve mantenere tono cordiale da staff di Gate Sardinia
+    must_not:
+    - Non deve fornire il WhatsApp +39 391 487 6443 come numero di contatto per informazioni generiche
+    - Non deve fornire contatti di Milano (email gatemilano, Antonio, numeri di Milano come 389 640 6077 o 329 169 6882)
+    - Non deve inventare un numero di telefono generico del locale
+    - Non deve dichiararsi bot/AI/assistente virtuale ne' dichiarare limiti tecnici
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - Antonio
+    - 389 640
+    - 329 169
+    - marketing@
+- id: sard-contacts-escalation-6
+  category: contacts-escalation
+  venue: gate_sardinia
+  user_message: non sono piu' potuto venire alla serata di sabato scorso, posso avere il rimborso del biglietto? a chi scrivo?
+  rubric:
+    must:
+    - Deve indirizzare la richiesta di rimborso a info@gatesardinia.it
+    - Deve indicare che il rimborso post-evento va richiesto entro il lunedi' successivo all'evento
+    - Deve indicare la documentazione richiesta (nome e cognome intestatario, email d'acquisto, screenshot del biglietto, screenshot del pagamento)
+    - Deve mantenere tono empatico/cordiale da staff di Gate Sardinia
+    must_not:
+    - Non deve indirizzare il rimborso a vip@ o booking@
+    - Non deve dire che il rimborso si gestisce via WhatsApp +39 391 487 6443
+    - Non deve fornire contatti di Milano (email gatemilano, marketing@gatemilano, numeri di Milano)
+    - Non deve indirizzare a Xceed o a support@xceed.me (canale di Milano/altri)
+    - Non deve dichiararsi bot/AI/assistente virtuale
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - Xceed
+    - marketing@
+    - Antonio
+    - 389 640
+    - 329 169
+- id: sard-refunds-reentry-1
+  category: refunds-reentry
+  venue: gate_sardinia
+  user_message: raga ho comprato il biglietto ma poi non posso piu venire, voglio il rimborso del biglietto come faccio?
+  rubric:
+    must:
+    - Deve chiarire che prima dell'evento il rimborso non e possibile
+    - Puo accennare che un rimborso e valutabile solo dopo l'evento (entro il lunedi successivo, scrivendo a info@gatesardinia.it) ma deve restare chiaro che pre-evento non si rimborsa
+    - Tono cortese e da staff (Charlie), naturale
+    must_not:
+    - Non deve promettere o confermare il rimborso del biglietto prima dell'evento
+    - Non deve indicare un contatto o una email diversa da info@gatesardinia.it per i rimborsi
+    - Non deve inventare procedure di rimborso pre-evento (es. modulo online, rimborso automatico)
+    - Non deve definirsi bot, AI, assistente virtuale o software
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - marketing@
+    - Xceed
+- id: sard-refunds-reentry-2
+  category: refunds-reentry
+  venue: gate_sardinia
+  user_message: se esco un attimo a prendere una cosa in macchina posso rientrare con lo stesso biglietto?
+  rubric:
+    must:
+    - Deve dire chiaramente che dopo l'uscita non e previsto il rientro
+    - Deve far capire che per rientrare servirebbe un nuovo biglietto
+    - Tono cortese, da staff (Charlie)
+    must_not:
+    - Non deve dire che si puo uscire e rientrare con lo stesso biglietto
+    - Non deve promettere timbri, braccialetti o pass di reingresso non confermati
+    - Non deve definirsi bot, AI, assistente virtuale o software
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - Xceed
+- id: sard-refunds-reentry-3
+  category: refunds-reentry
+  venue: gate_sardinia
+  user_message: ciao, ero da voi sabato sera ma c'e stato un problema e vorrei chiedere il rimborso del biglietto. come devo fare? cosa vi serve?
+  rubric:
+    must:
+    - Deve indicare che la richiesta va inviata a info@gatesardinia.it
+    - 'Deve specificare il termine: entro il lunedi successivo all''evento'
+    - 'Deve elencare i 4 documenti necessari: nome e cognome dell''intestatario, email usata per l''acquisto, screenshot del biglietto e screenshot della prova di pagamento'
+    must_not:
+    - Non deve indicare email o contatti diversi da info@gatesardinia.it per il rimborso
+    - Non deve garantire l'esito del rimborso come certo
+    - Non deve omettere o ridurre il numero di documenti richiesti
+    - Non deve definirsi bot, AI, assistente virtuale o software
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - marketing@
+    - 389 640
+    - 329 169
+    - Xceed
+- id: sard-refunds-reentry-4
+  category: refunds-reentry
+  venue: gate_sardinia
+  user_message: ma il rimborso lo posso ancora chiedere? l'evento era una settimana fa
+  rubric:
+    must:
+    - Deve far capire che il termine per chiedere il rimborso post-evento e il lunedi successivo all'evento, quindi a una settimana di distanza i tempi sono scaduti
+    - Deve restare cortese e da staff (Charlie)
+    - Puo invitare a scrivere comunque a info@gatesardinia.it spiegando la situazione, senza promettere esiti
+    must_not:
+    - Non deve affermare che il rimborso e ancora ottenibile senza limiti di tempo
+    - Non deve indicare contatti o email diversi da info@gatesardinia.it
+    - Non deve inventare una finestra temporale diversa dal lunedi successivo
+    - Non deve definirsi bot, AI, assistente virtuale o software
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - Xceed
+- id: sard-refunds-reentry-5
+  category: refunds-reentry
+  venue: gate_sardinia
+  user_message: vorrei il rimborso, vi mando solo lo screen del biglietto e basta no? il resto non ce l'ho
+  rubric:
+    must:
+    - Deve chiarire che lo screenshot del biglietto da solo non basta
+    - 'Deve elencare tutti i documenti richiesti: nome e cognome intestatario, email d''acquisto, screenshot del biglietto e screenshot della prova di pagamento'
+    - Deve indicare info@gatesardinia.it come destinatario, entro il lunedi successivo all'evento
+    must_not:
+    - Non deve confermare che il solo screenshot del biglietto sia sufficiente
+    - Non deve indicare contatti diversi da info@gatesardinia.it
+    - Non deve dire di non avere accesso alle email come limite tecnico
+    - Non deve definirsi bot, AI, assistente virtuale o software
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - marketing@
+    - Xceed
+    - non ho accesso
+- id: sard-refunds-reentry-6
+  category: refunds-reentry
+  venue: gate_sardinia
+  user_message: ho preso il biglietto vip per Perreo XL ma mi e capitato un imprevisto, posso farmi ridare i soldi prima della serata?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - Deve dire che prima dell'evento il rimborso del biglietto non e possibile
+    - Puo spiegare che eventuali richieste si valutano solo dopo l'evento, entro il lunedi successivo, scrivendo a info@gatesardinia.it
+    - Tono empatico ma chiaro sulla policy, da staff (Charlie)
+    must_not:
+    - Non deve promettere il rimborso del biglietto VIP prima della serata
+    - Non deve confondere il ticket VIP con la policy di cancellazione dei tavoli
+    - Non deve indicare contatti diversi da info@gatesardinia.it per il rimborso
+    - Non deve inventare un prezzo diverso da quelli nel contesto
+    - Non deve definirsi bot, AI, assistente virtuale o software
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - marketing@
+    - Xceed
+    - '23:00'
+- id: sard-extra-location-1
+  category: location-venue
+  venue: gate_sardinia
+  user_message: ciao raga ma dove siete di preciso? volevo capire come arrivare in macchina
+  rubric:
+    must:
+    - 'Deve dare l''indirizzo corretto: Via Marco Polo 1, 08020 Budoni (NU)'
+    - Deve indicare che e un venue outdoor in Sardegna
+    must_not:
+    - Non deve dare indirizzi o riferimenti di Milano (Via Valtellina, Carroponte)
+    - Non deve inventare indicazioni stradali non confermate
+  assertions:
+    forbidden_substrings:
+    - Via Valtellina
+    - Carroponte
+    - gatemilano
+- id: sard-extra-location-2
+  category: location-venue
+  venue: gate_sardinia
+  user_message: ma il locale e al chiuso o all'aperto? e quanti bar ci sono dentro?
+  rubric:
+    must:
+    - Deve dire che il venue e outdoor / all'aperto
+    - Deve indicare che ci sono 4 bar
+    must_not:
+    - Non deve dichiarare un guardaroba a pagamento (il venue e outdoor)
+    - Non deve usare nomi sale di Milano
+  assertions:
+    forbidden_substrings:
+    - Main Room
+    - Club Room
+    - guardaroba
+- id: sard-extra-accessibility-1
+  category: accessibility
+  venue: gate_sardinia
+  user_message: ciao, vengo in carrozzina, riesco ad accedere alla serata? c'e qualcosa che dovrei sapere?
+  rubric:
+    must:
+    - Deve usare un tono empatico e accogliente
+    - Deve indicare che il biglietto e quello standard
+    - Deve invitare a scrivere in anticipo a info@gatesardinia.it cosi lo staff prepara l'accoglienza
+    must_not:
+    - Non deve dichiarare infrastrutture specifiche (pedane, rampe, percorsi dedicati) non confermate
+    - Non deve indirizzare a contatti di Milano
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+- id: sard-extra-accessibility-companion-1
+  category: accessibility
+  venue: gate_sardinia
+  user_message: accompagno mia madre che ha difficolta a camminare, per me serve un biglietto a parte o entro come accompagnatore?
+  rubric:
+    must:
+    - Deve usare il termine accompagnatore con tono empatico
+    - Deve invitare a scrivere in anticipo a info@gatesardinia.it per organizzare l'accoglienza
+    must_not:
+    - Non deve dichiarare con certezza una politica di ingresso gratuito per l'accompagnatore non confermata nel contesto
+    - Non deve dichiarare infrastrutture (rampe/pedane) non confermate
+- id: sard-extra-booking-artist-1
+  category: contacts-escalation
+  venue: gate_sardinia
+  user_message: ciao sono un dj, vorrei propormi per suonare da voi questa estate, a chi mando il mio set?
+  rubric:
+    must:
+    - Deve indirizzare a booking@gatesardinia.it per le proposte artisti/booking
+    - Puo indicare anche il WhatsApp +39 391 487 6443 nel contesto booking/eventi privati
+    must_not:
+    - Non deve indirizzare a info@gatesardinia.it come canale per il booking artisti
+    - Non deve usare email o contatti di Milano
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - marketing@
+- id: sard-extra-whatsapp-generic-1
+  category: contacts-escalation
+  venue: gate_sardinia
+  user_message: mi passi il numero whatsapp del locale che vi scrivo li per qualsiasi cosa?
+  rubric:
+    must:
+    - Deve chiarire che il WhatsApp +39 391 487 6443 e dedicato a tavoli VIP o eventi privati
+    - Deve indirizzare alle info generali via email info@gatesardinia.it
+    must_not:
+    - Non deve presentare il WhatsApp come contatto generico per qualsiasi richiesta
+    - Non deve fornire numeri di telefono di Milano
+  assertions:
+    forbidden_substrings:
+    - 389 640
+    - 329 169
+- id: sard-extra-age-16event-1
+  category: age-document
+  venue: gate_sardinia
+  user_message: ho 16 anni, per la serata del 4 luglio posso entrare? avevo letto che era 16+
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Serata Perreo XL. Ingresso consentito ai 16+ con documento.\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - Deve confermare che per questo specifico evento l'ingresso e consentito ai 16+ (perche dichiarato nel contesto evento)
+    - Deve ricordare che serve il documento d'identita originale
+    must_not:
+    - Non deve negare l'ingresso applicando il 18+ generico, dato che l'evento dichiara esplicitamente 16+
+    - Non deve accettare la patente come documento
+- id: sard-extra-outside-food-1
+  category: dresscode-access
+  venue: gate_sardinia
+  user_message: posso portarmi da bere da fuori? tipo una bottiglia d'acqua mia o degli snack
+  rubric:
+    must:
+    - Deve indicare che cibo e bevande dall'esterno non sono ammessi
+    - Puo ricordare che ci sono bar e area food all'interno
+    must_not:
+    - Non deve dire che si possono portare bevande o cibo da fuori
+- id: sard-extra-parking-1
+  category: location-venue
+  venue: gate_sardinia
+  user_message: c'e un parcheggio quando vengo in macchina? si paga?
+  rubric:
+    must:
+    - Deve indicare che il parcheggio e gratuito in loco
+    - Deve precisare che non e custodito
+    must_not:
+    - Non deve garantire la custodia/sorveglianza del parcheggio
+    - Non deve usare riferimenti di Milano
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - Carroponte

@@ -1,0 +1,287 @@
+- id: sard-tickets-link-1
+  category: tickets-link
+  venue: gate_sardinia
+  user_message: ciao! come faccio a prendere i biglietti per la serata di sabato?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - Deve girare il link diretto ticketsms dell'evento copiandolo per intero, esattamente https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026
+    - Deve indicare ticketsms come biglietteria ufficiale per acquistare
+    - Può citare i prezzi presenti nel contesto (es. a partire da €11.50, Posto Unico da €10, VIP da €45)
+    must_not:
+    - Non deve dare un generico 'compra su ticketsms.it' senza il link diretto completo dell'evento
+    - Non deve indirizzare a Xceed o ad altre biglietterie
+    - Non deve inventare prezzi non presenti nel contesto
+    - Non deve troncare, accorciare o modificare l'URL ticketsms
+  assertions:
+    forbidden_substrings:
+    - Xceed
+    - xceed
+- id: sard-tickets-link-2
+  category: tickets-link
+  venue: gate_sardinia
+  user_message: ma i biglietti li fate su xceed?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - Deve chiarire che la biglietteria ufficiale è ticketsms, non Xceed
+    - 'Avendo l''evento nel contesto, deve girare il link diretto ticketsms copiandolo per intero: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026'
+    must_not:
+    - Non deve confermare o suggerire che si comprano su Xceed
+    - Non deve dare un generico 'compra su ticketsms.it' senza il link diretto completo dell'evento
+    - Non deve indirizzare a Dice o ad altre piattaforme
+  assertions:
+    forbidden_substrings:
+    - Xceed
+    - xceed
+- id: sard-tickets-link-3
+  category: tickets-link
+  venue: gate_sardinia
+  user_message: scusa dove compro i biglietti per il 4 luglio?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - 'Deve girare il link diretto ticketsms dell''evento del 4 luglio copiandolo per intero: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026'
+    - Deve indicare ticketsms come canale ufficiale d'acquisto
+    must_not:
+    - Non deve dare un generico 'compra su ticketsms.it' senza il link diretto completo
+    - Non deve rimandare a Xceed o ad altre biglietterie
+    - Non deve inventare prezzi non presenti nel contesto
+    - Non deve accorciare o alterare l'URL ticketsms
+  assertions:
+    forbidden_substrings:
+    - Xceed
+    - xceed
+- id: sard-tickets-link-4
+  category: tickets-link
+  venue: gate_sardinia
+  user_message: perfetto allora mi mandi il link per comprare?
+  history:
+  - role: user
+    content: che eventi avete il 18 luglio?
+  - role: assistant
+    content: Il 18 luglio c'è Tropical Night al Gate Sardinia, serata 22:00–04:00.
+  rag_context: "EVENTO: Tropical Night\nVenue: Gate Sardinia\nData: 18 July 2026\nDescrizione: Sabato 18 luglio Tropical Night al Gate Sardinia\nPrezzi:\n  a partire da €15.00\n  - Posto Unico: a partire da €15.00\n  - VIP: a partire da €50.00\nAcquista biglietti: https://www.ticketsms.it/event/Tropical-Night-Budoni-Gate-Sardinia-18-07-2026"
+  rubric:
+    must:
+    - 'Deve fornire il link diretto ticketsms dell''evento copiandolo per intero: https://www.ticketsms.it/event/Tropical-Night-Budoni-Gate-Sardinia-18-07-2026'
+    - Deve indicare ticketsms come biglietteria ufficiale
+    must_not:
+    - Non deve rispondere con un generico 'compra su ticketsms.it' senza il link diretto completo dell'evento
+    - Non deve mandare un link Xceed o di altre piattaforme
+    - Non deve modificare o troncare l'URL ticketsms
+  assertions:
+    forbidden_substrings:
+    - Xceed
+    - xceed
+- id: sard-tickets-link-5
+  category: tickets-link
+  venue: gate_sardinia
+  user_message: che biglietti ci sono per il 10 agosto?
+  rubric:
+    must:
+    - Deve rimandare a gatesardinia.it (o all'Instagram @gatesardinia) per trovare gli eventi e i relativi biglietti, dato che per quella data non c'è un evento nel contesto
+    - Deve mantenere un tono cordiale da staff Gate Sardinia
+    must_not:
+    - Non deve inventare un evento, un prezzo o un link ticketsms specifico non presente nel contesto
+    - Non deve rimandare a Xceed o ad altre biglietterie
+    - Non deve fornire un URL ticketsms inventato per quella data
+  assertions:
+    forbidden_substrings:
+    - Xceed
+    - xceed
+- id: sard-tickets-link-6
+  category: tickets-link
+  venue: gate_sardinia
+  user_message: vabbè basta che mi dici dove si comprano in generale, su ticketsms giusto?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - Deve confermare che ticketsms è la biglietteria ufficiale
+    - 'Avendo l''evento nel contesto, NON deve fermarsi al generico ticketsms.it ma deve girare il link diretto dell''evento copiandolo per intero: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026'
+    must_not:
+    - Non deve limitarsi a confermare un generico 'sì, su ticketsms.it' senza fornire il link diretto completo dell'evento presente nel contesto
+    - Non deve rimandare a Xceed o ad altre piattaforme
+    - Non deve alterare o accorciare l'URL ticketsms
+  assertions:
+    forbidden_substrings:
+    - Xceed
+    - xceed
+- id: sard-prices-1
+  category: prices
+  venue: gate_sardinia
+  user_message: ciao ma quanto costa il biglietto per Perreo XL del 4 luglio?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - Indica che i biglietti partono da €11.50 (o equivalente 'a partire da'), citando i prezzi presenti nel contesto (Posto Unico da €10.00 e VIP da €45.00)
+    - 'Gira il link diretto completo di acquisto: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026'
+    - Riporta i prezzi come 'a partire da' / minimi, senza spacciarli per prezzi fissi
+    must_not:
+    - Non inventa prezzi non presenti nel contesto (es. importi diversi da €11.50, €10.00, €45.00)
+    - Non rimanda a un generico 'compra su ticketsms.it' senza il link diretto dell'evento
+    - Non indirizza a Xceed o Dice o altre biglietterie
+    - Non si dichiara bot/AI/assistente
+  assertions:
+    forbidden_substrings:
+    - Xceed
+    - gatemilano
+- id: sard-prices-2
+  category: prices
+  venue: gate_sardinia
+  user_message: non ho capito i prezzi, perché c'è scritto 'a partire da'? mi spieghi come funzionano i biglietti?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - 'Spiega che i prezzi sono ''a partire da'' (scaglioni / fasce): il prezzo parte da un minimo e può salire man mano che i biglietti si esauriscono o secondo la fase di vendita'
+    - 'Distingue le due tipologie presenti nel contesto: Posto Unico da €10.00 e VIP da €45.00'
+    - 'Gira il link diretto ticketsms dell''evento per vedere il prezzo aggiornato: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026'
+    must_not:
+    - Non garantisce un prezzo fisso (es. 'costa esattamente €10')
+    - Non inventa fasce o importi non presenti nel contesto
+    - Non indirizza a Xceed o Dice
+    - Non si dichiara bot/AI/assistente
+  assertions:
+    forbidden_substrings:
+    - Xceed
+- id: sard-prices-3
+  category: prices
+  venue: gate_sardinia
+  user_message: raga quanto costa il biglietto per sabato?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - 'Collega ''sabato'' all''evento presente nel contesto (Perreo XL di sabato 4 luglio) e fornisce i prezzi di quell''evento: a partire da €11.50, Posto Unico da €10.00, VIP da €45.00'
+    - 'Gira il link diretto completo: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026'
+    must_not:
+    - Non inventa prezzi non presenti nel contesto
+    - Non inventa un evento o un sabato diverso da quello nel contesto
+    - Non rimanda a biglietterie diverse da ticketsms
+    - Non si dichiara bot/AI/assistente
+  assertions:
+    forbidden_substrings:
+    - Xceed
+- id: sard-prices-4
+  category: prices
+  venue: gate_sardinia
+  user_message: quanto si paga per entrare al concerto di Marracash da voi?
+  rubric:
+    must:
+    - Chiarisce di non avere i prezzi/dettagli di quell'evento a disposizione (senza dichiararsi bot o limiti tecnici)
+    - Rimanda a gatesardinia.it o all'Instagram @gatesardinia per prezzi e biglietti
+    must_not:
+    - Non inventa un prezzo d'ingresso (nessun importo specifico)
+    - Non conferma l'esistenza dell'evento o che i biglietti siano in vendita
+    - Non rimanda a Xceed o Dice
+    - Non si dichiara bot/AI/assistente né dichiara limiti tecnici (memoria, accesso ai dati)
+  assertions:
+    forbidden_substrings:
+    - Xceed
+    - gatemilano
+- id: sard-prices-5
+  category: prices
+  venue: gate_sardinia
+  user_message: il biglietto VIP da 45 euro comprende anche i drink?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - Chiarisce che il ticket VIP (da €45.00) dà accesso alle aree Terrace e VIP ma NON include consumazioni/drink
+    - Distingue il ticket VIP dal tavolo (bottle service con minimo di spesa), indicando che per i tavoli si scrive a vip@gatesardinia.it o WhatsApp +39 391 487 6443
+    - Riporta il prezzo VIP come 'a partire da €45.00'
+    must_not:
+    - Non afferma che il ticket VIP include drink o consumazioni
+    - Non inventa prezzi del tavolo o importi non presenti nel contesto
+    - Non promette un link di prenotazione tavolo online
+    - Non si dichiara bot/AI/assistente
+- id: sard-prices-6
+  category: prices
+  venue: gate_sardinia
+  user_message: ma non c'è niente che costa meno di 10 euro? tipo entrata gratis prima di mezzanotte?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - Indica che i prezzi disponibili partono da quelli nel contesto (a partire da €11.50 / Posto Unico da €10.00) e che non risultano tariffe inferiori
+    - 'Gira il link diretto ticketsms per verificare i prezzi aggiornati: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026'
+    must_not:
+    - Non inventa una tariffa sotto i €10 o un ingresso gratuito non presente nel contesto
+    - Non promette liste/omaggi/sconti non documentati
+    - Non rimanda a Xceed o Dice
+    - Non si dichiara bot/AI/assistente
+  assertions:
+    forbidden_substrings:
+    - Xceed
+- id: sard-extra-tickets-paste-1
+  category: tickets-link
+  venue: gate_sardinia
+  user_message: perfetto si dammi il link diretto per Perreo XL del 4 luglio che lo compro adesso
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - 'Deve girare il link diretto ticketsms completo dell''evento: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026'
+    - Deve indicare che ticketsms e la biglietteria ufficiale
+    must_not:
+    - Non deve limitarsi a un generico 'compra su ticketsms.it' senza il link diretto presente nel contesto
+    - Non deve nominare Xceed o Dice
+  assertions:
+    forbidden_substrings:
+    - Xceed
+    - xceed
+- id: sard-extra-tickets-resellers-1
+  category: tickets-link
+  venue: gate_sardinia
+  user_message: un tipo su un gruppo telegram mi rivende un biglietto per sabato a meta prezzo, conviene no?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - Deve sconsigliare i rivenditori non autorizzati / mercato secondario
+    - Deve indirizzare all'acquisto solo dai canali ufficiali (ticketsms), girando il link diretto presente nel contesto
+    must_not:
+    - Non deve approvare l'acquisto da rivenditori non autorizzati
+    - Non deve nominare Xceed
+  assertions:
+    forbidden_substrings:
+    - Xceed
+    - xceed
+- id: sard-extra-tickets-notreceived-1
+  category: tickets-link
+  venue: gate_sardinia
+  user_message: ho pagato il biglietto su ticketsms ma non mi e arrivata nessuna mail con il biglietto, come faccio?
+  rubric:
+    must:
+    - Deve indirizzare a scrivere a info@gatesardinia.it
+    - Deve indicare di fornire nome, email usata per l'acquisto e data dell'evento
+    must_not:
+    - Non deve promettere il rinvio diretto del biglietto via chat
+    - Non deve usare contatti o email di Milano
+  assertions:
+    forbidden_substrings:
+    - gatemilano
+    - info@gatemilano
+- id: sard-extra-prices-ticketvip-vs-tavolo-1
+  category: prices
+  venue: gate_sardinia
+  user_message: scusa il ticket VIP da 45 euro e la stessa cosa del tavolo VIP? cioe se prendo quello ho il tavolo con le bottiglie?
+  rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
+  rubric:
+    must:
+    - Deve chiarire che il ticket VIP da ticketsms da accesso alle aree Terrace e VIP ma NON include consumazioni
+    - Deve chiarire che il tavolo (bottle service) e un prodotto distinto con minimo di spesa, prenotabile via vip@gatesardinia.it o WhatsApp +39 391 487 6443
+    must_not:
+    - Non deve dire che il ticket VIP include un tavolo o le bottiglie
+    - Non deve inventare prezzi di tavolo non presenti
+- id: sard-extra-no-event-context-1
+  category: tickets-link
+  venue: gate_sardinia
+  user_message: dove compro i biglietti per la serata di ferragosto?
+  rubric:
+    must:
+    - Deve rimandare ai canali ufficiali gatesardinia.it o Instagram @gatesardinia per trovare il biglietto
+    - Deve indicare ticketsms come biglietteria ufficiale
+    must_not:
+    - Non deve inventare un link diretto ticketsms specifico per un evento non presente nel contesto
+    - Non deve nominare Xceed o l'instagram di Milano
+  assertions:
+    forbidden_substrings:
+    - Xceed
+    - xceed
+    - '@gatemilano'
