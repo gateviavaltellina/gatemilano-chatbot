@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     # invece della pipeline Xceed diretta.
     site_base_url: str = "https://gatemilano.it"
 
+    # Sito Gate Sardinia: il checkout tavoli VIP è self-hosted (Revolut + Sanity),
+    # distinto da Xceed (Milano). La disponibilità live è su
+    # GET /api/vip/availability?event=<sanityId> e la pagina di prenotazione/pagamento
+    # è /tavoli?event=<sanityId>.
+    sardinia_site_base_url: str = "https://www.gatesardinia.it"
+
     # Notifications
     discord_webhook_url: str = ""
     discord_ig_webhook_url: str = ""

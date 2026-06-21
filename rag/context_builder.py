@@ -8,7 +8,7 @@ from rag.event_store import (
     get_vip_candidates,
 )
 from rag.date_utils import extract_query_dates
-from rag.vip_tables import get_vip_tables_context, get_vip_tables_via_site
+from rag.vip_tables import get_vip_tables_context, get_vip_tables_via_site, get_vip_tables_sardinia
 
 logger = logging.getLogger(__name__)
 
@@ -50,15 +50,16 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     vip_context = ""
     if any(t in lower_text for t in _VIP_TRIGGERS) or any(t in history_text for t in _VIP_TRIGGERS):
         candidates = get_vip_candidates(venue, query_dates[0] if query_dates else None)
-        for name, date_iso, ticket_url in candidates:
+        for name, date_iso, ticket_url, sanity_id in candidates:
             if venue == "gate_milano":
                 logger.debug("VIP lookup (sito) per %s %s", name, date_iso)
                 result = await get_vip_tables_via_site(name, date_iso)
             elif venue == "gate_sardinia":
-                # Sardegna: nessun lookup tavoli live. Biglietteria su ticketsms,
-                # tavoli prenotabili solo via vip@gatesardinia.it / WhatsApp (mappa
-                # online non ancora attiva). MAI link tavolo Xceed nel contesto.
-                continue
+                # Sardegna: checkout self-hosted (Revolut + Sanity). Disponibilità live
+                # via /api/vip/availability?event=<id>; link prenotazione/pagamento
+                # /tavoli?event=<id>. MAI link tavolo Xceed nel contesto Sardegna.
+                logger.debug("VIP lookup (Sardegna) per event=%s", sanity_id)
+                result = await get_vip_tables_sardinia(sanity_id)
             else:
                 if "xceed" not in (ticket_url or ""):
                     continue

@@ -210,14 +210,16 @@ def get_all_ticket_urls_for_date(venue: str, date_str: str) -> list[str]:
     return urls
 
 
-def get_vip_candidates(venue: str, date_str: str | None = None, days: int = 14) -> list[tuple[str, str, str]]:
-    """Eventi candidati per il lookup tavoli VIP: lista di (event_name, date_iso, ticket_url).
+def get_vip_candidates(venue: str, date_str: str | None = None, days: int = 14) -> list[tuple[str, str, str, str]]:
+    """Eventi candidati per il lookup tavoli VIP: lista di
+    (event_name, date_iso, ticket_url, sanity_id).
 
     Se `date_str` è dato, solo gli eventi di quel giorno; altrimenti i prossimi `days`
     giorni in ordine di data. `date_iso` è YYYY-MM-DD (dalla data Rome salvata in date_ts),
-    pronto per l'endpoint del sito che risolve l'evento per name+date.
+    pronto per l'endpoint del sito che risolve l'evento per name+date. `sanity_id` serve
+    alla Sardegna per costruire /tavoli?event=<id> e /api/vip/availability?event=<id>.
     """
-    out: list[tuple[str, str, str]] = []
+    out: list[tuple[str, str, str, str]] = []
     if date_str:
         day_start = int(datetime.strptime(date_str[:10], "%Y-%m-%d")
                         .replace(tzinfo=timezone.utc).timestamp())
@@ -228,7 +230,7 @@ def get_vip_candidates(venue: str, date_str: str | None = None, days: int = 14) 
         cand.sort(key=lambda e: e["metadata"].get("date_ts", 0))
         for e in cand:
             m = e["metadata"]
-            out.append((m.get("event_name", ""), date_str[:10], m.get("ticket_url", "")))
+            out.append((m.get("event_name", ""), date_str[:10], m.get("ticket_url", ""), m.get("sanity_id", "")))
     else:
         today_ts = _today_start_utc()
         end_ts = today_ts + days * 86400
@@ -239,5 +241,5 @@ def get_vip_candidates(venue: str, date_str: str | None = None, days: int = 14) 
         for e in cand:
             m = e["metadata"]
             di = datetime.fromtimestamp(m.get("date_ts", 0), tz=timezone.utc).strftime("%Y-%m-%d")
-            out.append((m.get("event_name", ""), di, m.get("ticket_url", "")))
+            out.append((m.get("event_name", ""), di, m.get("ticket_url", ""), m.get("sanity_id", "")))
     return out
