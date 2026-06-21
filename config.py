@@ -59,6 +59,12 @@ class Settings(BaseSettings):
     # Vuoto = endpoint disabilitato (404).
     eval_export_token: str = ""
 
+    # Secret per il webhook Sanity (POST /webhook/sanity): permette il sync immediato
+    # alla pubblicazione/modifica di un evento, senza aspettare il polling. Lo si passa
+    # via header X-Webhook-Secret / Authorization: Bearer, o query ?key=. Vuoto =
+    # endpoint NON protetto (sync attivabile da chiunque: sconsigliato in prod).
+    sanity_webhook_secret: str = ""
+
     # App
     max_history: int = 8
     port: int = 8000

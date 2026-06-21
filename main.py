@@ -1,9 +1,10 @@
 import asyncio
+import hmac
 import logging
 import uvicorn
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from fastapi import FastAPI, BackgroundTasks, HTTPException
+from fastapi import FastAPI, BackgroundTasks, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -115,9 +116,31 @@ async def trigger_sync():
     return {"status": "sync completato"}
 
 
+def _verify_sanity_secret(request: Request, key: str) -> None:
+    """Protegge /webhook/sanity con un secret condiviso. Accetta il token via header
+    X-Webhook-Secret, Authorization: Bearer <token>, o query ?key=. Se il secret non
+    è configurato salta la verifica (retro-compatibile, ma logga un warning)."""
+    secret = settings.sanity_webhook_secret
+    if not secret:
+        logger.warning(
+            "SANITY_WEBHOOK_SECRET non configurato — /webhook/sanity NON protetto. "
+            "Imposta SANITY_WEBHOOK_SECRET in produzione."
+        )
+        return
+    provided = request.headers.get("X-Webhook-Secret") or key or ""
+    if not provided:
+        auth = request.headers.get("Authorization", "")
+        if auth.startswith("Bearer "):
+            provided = auth.split(" ", 1)[1]
+    if not hmac.compare_digest(provided, secret):
+        raise HTTPException(status_code=403, detail="secret non valido")
+
+
 @app.post("/webhook/sanity")
-async def sanity_webhook(background_tasks: BackgroundTasks):
-    """Endpoint per webhook Sanity CMS — sync immediato quando un evento viene modificato."""
+async def sanity_webhook(request: Request, background_tasks: BackgroundTasks, key: str = ""):
+    """Endpoint per webhook Sanity CMS — sync immediato quando un evento viene
+    pubblicato/modificato, senza aspettare il polling. Protetto da SANITY_WEBHOOK_SECRET."""
+    _verify_sanity_secret(request, key)
     background_tasks.add_task(sync_all_venues)
     return {"status": "sync scheduled"}
 
