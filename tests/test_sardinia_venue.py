@@ -49,6 +49,34 @@ def test_sardinia_prompt_directs_tables_to_online_booking():
     s = _static("gate_sardinia")
     # i tavoli ora si prenotano/pagano online: il prompt deve citare il link del sito
     assert "gatesardinia.it/tavoli" in s
+    # e NON deve più dire che la prenotazione online non è attiva
+    assert "non è ancora attiva" not in s
+
+
+# --- Drinklist: decisione di invio del PDF ---
+
+def test_drinklist_explicit_request_always_sends():
+    from whatsapp.webhook import _should_send_drinklist
+    # richiesta esplicita → invia anche se già inviato in precedenza
+    assert _should_send_drinklist("gate_sardinia", "mi giri il listino bottiglie?", "", already_sent=True)
+    assert _should_send_drinklist("gate_sardinia", "mi mandi la drinklist?", "", already_sent=True)
+
+
+def test_drinklist_implicit_trigger_sends_once():
+    from whatsapp.webhook import _should_send_drinklist
+    # parlando di tavoli: invio proattivo solo la prima volta
+    assert _should_send_drinklist("gate_sardinia", "vorrei un tavolo", "", already_sent=False)
+    assert not _should_send_drinklist("gate_sardinia", "vorrei un tavolo", "", already_sent=True)
+
+
+def test_drinklist_unrelated_message_no_send():
+    from whatsapp.webhook import _should_send_drinklist
+    assert not _should_send_drinklist("gate_sardinia", "a che ora aprite?", "alle 22", already_sent=False)
+
+
+def test_drinklist_unknown_venue_no_send():
+    from whatsapp.webhook import _should_send_drinklist
+    assert not _should_send_drinklist("gate_unknown", "mandami il listino", "", already_sent=False)
 
 
 # --- Prompt Milano: contenuto preservato ---

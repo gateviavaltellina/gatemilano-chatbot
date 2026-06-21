@@ -79,8 +79,27 @@ _DRINKLISTS: dict[str, tuple[str, str]] = {
     "gate_milano": (f"{_DRINKLIST_BASE}/drinklist_perreo.pdf", "Drinklist VIP Perreo.pdf"),
     "gate_sardinia": (f"{_DRINKLIST_BASE}/drinklist_sardegna.pdf", "Drinklist VIP Gate Sardinia.pdf"),
 }
-_DRINKLIST_TRIGGERS = ["tavolo", "tavoli", "vip", "drinklist", "bottle", "bottiglia", "minimo", "perreo xl"]
+# Trigger IMPLICITI: si parla di tavoli/VIP → invio proattivo del PDF, una sola volta.
+_DRINKLIST_TRIGGERS = ["tavolo", "tavoli", "vip", "bottle", "bottiglia", "minimo", "perreo xl"]
+# Richieste ESPLICITE del listino → invia SEMPRE (anche se già inviato): l'utente lo
+# sta chiedendo direttamente ("mi giri il listino bottiglie?", "inviami la drinklist").
+_DRINKLIST_EXPLICIT = [
+    "drinklist", "drink list", "listino", "bottiglie", "lista bottiglie",
+    "lista drink", "carta bottiglie", "carta drink",
+]
 _drinklist_sent: set[str] = set()
+
+
+def _should_send_drinklist(venue: str, lower_text: str, lower_reply: str, already_sent: bool) -> bool:
+    """Decide se allegare il PDF della drinklist. Richiesta esplicita → sempre;
+    trigger implicito (si parla di tavoli/VIP) → solo se non già inviato a questo utente."""
+    if venue not in _DRINKLISTS:
+        return False
+    if any(t in lower_text for t in _DRINKLIST_EXPLICIT):
+        return True
+    if not already_sent and any(t in lower_text or t in lower_reply for t in _DRINKLIST_TRIGGERS):
+        return True
+    return False
 
 # --- Ignored phones ---
 _ignored_phones: set[str] | None = None
@@ -231,9 +250,8 @@ async def process_message(phone: str, msg_id: str, text: str) -> None:
 
     lower_text = text.lower()
     lower_reply = reply.lower()
-    drinklist = _DRINKLISTS.get(venue)
-    if drinklist and phone not in _drinklist_sent and any(t in lower_text or t in lower_reply for t in _DRINKLIST_TRIGGERS):
-        url, filename = drinklist
+    if _should_send_drinklist(venue, lower_text, lower_reply, phone in _drinklist_sent):
+        url, filename = _DRINKLISTS[venue]
         await send_document(phone, url, filename)
         _drinklist_sent.add(phone)
 
