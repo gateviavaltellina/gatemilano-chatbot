@@ -45,6 +45,12 @@ def test_sardinia_prompt_has_vip_zones_and_booking_channel():
     assert "+39 391 487 6443" in s
 
 
+def test_sardinia_prompt_directs_tables_to_online_booking():
+    s = _static("gate_sardinia")
+    # i tavoli ora si prenotano/pagano online: il prompt deve citare il link del sito
+    assert "gatesardinia.it/tavoli" in s
+
+
 # --- Prompt Milano: contenuto preservato ---
 
 def test_milano_prompt_keeps_its_content():

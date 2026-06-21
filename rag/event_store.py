@@ -177,6 +177,51 @@ def get_events_for_date(venue: str, date_str: str) -> str:
     return "\n\n---\n\n".join(e["document"] for e in events)
 
 
+# Parole troppo generiche per identificare un evento dal nome (evitano falsi match).
+_NAME_STOPWORDS = {
+    "gate", "milano", "sardinia", "sardegna", "budoni", "club", "live", "show",
+    "night", "serata", "serate", "evento", "eventi", "party", "festival", "tour",
+    "presents", "open", "opening", "closing",
+}
+
+
+def find_event_dates_by_name(venue: str, text: str, days: int = 80, limit: int = 2) -> list[str]:
+    """Risolve un evento dal nome/lineup citato nel messaggio (es. un artista) quando
+    l'utente NON ha dato una data esplicita. Cerca su tutta la stagione (`days` giorni)
+    gli eventi il cui titolo condivide almeno un token significativo (>=4 lettere) col
+    messaggio, e ritorna fino a `limit` date YYYY-MM-DD in ordine cronologico.
+
+    Serve a far trovare al bot eventi oltre la finestra "prossimi giorni" (es. chiedere
+    di un artista che suona tra 6 settimane) e ad alimentare il lookup tavoli per quella
+    serata.
+    """
+    tokens = {t for t in _norm_name(text).split() if len(t) >= 4} - _NAME_STOPWORDS
+    if not tokens:
+        return []
+    today_ts = _today_start_utc()
+    end_ts = today_ts + days * 86400
+    matched: list[tuple[int, str]] = []
+    for e in _get(venue):
+        m = e["metadata"]
+        if m.get("type") != "event":
+            continue
+        ts = m.get("date_ts", 0)
+        if not (today_ts <= ts <= end_ts):
+            continue
+        name_tokens = {t for t in _norm_name(m.get("event_name", "")).split() if len(t) >= 4}
+        if tokens & name_tokens:
+            di = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
+            matched.append((ts, di))
+    matched.sort(key=lambda x: x[0])
+    out: list[str] = []
+    for _, di in matched:
+        if di not in out:
+            out.append(di)
+        if len(out) >= limit:
+            break
+    return out
+
+
 def count(venue: str) -> int:
     return len([e for e in _get(venue) if e["metadata"].get("type") == "event"])
 

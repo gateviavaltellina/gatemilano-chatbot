@@ -6,6 +6,7 @@ from rag.event_store import (
     get_upcoming_events_compact,
     get_events_for_date,
     get_vip_candidates,
+    find_event_dates_by_name,
 )
 from rag.date_utils import extract_query_dates
 from rag.vip_tables import get_vip_tables_context, get_vip_tables_via_site, get_vip_tables_sardinia
@@ -34,6 +35,10 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     """
     lower_text = text.lower()
     query_dates = extract_query_dates(text)
+    # Nessuna data esplicita ma l'utente cita un evento per nome/artista (anche oltre
+    # i "prossimi giorni"): risolvilo in data così entrano dettagli evento e tavoli.
+    if not query_dates:
+        query_dates = find_event_dates_by_name(venue, text)
     other_venue = _OTHER_VENUE.get(venue, "gate_milano")
     other_venue_name = _OTHER_VENUE_NAME.get(venue, "Gate Milano")
     channel = _VENUE_CHANNEL.get(venue, "gate-milano")
