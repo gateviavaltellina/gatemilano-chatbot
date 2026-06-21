@@ -22,6 +22,10 @@ _CACHE_TTL = 300  # 5 minuti
 # Cache per il path via-sito (Milano): (name, date_iso) → {"text": str, "ts": float}
 _site_cache: dict[tuple[str, str], dict] = {}
 
+# Cache per la Sardegna (checkout self-hosted Revolut): sanity_id → {"text": str, "ts": float}
+_sardinia_cache: dict[str, dict] = {}
+_SARDINIA_CACHE_TTL = 60  # disponibilità live: TTL breve
+
 
 def _extract_slug_id(ticket_url: str) -> tuple[str, int] | tuple[None, None]:
     m = _XCEED_URL_RE.search(ticket_url or "")
@@ -140,6 +144,7 @@ def invalidate_vip_cache() -> None:
     """Clear the VIP tables cache — call after Xceed sync so sold-out status is fresh."""
     _cache.clear()
     _site_cache.clear()
+    _sardinia_cache.clear()
     logger.debug("VIP tables cache invalidata")
 
 
@@ -202,4 +207,68 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
     body = "TAVOLI VIP: tutti esauriti per questo evento." if not available else "\n".join(lines)
     text = f"{map_line}\n{body}"
     _site_cache[key] = {"text": text, "ts": time.time()}
+    return text
+
+
+async def get_vip_tables_sardinia(sanity_id: str) -> str:
+    """
+    Disponibilità tavoli VIP di Gate Sardinia via endpoint pubblico del sito:
+        GET {sardinia_site_base_url}/api/vip/availability?event=<sanityId>
+    Restituisce {tables:[{code, zona, coperti, price, stato}]} con
+    stato ∈ libero | opzionato (hold attivo) | venduto.
+
+    Costruisce il blocco "TAVOLI VIP DISPONIBILI" per il RAG, con UN link per evento
+    di prenotazione/pagamento (/tavoli?event=<id>): selezione tavolo, dati cliente e
+    checkout Revolut avvengono sul sito. Ritorna "" se id mancante, errore o nessun
+    tavolo (il bot ricade sulle info statiche della knowledge). Non solleva mai.
+    """
+    if not sanity_id:
+        return ""
+
+    cached = _sardinia_cache.get(sanity_id)
+    if cached and time.time() - cached["ts"] < _SARDINIA_CACHE_TTL:
+        return cached["text"]
+
+    base = settings.sardinia_site_base_url.rstrip("/")
+    url = f"{base}/api/vip/availability"
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            r = await client.get(url, params={"event": sanity_id})
+            if r.status_code != 200:
+                logger.debug("VIP Sardegna: HTTP %s per event=%s", r.status_code, sanity_id)
+                return ""
+            data = r.json()
+    except Exception as e:
+        logger.debug("VIP Sardegna: errore per event=%s: %s", sanity_id, e)
+        return ""
+
+    tables = data.get("tables", []) if isinstance(data, dict) else []
+    if not tables:
+        _sardinia_cache[sanity_id] = {"text": "", "ts": time.time()}
+        return ""
+
+    available = [t for t in tables if t.get("stato") == "libero"]
+    unavailable = [t for t in tables if t.get("stato") != "libero"]
+
+    def _row(t: dict) -> str:
+        zona = t.get("zona", "VIP")
+        cod = t.get("code", "")
+        cop = t.get("coperti")
+        cop_str = f" — max {cop} persone" if cop else ""
+        return f"{zona} {cod}{cop_str}".strip()
+
+    booking_url = f"{base}/tavoli?event={sanity_id}"
+
+    if available:
+        lines = ["TAVOLI VIP DISPONIBILI (prenotazione e pagamento online):"]
+        for t in available:
+            lines.append(f"- {_row(t)}: minimo €{t.get('price')} → libero")
+        for t in unavailable:
+            lines.append(f"- {_row(t)}: minimo €{t.get('price')} — NON DISPONIBILE")
+        body = "\n".join(lines)
+    else:
+        body = "TAVOLI VIP: tutti esauriti per questo evento."
+
+    text = f"{body}\nPRENOTA E PAGA ONLINE: {booking_url}"
+    _sardinia_cache[sanity_id] = {"text": text, "ts": time.time()}
     return text

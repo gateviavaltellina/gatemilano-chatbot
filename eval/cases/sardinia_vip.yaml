@@ -5,12 +5,12 @@
   rubric:
     must:
     - Chiarisce che il pagamento del tavolo è 100% anticipato, non si paga la sera stessa in venue
-    - Indirizza alla prenotazione tramite vip@gatesardinia.it o WhatsApp +39 391 487 6443
+    - Indirizza alla prenotazione e al pagamento online su gatesardinia.it/tavoli (può citare vip@gatesardinia.it o WhatsApp +39 391 487 6443 come assistenza)
     - Mantiene un tono cordiale da staff (Charlie)
     must_not:
     - Afferma che si può pagare il tavolo all'arrivo o la sera stessa
     - Promette un rimborso in caso di cancellazione
-    - Inventa un link di prenotazione del tavolo
+    - Inventa un link di prenotazione falso o diverso da gatesardinia.it/tavoli
     - Si dichiara bot/AI/assistente virtuale
   assertions:
     forbidden_substrings:
@@ -25,11 +25,11 @@
     - Chiarisce che il minimo NON è di persone ma di SPESA (consumazioni)
     - Spiega che si può prenotare anche in pochi (es. in 2) pagando comunque il minimo di spesa
     - 'Indica i minimi di spesa: €600 (max 10 persone) per i tavoli T1-T10/V1-V10 e €300 (max 6 persone) per T11-T20/V11-V20'
-    - Indirizza a vip@gatesardinia.it o WhatsApp +39 391 487 6443 per prenotare
+    - Indirizza alla prenotazione online su gatesardinia.it/tavoli (vip@gatesardinia.it o WhatsApp +39 391 487 6443 come assistenza)
     must_not:
     - Afferma che serve un minimo di persone (es. minimo 10 o minimo 6 persone)
     - Confonde il minimo di spesa con un minimo di persone
-    - Inventa un link di prenotazione del tavolo
+    - Inventa un link di prenotazione falso o diverso da gatesardinia.it/tavoli
   assertions:
     forbidden_substrings:
     - gatemilano
@@ -39,12 +39,11 @@
   user_message: mi mandi il link per prenotare il tavolo online?
   rubric:
     must:
-    - Spiega che la mappa/prenotazione online dei tavoli NON è ancora attiva
-    - Indirizza la prenotazione a vip@gatesardinia.it oppure WhatsApp +39 391 487 6443
-    - Non fornisce alcun link di prenotazione del tavolo
+    - Fornisce il link di prenotazione e pagamento online dei tavoli su gatesardinia.it/tavoli
+    - Può precisare che sul sito si sceglie il tavolo sulla mappa, si inseriscono i dati e si paga con carta (pagamento anticipato)
     must_not:
-    - Fornisce o inventa un link per prenotare il tavolo
-    - Afferma che la mappa online è attiva
+    - Afferma che la prenotazione/mappa online dei tavoli non è attiva o non è ancora disponibile
+    - Inventa un link di prenotazione falso o diverso da gatesardinia.it/tavoli
     - Si dichiara bot/AI/assistente virtuale
   assertions:
     forbidden_substrings:
@@ -59,10 +58,10 @@
     - Conferma che si può prenotare un tavolo anche in 2 persone
     - Spiega che il vincolo è il minimo di SPESA (consumazioni), non un numero minimo di persone
     - Cita un minimo di spesa concreto (€600 o €300 a seconda del tavolo)
-    - Indirizza a vip@gatesardinia.it o WhatsApp +39 391 487 6443
+    - Indirizza alla prenotazione online su gatesardinia.it/tavoli (vip@gatesardinia.it o WhatsApp +39 391 487 6443 come assistenza)
     must_not:
     - Dice che non si può prenotare in 2 / che serve un numero minimo di persone
-    - Inventa un link di prenotazione del tavolo
+    - Inventa un link di prenotazione falso o diverso da gatesardinia.it/tavoli
     - Si dichiara bot/AI/assistente virtuale
   assertions:
     forbidden_substrings:
@@ -75,11 +74,11 @@
     must:
     - 'Spiega che ci sono due zone tavoli: Terrace (la migliore, rialzata, con vista sul palco) e VIP'
     - Chiarisce che l'ingresso è INCLUSO nel tavolo
-    - Indirizza a vip@gatesardinia.it o WhatsApp +39 391 487 6443 per prenotare un tavolo
+    - Indirizza alla prenotazione online su gatesardinia.it/tavoli (vip@gatesardinia.it o WhatsApp +39 391 487 6443 come assistenza)
     must_not:
     - Afferma che l'ingresso al tavolo si paga a parte
     - Usa nomi di sale di Milano come Main Room o Club Room
-    - Inventa un link di prenotazione del tavolo
+    - Inventa un link di prenotazione falso o diverso da gatesardinia.it/tavoli
   assertions:
     forbidden_substrings:
     - Main Room
@@ -116,10 +115,10 @@
     must:
     - Deve indicare che i tavoli Terrace avanti (T1-T10) hanno minimo spesa €600 e max 10 persone
     - Deve indicare che ogni persona extra oltre le 10 costa €60
-    - Deve indirizzare la prenotazione a vip@gatesardinia.it o WhatsApp +39 391 487 6443
+    - Deve indirizzare alla prenotazione online su gatesardinia.it/tavoli (vip@gatesardinia.it o WhatsApp +39 391 487 6443 come assistenza)
     must_not:
     - Non deve indicare €50 come quota extra per i tavoli avanti (€50 e per i tavoli dietro T11-T20)
-    - Non deve promettere un link di prenotazione online del tavolo
+    - Non deve inventare un link di prenotazione falso o diverso da gatesardinia.it/tavoli
 - id: sard-extra-tables-credit-1
   category: vip-tables
   venue: gate_sardinia

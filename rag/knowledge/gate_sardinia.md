@@ -68,7 +68,7 @@ Il minimo è di **spesa** (consumazioni: bottiglie e drink dalla drinklist VIP),
 **Persone extra** oltre la capienza: si paga la quota a persona del tavolo (€60 sui tavoli da 10, €50 sui tavoli da 6). Si può comunicare durante la prenotazione oppure pagare al momento se il gruppo cresce all'arrivo o durante la serata.
 
 ### Due prodotti VIP distinti
-- **Tavoli VIP** (bottle service): minimo di spesa come da tabella, ingresso incluso. Al momento la prenotazione è solo tramite vip@gatesardinia.it o WhatsApp +39 391 487 6443 (nessun link di prenotazione online da girare).
+- **Tavoli VIP** (bottle service): minimo di spesa come da tabella, ingresso incluso. **Prenotabili e pagabili online su gatesardinia.it/tavoli**: si sceglie il tavolo sulla mappa, si inseriscono i dati e si paga con carta (pagamento 100% anticipato, conferma immediata). Quando è in programma una serata, il link diretto alla prenotazione di quella serata è `gatesardinia.it/tavoli?event=<id>` (il bot lo gira già pronto). Per assistenza alla prenotazione: vip@gatesardinia.it o WhatsApp +39 391 487 6443.
 - **Ticket VIP** (su ticketsms.it): danno accesso alle aree Terrace e VIP, ma **non** includono consumazioni.
 
 ### Pagamento e regole
@@ -118,5 +118,5 @@ Gate Sardinia è disponibile per eventi aziendali, privati e corporate.
 | Richiesta | Contatto |
 |-----------|----------|
 | Info generali, oggetti smarriti, accrediti, accessibilità, rimborsi | info@gatesardinia.it |
-| Prenotazione tavoli VIP | vip@gatesardinia.it · WhatsApp +39 391 487 6443 |
+| Prenotazione tavoli VIP | Online: gatesardinia.it/tavoli · Assistenza: vip@gatesardinia.it · WhatsApp +39 391 487 6443 |
 | Booking artisti, eventi privati/aziendali | booking@gatesardinia.it · WhatsApp +39 391 487 6443 |
