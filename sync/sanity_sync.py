@@ -56,6 +56,8 @@ GROQ_SITE_SETTINGS = """*[_type == "siteSettings"][0] {
 
 GROQ_BLOG_POSTS = """*[_type == "blogPost"] {
   _id,
+  titleIt,
+  bodyIt,
   titleEn,
   bodyEn
 }"""
@@ -414,9 +416,17 @@ def _build_site_settings_document(settings: dict, venue_label: str) -> tuple[str
 
 
 def _build_blog_document(post: dict, venue_label: str) -> tuple[str, dict]:
-    title = post.get("titleEn") or post.get("title") or "Info"
-    body = _portable_text_to_str(post.get("bodyEn") or post.get("body") or [])
-    document = f"{title}\n\n{body}".strip()
+    # I post sono bilingui (it/en). I clienti scrivono soprattutto in italiano, ma
+    # qualcuno scrive in inglese: indicizziamo ENTRAMBE le lingue così il RAG trova
+    # il contenuto a prescindere dalla lingua della domanda. Titolo: italiano primario.
+    title_it = post.get("titleIt")
+    title_en = post.get("titleEn")
+    titles = " / ".join(dict.fromkeys(t for t in (title_it, title_en) if t))
+    titles = titles or post.get("title") or "Info"
+    body_it = _portable_text_to_str(post.get("bodyIt") or [])
+    body_en = _portable_text_to_str(post.get("bodyEn") or post.get("body") or [])
+    body = "\n\n".join(p for p in (body_it, body_en) if p)
+    document = f"{titles}\n\n{body}".strip()
     metadata = {
         "type": "blog_post",
         "source": "sanity",
