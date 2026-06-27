@@ -9,6 +9,20 @@ staff vede subito un alert prominente e può prendere in carico con !t / !r.
 
 # categoria (con emoji per l'alert) → keyword in minuscolo (match per sottostringa)
 _CATEGORIES = {
+    # GAP wh-41: "I wish I might not be alive on Friday" non generava alcun alert.
+    # L'autolesionismo è la categoria a priorità più alta: lo staff va allertato
+    # SEMPRE, anche se il bot risponde in parallelo. Keyword volutamente larghe
+    # (IT + EN) ma scelte per non colpire i messaggi benigni operativi.
+    "🆘 Autolesionismo": [
+        # inglese
+        "kill myself", "hurt myself", "harm myself", "want to die", "wanna die",
+        "end my life", "not be alive", "don't want to live", "dont want to live",
+        "suicid", "self-harm", "self harm",
+        # italiano
+        "uccidermi", "uccidersi", "farla finita", "farmi del male", "autoles",
+        "togliermi la vita", "non voglio più vivere", "non voglio piu vivere",
+        "non voglio vivere", "voglio morire", "pensieri di morte",
+    ],
     "♿ Accessibilità": [
         "accessibil", "carrozzin", "sedia a rotelle", "disabil", "invalid",
         "mobilità ridotta", "mobilita ridotta", "wheelchair", "deambul", "stampelle",
