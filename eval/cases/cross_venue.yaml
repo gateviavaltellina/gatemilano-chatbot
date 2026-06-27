@@ -1,0 +1,47 @@
+# Cross-venue POSITIVO: il cliente scrive a una venue ma chiede di un evento
+# dell'ALTRA (caso reale chat 23/6 e 25/6). Il bot deve rispondere usando i dati
+# dell'altra location presenti nel contesto (etichettati "venue diversa"),
+# chiarendo che è l'altra venue — SENZA scaricare il cliente sull'email e SENZA
+# mischiare policy/sale/contatti tra le due venue.
+
+- id: xvenue-milano-chiede-tavoli-sardegna
+  category: cross-venue
+  venue: gate_milano
+  user_message: "per i tavoli del 5 luglio a gate sardinia, le bottiglie sono incluse?"
+  rag_context: |
+    [TAVOLI A GATE SARDINIA — venue diversa]
+    TAVOLI VIP DISPONIBILI (prenotazione e pagamento online):
+    - TERRAZZA: 20 tavoli liberi — €300 (6 persone), €600 (10 persone)
+    - VIP: 20 tavoli liberi — €300 (6 persone), €600 (10 persone)
+    PRENOTA E PAGA ONLINE: https://www.gatesardinia.it/tavoli?event=tba-2026-07-05-2eebqscq
+
+    [EVENTI A GATE SARDINIA — venue diversa]
+    EVENTO: Lubi, Melons, Overlapa
+    Venue: Gate Sardinia
+    Data: 5 July 2026
+  rubric:
+    must:
+      - "Deve rispondere sui tavoli dell'evento del 5 luglio a Gate Sardinia usando i dati nel contesto (zone TERRAZZA/VIP, fascia €300–600), chiarendo che è l'altra location Gate Sardinia"
+      - "Deve spiegare che il minimo è di spesa su consumazioni (le bottiglie/drink rientrano nel minimo), non un costo extra oltre al tavolo"
+    must_not:
+      - "Non deve limitarsi a scaricare il cliente dicendo che non gestisce quella venue o di scrivere a info@gatemilano.com"
+      - "Non deve applicare a Gate Sardinia nomi di sala di Milano (Main Room, Club Room, Console, zona F/Face) né contatti di Gate Milano"
+  assertions:
+    forbidden_substrings:
+      - "Main Room"
+      - "Club Room"
+
+- id: xvenue-no-leak-quando-non-in-contesto
+  category: cross-venue
+  venue: gate_milano
+  # Nessun blocco "venue diversa" nel contesto: il bot NON deve inventare dati
+  # dell'altra venue, ma indirizzare a quella location senza spacciare info.
+  user_message: "che tavoli avete per la serata di domani a gate sardinia?"
+  rag_context: |
+    EVENTI IN PROGRAMMA (Gate Milano):
+    - Nessun evento nei prossimi giorni (stagione chiusa)
+  rubric:
+    must:
+      - "Deve indicare che per i tavoli di Gate Sardinia conviene verificare su gatesardinia.it o contattare quella location"
+    must_not:
+      - "Non deve inventare zone, prezzi o disponibilità di tavoli di Gate Sardinia non presenti nel contesto"

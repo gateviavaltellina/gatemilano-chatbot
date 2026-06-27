@@ -69,10 +69,12 @@ async def test_available_and_unavailable(monkeypatch):
     out = await vip_tables.get_vip_tables_sardinia("ev123")
 
     assert "TAVOLI VIP DISPONIBILI" in out
-    assert "Terrace T3 — max 10 persone: minimo €600 → libero" in out
-    assert "VIP V12 — max 6 persone: minimo €300 — NON DISPONIBILE" in out
-    # opzionato = hold attivo → non disponibile
-    assert "Terrace T1 — max 10 persone: minimo €600 — NON DISPONIBILE" in out
+    # pochi liberi → tavolo elencato per nome
+    assert "Terrace T3 (max 10 persone) — €600 → libero" in out
+    # VIP ha solo un venduto → zona esaurita
+    assert "VIP: esauriti" in out
+    # opzionato = hold attivo → NON elencato come libero
+    assert "Terrace T1" not in out
     assert "PRENOTA E PAGA ONLINE: https://www.gatesardinia.it/tavoli?event=ev123" in out
     assert _FakeClient.last_params == {"event": "ev123"}
 

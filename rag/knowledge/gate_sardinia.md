@@ -35,7 +35,7 @@ Gate Sardinia è il venue estivo del gruppo Gate (attivo dal 2017 con Gate Milan
 - Biglietto regolarmente acquistato ma NON ricevuto: scrivere a info@gatesardinia.it indicando nome, email usata per l'acquisto e data dell'evento.
 
 ## Accesso e Dress Code
-**Età minima:** 18 anni. Alcuni eventi possono indicare una soglia diversa (es. 16+): in quel caso vale quella dell'evento.
+**Età minima:** 18 anni di norma. Alcuni eventi possono indicare una soglia diversa (es. 16+): in quel caso vale quella dell'evento. **Eccezione:** i minorenni possono entrare a qualsiasi età se **accompagnati da un maggiorenne** (da soli no). Il servizio di alcolici resta riservato ai 18+. Documento d'identità originale sempre obbligatorio.
 **Documento obbligatorio:** originale (no fotocopie, no foto digitali)
 - Cittadini UE: carta d'identità o passaporto
 - Cittadini non UE: solo passaporto
@@ -43,7 +43,7 @@ Gate Sardinia è il venue estivo del gruppo Gate (attivo dal 2017 con Gate Milan
 
 **Dress code:** smart casual estivo
 **Vietato:** costumi, ciabatte, canottiere, t-shirt con stampe offensive, cappellini
-**Concerti:** abbigliamento libero
+**Concerti:** abbigliamento libero — per i concerti il dress code smart casual e i capi vietati sopra NON si applicano: si viene come si vuole.
 
 **Controllo sicurezza:** security e metal detector all'ingresso
 **Il venue si riserva il diritto di rifiutare l'accesso a propria discrezione**

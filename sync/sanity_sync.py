@@ -34,6 +34,7 @@ GROQ_EVENTS = """*[_type == "event" && date >= $today && defined(title) && title
   title,
   date,
   venue,
+  artists,
   ticketUrl,
   isSoldOut,
   isSellingFast,
@@ -55,6 +56,8 @@ GROQ_SITE_SETTINGS = """*[_type == "siteSettings"][0] {
 
 GROQ_BLOG_POSTS = """*[_type == "blogPost"] {
   _id,
+  titleIt,
+  bodyIt,
   titleEn,
   bodyEn
 }"""
@@ -283,10 +286,15 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
     is_selling_fast = event.get("isSellingFast") or False
     genres = event.get("genres") or []
     min_age = event.get("minAge")
+    # Lineup completa (Sanity `artists`): può contenere artisti NON presenti nel
+    # titolo. Va nel documento (così il bot sa dire chi suona) e nei metadata (così
+    # find_event_dates_by_name risolve la data anche dal nome di un artista in lineup).
+    artists = [a.strip() for a in (event.get("artists") or []) if a and a.strip()]
 
     date_fmt = _format_date(date_str)
     room_str = f"\nSala: {room}" if room else ""
     genres_str = f"\nGeneri: {', '.join(genres)}" if genres else ""
+    lineup_str = f"\nLineup: {', '.join(artists)}" if artists else ""
     # Età minima per-evento da Sanity. Accetta numero (16/18) o stringa ("16+", "18+").
     # Se valorizzata è ESPLICITA e prioritaria per il bot (vedi regola ETÀ nel system prompt).
     age_str = ""
@@ -313,6 +321,7 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
         f"Venue: {venue_label}"
         f"{room_str}\n"
         f"Data: {date_fmt}"
+        f"{lineup_str}"
         f"{genres_str}"
         f"{age_str}"
         f"{about_str}"
@@ -338,6 +347,7 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
         "type": "event",
         "source": "sanity",
         "event_name": title,
+        "artists": artists,
         "date": date_str,
         "date_ts": date_ts,
         "venue": venue_label,
@@ -406,9 +416,17 @@ def _build_site_settings_document(settings: dict, venue_label: str) -> tuple[str
 
 
 def _build_blog_document(post: dict, venue_label: str) -> tuple[str, dict]:
-    title = post.get("titleEn") or post.get("title") or "Info"
-    body = _portable_text_to_str(post.get("bodyEn") or post.get("body") or [])
-    document = f"{title}\n\n{body}".strip()
+    # I post sono bilingui (it/en). I clienti scrivono soprattutto in italiano, ma
+    # qualcuno scrive in inglese: indicizziamo ENTRAMBE le lingue così il RAG trova
+    # il contenuto a prescindere dalla lingua della domanda. Titolo: italiano primario.
+    title_it = post.get("titleIt")
+    title_en = post.get("titleEn")
+    titles = " / ".join(dict.fromkeys(t for t in (title_it, title_en) if t))
+    titles = titles or post.get("title") or "Info"
+    body_it = _portable_text_to_str(post.get("bodyIt") or [])
+    body_en = _portable_text_to_str(post.get("bodyEn") or post.get("body") or [])
+    body = "\n\n".join(p for p in (body_it, body_en) if p)
+    document = f"{titles}\n\n{body}".strip()
     metadata = {
         "type": "blog_post",
         "source": "sanity",

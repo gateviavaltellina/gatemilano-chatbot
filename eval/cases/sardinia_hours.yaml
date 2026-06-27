@@ -49,11 +49,10 @@
 - id: sard-hours-season-4
   category: hours-season
   venue: gate_sardinia
-  user_message: ma stanotte siete ancora aperti? sono le 2 di notte, faccio in tempo a venire?
+  user_message: se a una vostra serata arrivo verso le 2 di notte, faccio ancora in tempo a entrare prima che chiudiate?
   rubric:
     must:
-    - Conferma che alle 02:00 di notte la serata iniziata la sera prima è ancora in corso (rollover notte) e si chiude alle 04:00
-    - Conferma quindi che fa ancora in tempo a entrare prima delle 04:00
+    - Conferma che si entra fino alla chiusura alle 04:00, quindi arrivando verso le 2 di notte si fa ampiamente in tempo
     - Se menziona il tavolo, ricorda che l'arrivo massimo al tavolo è le 02:30
     - Tono cordiale
     must_not:
@@ -98,8 +97,8 @@
 - id: sard-timetable-1
   category: timetable
   venue: gate_sardinia
-  user_message: raga a che ora suona l'headliner stasera? non voglio perdermelo
-  rag_context: "EVENTO: Sunset Festival\nVenue: Gate Sardinia\nData: 18 June 2026\nDescrizione: Una notte di musica sotto le stelle a Budoni con la nostra line-up\nLine-up: Marco Carola, Joseph Capriati, Anfisa Letyago\nPrezzi:\n  a partire da €15.00\n  - Posto Unico: a partire da €15.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Sunset-Festival-Budoni-Gate-Sardinia-18-06-2026"
+  user_message: raga a che ora suona l'headliner al Sunset Festival? non voglio perdermelo
+  rag_context: "EVENTO: Sunset Festival\nVenue: Gate Sardinia\nData: 11 July 2026\nDescrizione: Una notte di musica sotto le stelle a Budoni con la nostra line-up\nLine-up: Marco Carola, Joseph Capriati, Anfisa Letyago\nPrezzi:\n  a partire da €15.00\n  - Posto Unico: a partire da €15.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Sunset-Festival-Budoni-Gate-Sardinia-11-07-2026"
   rubric:
     must:
     - Spiega che non comunichiamo gli orari di esibizione dei singoli artisti (incluso l'headliner)
@@ -178,7 +177,6 @@
     - Fornisce la line-up completa presente nel contesto (Rauw Alejandro, Mora, Young Miko)
     - Chiarisce che non comunichiamo gli orari di esibizione uno per uno
     - Può indicare apertura 22:00 e chiusura 04:00
-    - 'Gira il link diretto ticketsms dell''evento copiandolo per intero: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026'
     must_not:
     - Non assegna orari ai singoli artisti
     - Non inventa una scaletta

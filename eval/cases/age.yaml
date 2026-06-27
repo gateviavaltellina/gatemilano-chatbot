@@ -50,6 +50,22 @@
     must_not:
       - "Non deve inventare una soglia di età specifica e diversa non presente nel contesto, né negare seccamente l'ingresso"
 
+- id: age-no-context-da-policy-generale
+  category: age
+  venue: gate_milano
+  # Caso reale (chat IG 26/6, Perreo XL senza minAge): il bot rispondeva solo
+  # "non ho l'età, controlla il sito". Ora deve dare SUBITO la policy generale.
+  user_message: "Che età è l'evento?"
+  rag_context: |
+    EVENTO: Perreo XL
+    Venue: Gate Milano
+    Data: {{TODAY+1}}
+  rubric:
+    must:
+      - "Deve dare la regola generale (ingresso di norma dai 16 con documento, alcune serate 18+, alcol riservato ai 18+) e ricordare il documento originale obbligatorio"
+    must_not:
+      - "Non deve limitarsi a dire 'non ho l'età, controlla su gatemilano.it' senza prima fornire la regola generale; non deve inventare una soglia specifica per quella serata"
+
 - id: age-alcol-16
   category: age
   venue: gate_milano

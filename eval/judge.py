@@ -3,6 +3,11 @@ from __future__ import annotations
 
 from eval.schema import Case, JudgeVerdict
 
+
+class JudgeTruncated(RuntimeError):
+    """Il giudice ha esaurito max_tokens prima di emettere il verdetto: l'input
+    del tool_use e' incompleto, quindi va trattato come errore infra (non un 'fail')."""
+
 _JUDGE_INSTRUCTIONS = """\
 Sei un valutatore severo di un chatbot per un club/venue.
 Ricevi: il messaggio dell'utente, la risposta del bot, e una rubrica di criteri.
@@ -65,13 +70,19 @@ def parse_verdict(response) -> JudgeVerdict:
 
 
 async def judge_reply(case: Case, reply: str, *, client, model: str) -> JudgeVerdict:
+    # max_tokens ampio: lo schema mette 'reasoning' PRIMA del verdict, quindi serve
+    # spazio per ragionamento + violated + verdict. Con un budget stretto (es. 500)
+    # il reasoning lungo lo esauriva e il tool_use usciva troncato → verdict='fail'
+    # silenzioso e violated/reasoning vuoti. 2000 copre i casi osservati con margine.
     response = await client.messages.create(
         model=model,
-        max_tokens=500,
+        max_tokens=2000,
         temperature=0,  # giudizio deterministico, riduce i falsi positivi
         system=build_judge_system(),
         tools=[_VERDICT_TOOL],
         tool_choice={"type": "tool", "name": "record_verdict"},
         messages=[{"role": "user", "content": _format_user(case, reply)}],
     )
+    if getattr(response, "stop_reason", None) == "max_tokens":
+        raise JudgeTruncated(f"giudizio troncato (max_tokens) per il caso {case.id}")
     return parse_verdict(response)

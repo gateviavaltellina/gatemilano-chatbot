@@ -184,6 +184,19 @@ _NAME_STOPWORDS = {
     "presents", "open", "opening", "closing",
 }
 
+# Nomi artista CORTI (<4 lettere, normalizzati: minuscolo, senza accenti) di forte
+# richiamo che vanno SEMPRE risolti. Senza questa allowlist resterebbero sotto la
+# soglia anti-rumore: es. "Guè" (token "gue") non verrebbe mai matchato. Aggiungere
+# qui gli headliner costosi con nome corto man mano che entrano in cartellone.
+_SHORT_ARTIST_ALLOWLIST = {"gue"}
+
+
+def _name_tokens(s: str) -> set[str]:
+    """Token significativi di un nome/lineup: lunghi >=4 lettere, più i nomi artista
+    corti in allowlist (es. 'gue'). Match per token esatto, mai per sottostringa."""
+    return {t for t in _norm_name(s).split()
+            if len(t) >= 4 or t in _SHORT_ARTIST_ALLOWLIST}
+
 
 def find_event_dates_by_name(venue: str, text: str, days: int = 80, limit: int = 2) -> list[str]:
     """Risolve un evento dal nome/lineup citato nel messaggio (es. un artista) quando
@@ -195,7 +208,7 @@ def find_event_dates_by_name(venue: str, text: str, days: int = 80, limit: int =
     di un artista che suona tra 6 settimane) e ad alimentare il lookup tavoli per quella
     serata.
     """
-    tokens = {t for t in _norm_name(text).split() if len(t) >= 4} - _NAME_STOPWORDS
+    tokens = _name_tokens(text) - _NAME_STOPWORDS
     if not tokens:
         return []
     today_ts = _today_start_utc()
@@ -208,7 +221,15 @@ def find_event_dates_by_name(venue: str, text: str, days: int = 80, limit: int =
         ts = m.get("date_ts", 0)
         if not (today_ts <= ts <= end_ts):
             continue
-        name_tokens = {t for t in _norm_name(m.get("event_name", "")).split() if len(t) >= 4}
+        # Cerca su titolo + lineup: un artista può essere in `artists` (Sanity) ma
+        # NON nel titolo (es. Sardinia 10/7: titolo "Davide T", in lineup anche
+        # Kamelia/Dfifonte/Asci). Senza questo, chi chiede di quegli artisti non
+        # troverebbe la serata.
+        searchable = m.get("event_name", "")
+        artists = m.get("artists")
+        if artists:
+            searchable += " " + " ".join(artists)
+        name_tokens = _name_tokens(searchable)
         if tokens & name_tokens:
             di = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
             matched.append((ts, di))

@@ -25,6 +25,25 @@ _OTHER_VENUE_NAME = {"gate_milano": "Gate Sardinia", "gate_sardinia": "Gate Mila
 _VENUE_CHANNEL = {"gate_milano": "gate-milano", "gate_sardinia": "gate-sardinia"}
 
 
+async def _vip_lookup(venue: str, date_str: str | None, channel: str) -> str:
+    """Disponibilità tavoli per una venue. Candidati: eventi della data richiesta,
+    oppure i prossimi in programma (in ordine); si ferma al primo che ha tavoli.
+    Milano usa l'endpoint del sito (name+date); Sardegna l'endpoint /api/vip/availability
+    (MAI link Xceed); le altre venue la pipeline Xceed. Ritorna "" se nessun tavolo."""
+    for name, date_iso, ticket_url, sanity_id in get_vip_candidates(venue, date_str):
+        if venue == "gate_milano":
+            result = await get_vip_tables_via_site(name, date_iso)
+        elif venue == "gate_sardinia":
+            result = await get_vip_tables_sardinia(sanity_id)
+        else:
+            if "xceed" not in (ticket_url or ""):
+                continue
+            result = await get_vip_tables_context(ticket_url, channel)
+        if result:
+            return result
+    return ""
+
+
 async def build_rag_context(venue: str, text: str, history: list[dict] | None = None) -> tuple[str, list[str]]:
     """
     Build RAG context for a user message.
@@ -34,14 +53,20 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     planning ahead; full event details are only injected for explicitly queried dates.
     """
     lower_text = text.lower()
+    other_venue = _OTHER_VENUE.get(venue, "gate_milano")
+    other_venue_name = _OTHER_VENUE_NAME.get(venue, "Gate Milano")
+    channel = _VENUE_CHANNEL.get(venue, "gate-milano")
+
     query_dates = extract_query_dates(text)
     # Nessuna data esplicita ma l'utente cita un evento per nome/artista (anche oltre
     # i "prossimi giorni"): risolvilo in data così entrano dettagli evento e tavoli.
     if not query_dates:
         query_dates = find_event_dates_by_name(venue, text)
-    other_venue = _OTHER_VENUE.get(venue, "gate_milano")
-    other_venue_name = _OTHER_VENUE_NAME.get(venue, "Gate Milano")
-    channel = _VENUE_CHANNEL.get(venue, "gate-milano")
+    # Cross-venue per nome: se l'artista/evento non è di QUESTA venue, prova l'ALTRA
+    # (caso reale: "Guè"/"Melons"/"Rondodasosa" citati sul canale Milano ma in
+    # cartellone a Gate Sardinia). Così scattano evento e tavoli dell'altra location.
+    if not query_dates:
+        query_dates = find_event_dates_by_name(other_venue, text)
 
     # Check history for VIP topic — last 6 messages (3 turns)
     history_text = " ".join(
@@ -49,30 +74,19 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     ).lower()
 
     # 1. VIP context — when VIP keywords in current message OR recent history.
-    # Candidati: eventi della data richiesta, oppure i prossimi in programma (in ordine);
-    # ci si ferma al primo che ha tavoli. Milano usa l'endpoint del sito (single source
-    # of truth, name+date); le altre venue restano sulla pipeline Xceed diretta (per ora).
     vip_context = ""
     if any(t in lower_text for t in _VIP_TRIGGERS) or any(t in history_text for t in _VIP_TRIGGERS):
-        candidates = get_vip_candidates(venue, query_dates[0] if query_dates else None)
-        for name, date_iso, ticket_url, sanity_id in candidates:
-            if venue == "gate_milano":
-                logger.debug("VIP lookup (sito) per %s %s", name, date_iso)
-                result = await get_vip_tables_via_site(name, date_iso)
-            elif venue == "gate_sardinia":
-                # Sardegna: checkout self-hosted (Revolut + Sanity). Disponibilità live
-                # via /api/vip/availability?event=<id>; link prenotazione/pagamento
-                # /tavoli?event=<id>. MAI link tavolo Xceed nel contesto Sardegna.
-                logger.debug("VIP lookup (Sardegna) per event=%s", sanity_id)
-                result = await get_vip_tables_sardinia(sanity_id)
-            else:
-                if "xceed" not in (ticket_url or ""):
-                    continue
-                logger.debug("VIP lookup (xceed) per ticket_url=%s", ticket_url[:60])
-                result = await get_vip_tables_context(ticket_url, channel)
-            if result:
-                vip_context = result
-                break
+        vip_context = await _vip_lookup(venue, query_dates[0] if query_dates else None, channel)
+        # Cross-venue: il cliente scrive a una venue ma chiede di un evento dell'ALTRA
+        # (caso reale: "tavoli del 5 luglio a Gate Sardinia" sul numero di Milano). Se
+        # qui non troviamo tavoli e c'è una data richiesta con un evento nell'altra
+        # venue, prendiamo i SUOI tavoli ETICHETTANDO la provenienza, così il bot
+        # risponde con i dati giusti senza spacciarli per questa venue.
+        if not vip_context and query_dates:
+            other_channel = _VENUE_CHANNEL.get(other_venue, "gate-milano")
+            other_vip = await _vip_lookup(other_venue, query_dates[0], other_channel)
+            if other_vip:
+                vip_context = f"[TAVOLI A {other_venue_name.upper()} — venue diversa]\n{other_vip}"
 
     # 2. Full event details for specifically queried dates
     date_parts = []

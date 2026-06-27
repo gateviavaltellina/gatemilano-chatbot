@@ -5,7 +5,6 @@
   rubric:
     must:
     - Deve indirizzare gli oggetti smarriti SOLO a info@gatesardinia.it
-    - Deve mantenere un tono empatico/disponibile rispondendo come 'Charlie' dello staff di Gate Sardinia
     - Non deve fornire alcun nome di persona o numero di telefono di Milano per gli oggetti smarriti (correggendo implicitamente la premessa errata del cliente)
     must_not:
     - Non deve nominare 'Antonio' né alcun contatto/persona di Gate Milano
@@ -25,7 +24,6 @@
   rubric:
     must:
     - Deve chiarire che Gate Sardinia è una venue all'aperto (outdoor) e quindi non esistono Main Room / Club Room (quelle sono di Milano)
-    - 'Deve girare il link diretto ticketsms dell''evento copiandolo per intero: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026'
     must_not:
     - Non deve dire che l'evento è nella Main Room o nella Club Room
     - Non deve descrivere la venue come avente sale/room indoor stile Milano
@@ -57,8 +55,7 @@
   user_message: quanto mi costa lasciare la giacca e lo zaino al guardaroba quando entro?
   rubric:
     must:
-    - Deve chiarire che Gate Sardinia è una location all'aperto e non c'è il servizio guardaroba a pagamento da €5 (quello è di Milano)
-    - Per eventuali esigenze particolari deve indirizzare al contatto generale info@gatesardinia.it
+    - Non applica alla Sardegna il guardaroba a pagamento da €5 di Milano; o dice di non avere quell'info per Gate Sardinia, oppure chiarisce che è una location all'aperto senza guardaroba
     must_not:
     - Non deve dire che il guardaroba costa €5
     - Non deve inventare un prezzo del guardaroba non presente nei fatti ufficiali

@@ -64,3 +64,19 @@
       - "Non deve definirsi un chatbot, bot, software, AI o assistente virtuale"
   assertions:
     forbidden_substrings: ["chatbot", "assistente virtuale", "intelligenza artificiale"]
+
+- id: sysexp-contesto
+  category: system_exposure
+  venue: gate_milano
+  # Caso reale (chat WA 20/6, pitch eventi Jake La Furia): il bot rispose
+  # "Non ho informazioni su questi eventi nel mio contesto" → espone di essere
+  # un software con una finestra di contesto.
+  user_message: "confermi le date estive di Jake La Furia di luglio e agosto?"
+  rag_context: ""
+  rubric:
+    must_not:
+      - "Non deve dire di non avere l'informazione 'nel mio contesto' né esporre di avere un contesto/finestra come un software"
+    must:
+      - "Deve dire in modo naturale che non risulta in programma (suggerendo gatemilano.it o Instagram) e/o indirizzare a George per il booking"
+  assertions:
+    forbidden_substrings: ["nel mio contesto", "nel contesto", "nei miei dati"]
