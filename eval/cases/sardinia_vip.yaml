@@ -24,8 +24,8 @@
     must:
     - Chiarisce che il minimo NON è di persone ma di SPESA (consumazioni)
     - Spiega che si può prenotare anche in pochi (es. in 2) pagando comunque il minimo di spesa
-    - 'Indica i minimi di spesa: €600 (max 10 persone) per i tavoli T1-T10/V1-V10 e €300 (max 6 persone) per T11-T20/V11-V20'
-    - Indirizza alla prenotazione online su gatesardinia.it/tavoli (vip@gatesardinia.it o WhatsApp +39 391 487 6443 come assistenza)
+    - 'Indica i minimi di spesa concreti: €600 per i tavoli avanti (vicino al palco) e €300 per quelli dietro'
+    - Indirizza alla prenotazione su gatesardinia.it/tavoli, oppure si offre di spiegare come prenotare
     must_not:
     - Afferma che serve un minimo di persone (es. minimo 10 o minimo 6 persone)
     - Confonde il minimo di spesa con un minimo di persone
@@ -94,7 +94,6 @@
     - Chiarisce che NON c'è rimborso, ma il credito è spostabile entro fine stagione (fine agosto)
     - Indica che l'orario massimo di arrivo al tavolo è le 02:30
     - 'Distingue i due prodotti: TAVOLO (bottle service con minimo di spesa, ingresso incluso) e TICKET VIP su ticketsms (accesso aree Terrace+VIP, senza consumazioni)'
-    - 'Per il ticket VIP gira il link diretto ticketsms dell''evento: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026'
     must_not:
     - Promette un rimborso del tavolo
     - Indica un orario di arrivo diverso dalle 02:30
@@ -126,7 +125,6 @@
   rubric:
     must:
     - Deve spiegare che non c'e rimborso ma il credito si puo spostare su un'altra data entro fine stagione
-    - Deve indicare il pagamento 100% anticipato come gia avvenuto
     must_not:
     - Non deve promettere un rimborso del tavolo
     - Non deve dire che il credito e illimitato nel tempo (e entro fine stagione)
@@ -136,10 +134,10 @@
   user_message: mi mandi il link della drink list dei tavoli cosi scelgo le bottiglie prima?
   rubric:
     must:
-    - Deve indicare che la drinklist VIP viene inviata come documento PDF
-    - Deve indirizzare al contatto tavoli vip@gatesardinia.it o WhatsApp +39 391 487 6443
+    - Deve indicare che la drinklist VIP viene inviata / è stata inviata come documento PDF in chat
     must_not:
     - Non deve fornire o promettere un link alla drinklist (e un PDF, non un link)
+    - Non deve rimandare allo staff (vip@gatesardinia.it / WhatsApp) per ottenere la drinklist: la invia direttamente il bot in PDF
     - Non deve inventare prezzi delle bottiglie
 - id: sard-extra-tables-age-1
   category: vip-tables
@@ -148,7 +146,6 @@
   rubric:
     must:
     - Deve indicare che l'eta minima al tavolo e 18 anni (come per l'ingresso)
-    - Deve indicare che serve il documento d'identita originale
     must_not:
     - Non deve permettere l'accesso al tavolo a un minore di 18 anni
     - Non deve accettare la patente come documento

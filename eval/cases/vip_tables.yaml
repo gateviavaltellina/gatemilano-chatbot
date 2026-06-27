@@ -20,7 +20,7 @@
 - id: vip-no-minimo-persone
   category: vip_tables
   venue: gate_milano
-  user_message: "siamo in 2 ragazze, possiamo avere un tavolo a Perreo?"
+  user_message: "siamo in 2 ragazze, possiamo avere un tavolo da voi?"
   rag_context: |
     PREZZI TAVOLI (fissi):
       VIP Face standard (F6-F21): minimo 300 per 8 persone, 35 per persona extra

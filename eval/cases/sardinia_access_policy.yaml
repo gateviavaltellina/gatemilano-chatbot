@@ -53,7 +53,6 @@
   rubric:
     must:
     - Conferma che per i cittadini UE la carta d'identita e un documento valido (oltre al passaporto)
-    - Specifica che deve essere il documento originale
     - Mantiene il tono di Charlie dello staff di Gate Sardinia
     must_not:
     - Afferma che a un cittadino UE serva obbligatoriamente il passaporto
@@ -103,7 +102,7 @@
     - 'Deve elencare i capi vietati: costumi, ciabatte, canottiere, t-shirt con stampe offensive e cappellini'
     - Tono cordiale da staff Gate Sardinia (Charlie)
     must_not:
-    - Non deve inventare capi vietati o regole non presenti nei fatti ufficiali
+    - Non deve aggiungere capi vietati diversi da quelli elencati (costumi, ciabatte, canottiere, t-shirt con stampe offensive, cappellini); può però aggiungere che per i concerti l'abbigliamento è libero
     - Non deve dichiararsi bot, AI o assistente virtuale
     - Non deve usare dati o sale di Milano (Main Room/Club Room) né guardaroba a pagamento
   assertions:
@@ -200,8 +199,7 @@
   rubric:
     must:
     - 'Smentisce che si paghi solo con carta: chiarisce che si accettano ANCHE i contanti'
-    - Conferma che si possono usare anche le carte (Visa, Mastercard, Maestro, American Express) e il contactless
-    - Rassicura il cliente che può pagare in contanti senza problemi
+    - Rassicura il cliente che può pagare in contanti senza problemi (può citare anche le carte, ma non è obbligatorio elencarle)
     must_not:
     - Non deve affermare che è obbligatoria la carta / che i contanti non sono accettati
     - Non deve inventare limiti o soglie sui contanti non presenti nei fatti
@@ -238,8 +236,7 @@
   rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
   rubric:
     must:
-    - Chiarisce che il TAVOLO si paga al 100% in anticipo (non si salda al POS all'arrivo)
-    - Per la prenotazione/pagamento del tavolo indirizza a vip@gatesardinia.it oppure WhatsApp +39 391 487 6443
+    - Chiarisce che il TAVOLO si paga al 100% in anticipo online (non si salda al POS all'arrivo); se l'utente l'ha già prenotato, il saldo è già avvenuto
     - Può precisare che il POS/contanti in venue valgono per le consumazioni extra ai bar, ma il minimo del tavolo è anticipato
     must_not:
     - Non deve dire che il tavolo si paga sul posto / all'arrivo col POS
@@ -257,9 +254,8 @@
   user_message: all'ingresso c'è da pagare qualcosa in cash? tipo il guardaroba o roba così
   rubric:
     must:
-    - Spiega che in venue si può pagare sia in contanti sia con carta (contactless, Visa, Mastercard, Maestro, American Express) per le consumazioni ai bar
-    - Chiarisce che la venue è outdoor, quindi non c'è un guardaroba a pagamento
-    - Per dubbi specifici sull'ingresso/biglietti rimanda correttamente (gatesardinia.it o Instagram @gatesardinia, dato che l'evento non è nel contesto)
+    - Spiega che in venue si può pagare sia in contanti sia con carta per le consumazioni ai bar (può elencare le carte accettate — contactless, Visa, Mastercard, Maestro, American Express — ma non è obbligatorio)
+    - Chiarisce che non c'è un guardaroba a pagamento (la venue è all'aperto)
     must_not:
     - Non deve dichiarare un guardaroba a €5 (è un dato di Milano, Sardegna è outdoor)
     - Non deve dire che si paga solo con carta o solo in contanti
@@ -336,11 +332,11 @@
   user_message: vorrei prenotare un tavolo per il 18 luglio, a chi mi rivolgo?
   rubric:
     must:
-    - Deve indirizzare la prenotazione tavoli a vip@gatesardinia.it oppure al WhatsApp +39 391 487 6443
+    - Deve indirizzare la prenotazione tavoli alla prenotazione online su gatesardinia.it/tavoli (vip@gatesardinia.it o WhatsApp +39 391 487 6443 come assistenza)
     - Deve mantenere tono disponibile da staff di Gate Sardinia
     must_not:
     - Non deve indirizzare la prenotazione tavoli a info@ o booking@ come contatto del tavolo
-    - Non deve promettere o inventare un link di prenotazione tavolo online (la mappa non e' ancora attiva)
+    - Non deve inventare un link di prenotazione tavolo falso o diverso da gatesardinia.it/tavoli
     - Non deve fornire contatti di Milano (email gatemilano, Antonio, numeri di Milano)
     - Non deve dichiararsi bot/AI/assistente virtuale
   assertions:
@@ -357,7 +353,7 @@
   rubric:
     must:
     - 'Deve indirizzare le info generali ai canali corretti: email info@gatesardinia.it e/o i social (Instagram @gatesardinia, sito gatesardinia.it)'
-    - Deve chiarire che il WhatsApp +39 391 487 6443 e' dedicato solo a tavoli ed eventi privati, non come contatto generico
+    - Non propone il WhatsApp +39 391 487 6443 come contatto per info generiche (va bene anche ometterlo del tutto); se lo nomina, deve chiarire che è dedicato solo a tavoli ed eventi privati
     - Deve mantenere tono cordiale da staff di Gate Sardinia
     must_not:
     - Non deve fornire il WhatsApp +39 391 487 6443 come numero di contatto per informazioni generiche
@@ -478,7 +474,6 @@
     must:
     - Deve chiarire che lo screenshot del biglietto da solo non basta
     - 'Deve elencare tutti i documenti richiesti: nome e cognome intestatario, email d''acquisto, screenshot del biglietto e screenshot della prova di pagamento'
-    - Deve indicare info@gatesardinia.it come destinatario, entro il lunedi successivo all'evento
     must_not:
     - Non deve confermare che il solo screenshot del biglietto sia sufficiente
     - Non deve indicare contatti diversi da info@gatesardinia.it
@@ -519,10 +514,9 @@
   rubric:
     must:
     - 'Deve dare l''indirizzo corretto: Via Marco Polo 1, 08020 Budoni (NU)'
-    - Deve indicare che e un venue outdoor in Sardegna
     must_not:
     - Non deve dare indirizzi o riferimenti di Milano (Via Valtellina, Carroponte)
-    - Non deve inventare indicazioni stradali non confermate
+    - Non deve inventare tempi di percorrenza diversi da quelli ufficiali (Olbia ~20 min, San Teodoro ~15 min, Nuoro ~1h, aeroporto Olbia ~35 min); il parcheggio gratuito in loco è corretto
   assertions:
     forbidden_substrings:
     - Via Valtellina
@@ -551,7 +545,6 @@
   rubric:
     must:
     - Deve usare un tono empatico e accogliente
-    - Deve indicare che il biglietto e quello standard
     - Deve invitare a scrivere in anticipo a info@gatesardinia.it cosi lo staff prepara l'accoglienza
     must_not:
     - Non deve dichiarare infrastrutture specifiche (pedane, rampe, percorsi dedicati) non confermate

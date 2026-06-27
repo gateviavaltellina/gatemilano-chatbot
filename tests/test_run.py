@@ -56,6 +56,22 @@ async def test_run_all_runs_every_case():
 
 
 @pytest.mark.asyncio
+async def test_run_case_marks_judge_failure_as_infra_error():
+    # se il judge solleva (es. risposta troncata / errore di rete) NON deve far crashare
+    # la run ne' contare come 'fail' comportamentale: e' un errore infra, escluso dal punteggio.
+    async def gen(venue, user_message, rag_context, history):
+        return "una risposta normale del bot"
+
+    async def judge(case, reply):
+        raise RuntimeError("judge truncated (stop_reason=max_tokens)")
+
+    case = _case(rubric=Rubric(must=["x"]))
+    res = await run_case(case, generate_fn=gen, judge_fn=judge)
+    assert res.error is not None
+    assert res.passed is False
+
+
+@pytest.mark.asyncio
 async def test_run_case_marks_bot_fallback_as_error():
     judge_calls = []
 

@@ -43,7 +43,7 @@ Gate Sardinia è il venue estivo del gruppo Gate (attivo dal 2017 con Gate Milan
 
 **Dress code:** smart casual estivo
 **Vietato:** costumi, ciabatte, canottiere, t-shirt con stampe offensive, cappellini
-**Concerti:** abbigliamento libero
+**Concerti:** abbigliamento libero — per i concerti il dress code smart casual e i capi vietati sopra NON si applicano: si viene come si vuole.
 
 **Controllo sicurezza:** security e metal detector all'ingresso
 **Il venue si riserva il diritto di rifiutare l'accesso a propria discrezione**

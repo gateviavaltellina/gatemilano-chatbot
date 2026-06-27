@@ -33,7 +33,13 @@ async def run_case(case: Case, *, generate_fn, judge_fn) -> CaseResult:
             id=case.id, category=case.category, user_message=case.user_message,
             reply=reply, assertion_failures=failures, judge=None,
         )
-    verdict = None if case.rubric.is_empty() else await judge_fn(case, reply)
+    try:
+        verdict = None if case.rubric.is_empty() else await judge_fn(case, reply)
+    except Exception as e:  # errore del giudice (troncamento, rete) = infra, non un 'fail'
+        return CaseResult(
+            id=case.id, category=case.category, user_message=case.user_message,
+            reply=reply, error=f"errore giudice (non valutato): {e}",
+        )
     return CaseResult(
         id=case.id, category=case.category, user_message=case.user_message,
         reply=reply, assertion_failures=[], judge=verdict,
