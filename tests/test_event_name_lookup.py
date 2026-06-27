@@ -65,6 +65,23 @@ def test_finds_artist_only_in_lineup_real_case():
     assert find_event_dates_by_name("gate_sardinia", "suona Kamelia?") == [expected]
 
 
+def test_finds_short_allowlisted_artist_gue():
+    # "Guè" è 3 lettere → sotto la soglia anti-rumore, ma è un headliner di richiamo
+    # in allowlist: senza questo non si risolverebbe (caso reale "gue"/"Guè").
+    _seed("gate_sardinia", "Guè", 19)
+    ts = _today_start_utc() + 19 * 86400
+    import datetime as _dt
+    expected = _dt.datetime.fromtimestamp(ts, tz=_dt.timezone.utc).strftime("%Y-%m-%d")
+    assert find_event_dates_by_name("gate_sardinia", "c'è Guè?") == [expected]
+    assert find_event_dates_by_name("gate_sardinia", "vorrei un tavolo per gue") == [expected]
+
+
+def test_short_non_allowlisted_token_still_ignored():
+    # nome corto NON in allowlist resta filtrato (no falsi positivi su parole brevi)
+    _seed("gate_sardinia", "Sun", 19)
+    assert find_event_dates_by_name("gate_sardinia", "sun") == []
+
+
 def test_finds_multiword_artist_in_lineup():
     # artista a due parole presente solo in lineup
     _seed("gate_sardinia", "Leon, Yaya", 20, artists=["Leon", "Matthias Tanzmann", "Yaya"])
