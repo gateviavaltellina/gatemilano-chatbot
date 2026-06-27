@@ -247,28 +247,55 @@ async def get_vip_tables_sardinia(sanity_id: str) -> str:
         _sardinia_cache[sanity_id] = {"text": "", "ts": time.time()}
         return ""
 
-    available = [t for t in tables if t.get("stato") == "libero"]
-    unavailable = [t for t in tables if t.get("stato") != "libero"]
-
-    def _row(t: dict) -> str:
-        zona = t.get("zona", "VIP")
-        cod = t.get("code", "")
-        cop = t.get("coperti")
-        cop_str = f" — max {cop} persone" if cop else ""
-        return f"{zona} {cod}{cop_str}".strip()
-
     booking_url = f"{base}/tavoli?event={sanity_id}"
-
-    if available:
-        lines = ["TAVOLI VIP DISPONIBILI (prenotazione e pagamento online):"]
-        for t in available:
-            lines.append(f"- {_row(t)}: minimo €{t.get('price')} → libero")
-        for t in unavailable:
-            lines.append(f"- {_row(t)}: minimo €{t.get('price')} — NON DISPONIBILE")
-        body = "\n".join(lines)
-    else:
-        body = "TAVOLI VIP: tutti esauriti per questo evento."
-
-    text = f"{body}\nPRENOTA E PAGA ONLINE: {booking_url}"
+    text = _format_sardinia_tables(tables, booking_url)
     _sardinia_cache[sanity_id] = {"text": text, "ts": time.time()}
     return text
+
+
+# Sotto questa soglia (per zona) elenca i singoli tavoli per nome, così il bot può
+# dire "restano TERRAZZA T3 e T7"; sopra, riassume per non iniettare muri di righe.
+_SARDINIA_TABLE_DETAIL_MAX = 4
+
+
+def _sardinia_combo_str(tables: list) -> str:
+    """Fascia prezzi/coperti distinti tra i tavoli dati: '€300 (6 persone), €600 (10 persone)'."""
+    combos = sorted(
+        {(t.get("price"), t.get("coperti")) for t in tables},
+        key=lambda c: (c[0] is None, c[0]),
+    )
+    parts = []
+    for price, cop in combos:
+        cop_str = f" ({cop} persone)" if cop else ""
+        parts.append(f"€{price}{cop_str}")
+    return ", ".join(parts)
+
+
+def _format_sardinia_tables(tables: list, booking_url: str) -> str:
+    """Blocco RAG disponibilità tavoli Sardegna. Riassume per zona quando i liberi sono
+    molti (conteggio + fascia prezzi); elenca i singoli tavoli quando ne restano pochi.
+    Ritorna "" se non ci sono tavoli."""
+    if not tables:
+        return ""
+
+    zones = sorted({(t.get("zona") or "VIP") for t in tables})
+    free_total = [t for t in tables if t.get("stato") == "libero"]
+    if not free_total:
+        return f"TAVOLI VIP: tutti esauriti per questo evento.\nPRENOTA E PAGA ONLINE: {booking_url}"
+
+    lines = ["TAVOLI VIP DISPONIBILI (prenotazione e pagamento online):"]
+    for zona in zones:
+        free = [t for t in tables if (t.get("zona") or "VIP") == zona and t.get("stato") == "libero"]
+        if not free:
+            lines.append(f"- {zona}: esauriti")
+            continue
+        if len(free) > _SARDINIA_TABLE_DETAIL_MAX:
+            lines.append(f"- {zona}: {len(free)} tavoli liberi — {_sardinia_combo_str(free)}")
+        else:
+            for t in sorted(free, key=lambda t: t.get("code") or ""):
+                cop = t.get("coperti")
+                cop_str = f" (max {cop} persone)" if cop else ""
+                lines.append(f"- {zona} {t.get('code', '')}{cop_str} — €{t.get('price')} → libero")
+
+    body = "\n".join(lines)
+    return f"{body}\nPRENOTA E PAGA ONLINE: {booking_url}"
