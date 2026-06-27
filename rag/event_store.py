@@ -208,7 +208,15 @@ def find_event_dates_by_name(venue: str, text: str, days: int = 80, limit: int =
         ts = m.get("date_ts", 0)
         if not (today_ts <= ts <= end_ts):
             continue
-        name_tokens = {t for t in _norm_name(m.get("event_name", "")).split() if len(t) >= 4}
+        # Cerca su titolo + lineup: un artista può essere in `artists` (Sanity) ma
+        # NON nel titolo (es. Sardinia 10/7: titolo "Davide T", in lineup anche
+        # Kamelia/Dfifonte/Asci). Senza questo, chi chiede di quegli artisti non
+        # troverebbe la serata.
+        searchable = m.get("event_name", "")
+        artists = m.get("artists")
+        if artists:
+            searchable += " " + " ".join(artists)
+        name_tokens = {t for t in _norm_name(searchable).split() if len(t) >= 4}
         if tokens & name_tokens:
             di = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
             matched.append((ts, di))

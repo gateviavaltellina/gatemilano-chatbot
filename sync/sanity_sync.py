@@ -34,6 +34,7 @@ GROQ_EVENTS = """*[_type == "event" && date >= $today && defined(title) && title
   title,
   date,
   venue,
+  artists,
   ticketUrl,
   isSoldOut,
   isSellingFast,
@@ -283,10 +284,15 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
     is_selling_fast = event.get("isSellingFast") or False
     genres = event.get("genres") or []
     min_age = event.get("minAge")
+    # Lineup completa (Sanity `artists`): può contenere artisti NON presenti nel
+    # titolo. Va nel documento (così il bot sa dire chi suona) e nei metadata (così
+    # find_event_dates_by_name risolve la data anche dal nome di un artista in lineup).
+    artists = [a.strip() for a in (event.get("artists") or []) if a and a.strip()]
 
     date_fmt = _format_date(date_str)
     room_str = f"\nSala: {room}" if room else ""
     genres_str = f"\nGeneri: {', '.join(genres)}" if genres else ""
+    lineup_str = f"\nLineup: {', '.join(artists)}" if artists else ""
     # Età minima per-evento da Sanity. Accetta numero (16/18) o stringa ("16+", "18+").
     # Se valorizzata è ESPLICITA e prioritaria per il bot (vedi regola ETÀ nel system prompt).
     age_str = ""
@@ -313,6 +319,7 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
         f"Venue: {venue_label}"
         f"{room_str}\n"
         f"Data: {date_fmt}"
+        f"{lineup_str}"
         f"{genres_str}"
         f"{age_str}"
         f"{about_str}"
@@ -338,6 +345,7 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
         "type": "event",
         "source": "sanity",
         "event_name": title,
+        "artists": artists,
         "date": date_str,
         "date_ts": date_ts,
         "venue": venue_label,
