@@ -53,14 +53,20 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     planning ahead; full event details are only injected for explicitly queried dates.
     """
     lower_text = text.lower()
+    other_venue = _OTHER_VENUE.get(venue, "gate_milano")
+    other_venue_name = _OTHER_VENUE_NAME.get(venue, "Gate Milano")
+    channel = _VENUE_CHANNEL.get(venue, "gate-milano")
+
     query_dates = extract_query_dates(text)
     # Nessuna data esplicita ma l'utente cita un evento per nome/artista (anche oltre
     # i "prossimi giorni"): risolvilo in data così entrano dettagli evento e tavoli.
     if not query_dates:
         query_dates = find_event_dates_by_name(venue, text)
-    other_venue = _OTHER_VENUE.get(venue, "gate_milano")
-    other_venue_name = _OTHER_VENUE_NAME.get(venue, "Gate Milano")
-    channel = _VENUE_CHANNEL.get(venue, "gate-milano")
+    # Cross-venue per nome: se l'artista/evento non è di QUESTA venue, prova l'ALTRA
+    # (caso reale: "Guè"/"Melons"/"Rondodasosa" citati sul canale Milano ma in
+    # cartellone a Gate Sardinia). Così scattano evento e tavoli dell'altra location.
+    if not query_dates:
+        query_dates = find_event_dates_by_name(other_venue, text)
 
     # Check history for VIP topic — last 6 messages (3 turns)
     history_text = " ".join(

@@ -51,6 +51,26 @@ async def test_cross_venue_tables_injected_and_labeled():
 
 
 @pytest.mark.asyncio
+async def test_cross_venue_resolves_artist_date_from_other_venue():
+    # "Melons" è in cartellone SOLO a Gate Sardinia (5/7); cliente sul canale Milano.
+    # Senza risoluzione cross-venue del nome, il bot direbbe "non in programma".
+    _seed("gate_sardinia", "tba-2026-07-05-x", "Lubi, Melons, Overlapa", "2026-07-05")
+    ctx, dates = await cb.build_rag_context("gate_milano", "c'è una serata con Melons?")
+    assert dates == ["2026-07-05"]
+    assert "Lubi, Melons, Overlapa" in ctx
+    assert "venue diversa" in ctx.lower()
+
+
+@pytest.mark.asyncio
+async def test_same_venue_name_wins_over_other(monkeypatch):
+    # se l'artista è di QUESTA venue, si risolve qui e non si pesca dall'altra
+    _seed("gate_milano", "ev-mi", "Notorious Vol.1", "2026-06-29")
+    _seed("gate_sardinia", "ev-sa", "Notorious Sardegna", "2026-07-02")
+    ctx, dates = await cb.build_rag_context("gate_milano", "quando c'è Notorious?")
+    assert dates == ["2026-06-29"]
+
+
+@pytest.mark.asyncio
 async def test_same_venue_tables_not_labeled_other(monkeypatch):
     # se l'evento è della stessa venue del canale, nessuna etichetta cross-venue
     async def _milano_tables(name, date_iso):
