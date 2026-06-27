@@ -73,33 +73,14 @@ def _add_to_history(conv: dict, role: str, content: str, max_history: int) -> No
 
 
 # --- Drinklist (venue-aware) ---
-_DRINKLIST_BASE = "https://gatemilano-chatbot-production.up.railway.app/static"
-# venue → (url PDF, filename mostrato all'utente). Venue assente → nessun invio.
-_DRINKLISTS: dict[str, tuple[str, str]] = {
-    "gate_milano": (f"{_DRINKLIST_BASE}/drinklist_perreo.pdf", "Drinklist VIP Perreo.pdf"),
-    "gate_sardinia": (f"{_DRINKLIST_BASE}/drinklist_sardegna.pdf", "Drinklist VIP Gate Sardinia.pdf"),
-}
-# Trigger IMPLICITI: si parla di tavoli/VIP → invio proattivo del PDF, una sola volta.
-_DRINKLIST_TRIGGERS = ["tavolo", "tavoli", "vip", "bottle", "bottiglia", "minimo", "perreo xl"]
-# Richieste ESPLICITE del listino → invia SEMPRE (anche se già inviato): l'utente lo
-# sta chiedendo direttamente ("mi giri il listino bottiglie?", "inviami la drinklist").
-_DRINKLIST_EXPLICIT = [
-    "drinklist", "drink list", "listino", "bottiglie", "lista bottiglie",
-    "lista drink", "carta bottiglie", "carta drink",
-]
+# Config e logica condivise coi canali (vedi notifications/drinklist.py). Su WhatsApp
+# alleghiamo il PDF; gli alias _DRINKLISTS/_should_send_drinklist restano per compat.
+from notifications.drinklist import (  # noqa: E402
+    DRINKLISTS as _DRINKLISTS,
+    should_send_drinklist as _should_send_drinklist,
+)
+
 _drinklist_sent: set[str] = set()
-
-
-def _should_send_drinklist(venue: str, lower_text: str, lower_reply: str, already_sent: bool) -> bool:
-    """Decide se allegare il PDF della drinklist. Richiesta esplicita → sempre;
-    trigger implicito (si parla di tavoli/VIP) → solo se non già inviato a questo utente."""
-    if venue not in _DRINKLISTS:
-        return False
-    if any(t in lower_text for t in _DRINKLIST_EXPLICIT):
-        return True
-    if not already_sent and any(t in lower_text or t in lower_reply for t in _DRINKLIST_TRIGGERS):
-        return True
-    return False
 
 # --- Ignored phones ---
 _ignored_phones: set[str] | None = None

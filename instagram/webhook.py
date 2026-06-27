@@ -13,6 +13,7 @@ from ai.claude_client import generate_response
 from notifications.discord import notify_conversation, notify_human_message, notify_escalation
 from notifications.discord_bot import is_human_takeover
 from notifications.escalation import detect_sensitive
+from notifications.drinklist import should_send_drinklist, drinklist_link_message
 from instagram.client import send_ig_message, react_to_message
 
 router = APIRouter()
@@ -175,6 +176,14 @@ async def process_ig_message(ig_account_id: str, sender_id: str, text: str) -> N
     _add_to_history(conv, "assistant", reply)
 
     await send_ig_message(ig_account_id, sender_id, reply)
+
+    # Drinklist: IG non può allegare PDF → invia il LINK come testo. Flag per
+    # conversazione (persistito con la conv) per non re-inviarlo a ogni messaggio.
+    if should_send_drinklist(venue, text.lower(), reply.lower(), conv.get("drinklist_sent", False)):
+        link_msg = drinklist_link_message(venue)
+        if link_msg:
+            await send_ig_message(ig_account_id, sender_id, link_msg)
+            conv["drinklist_sent"] = True
 
     sensitive = detect_sensitive(text)
     if sensitive:

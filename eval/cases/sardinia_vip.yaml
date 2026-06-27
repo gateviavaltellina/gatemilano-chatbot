@@ -131,13 +131,16 @@
 - id: sard-extra-tables-drinklist-1
   category: vip-tables
   venue: gate_sardinia
+  # La drinklist parte in automatico dal sistema (PDF su WhatsApp, link su
+  # Instagram). Il bot deve solo dire che la invia qui in chat, senza rimandare
+  # allo staff e senza inventare un URL nel testo (al formato pensa il sistema).
   user_message: mi mandi il link della drink list dei tavoli cosi scelgo le bottiglie prima?
   rubric:
     must:
-    - Deve indicare che la drinklist VIP viene inviata / è stata inviata come documento PDF in chat
+    - Deve indicare che la drinklist VIP viene inviata / è stata inviata direttamente qui in chat
     must_not:
-    - Non deve fornire o promettere un link alla drinklist (e un PDF, non un link)
-    - Non deve rimandare allo staff (vip@gatesardinia.it / WhatsApp) per ottenere la drinklist: la invia direttamente il bot in PDF
+    - Non deve rimandare allo staff (vip@gatesardinia.it / WhatsApp) per ottenere la drinklist
+    - Non deve inventare un URL/link della drinklist nel testo della risposta
     - Non deve inventare prezzi delle bottiglie
 - id: sard-extra-tables-age-1
   category: vip-tables
