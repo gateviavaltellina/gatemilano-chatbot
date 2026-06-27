@@ -142,10 +142,13 @@
 - id: sard-extra-tables-age-1
   category: vip-tables
   venue: gate_sardinia
+  # Policy Gate Sardinia: un minore accompagnato da un maggiorenne puo' stare al
+  # tavolo (come per l'ingresso); il servizio alcolici resta pero' riservato ai 18+.
   user_message: se prendiamo un tavolo mia sorella che ha 17 anni puo stare al tavolo con noi?
   rubric:
     must:
-    - Deve indicare che l'eta minima al tavolo e 18 anni (come per l'ingresso)
+    - Deve indicare che la sorella 17enne puo' stare al tavolo essendo accompagnata da maggiorenni
+    - Deve precisare che il servizio di alcolici resta riservato ai 18+, quindi a lei non vengono serviti alcolici
     must_not:
-    - Non deve permettere l'accesso al tavolo a un minore di 18 anni
-    - Non deve accettare la patente come documento
+    - Non deve negare alla 17enne di stare al tavolo accompagnata
+    - Non deve dire che a una 17enne possono essere serviti alcolici

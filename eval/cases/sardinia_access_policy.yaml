@@ -19,15 +19,31 @@
 - id: sard-age-document-2
   category: age-document
   venue: gate_sardinia
+  # Policy Gate Sardinia: un minore puo' entrare se ACCOMPAGNATO da un maggiorenne;
+  # da solo no. Qui l'utente non specifica accompagnamento → va spiegata l'opzione.
   user_message: ho 17 anni posso entrare?
   rubric:
     must:
-    - Dichiara che l'ingresso e riservato ai maggiorenni (18+)
-    - Spiega che con 17 anni non e possibile entrare
+    - Chiarisce che da solo un minorenne non puo' entrare, ma accompagnato da un maggiorenne si' (a Gate Sardinia non sono rigidi su questo)
     - Mantiene un tono cortese da staff di Gate Sardinia
     must_not:
-    - Afferma che un diciassettenne puo entrare liberamente
-    - Inventa un'eccezione 16+ non dichiarata nel contesto
+    - Afferma che un diciassettenne puo' entrare da solo senza un adulto
+    - Nega del tutto l'ingresso senza menzionare la possibilita' di entrare accompagnato da un maggiorenne
+    - Si dichiara bot, AI o assistente virtuale
+- id: sard-age-minore-accompagnato
+  category: age-document
+  venue: gate_sardinia
+  # Caso reale (chat IG 27/6, Melons 5/7): un 12enne accompagnato da un maggiorenne
+  # a Gate Sardinia PUO' entrare. Il bot live rispondeva erroneamente "no, 18+,
+  # nessuna eccezione anche se accompagnato".
+  user_message: ciao ho 12 anni, con un maggiorenne posso entrare alla serata del 5 luglio?
+  rubric:
+    must:
+    - Conferma che a Gate Sardinia un minore puo' entrare se accompagnato da un maggiorenne, quindi si', accompagnato puo' entrare anche a 12 anni
+    - Ricorda che il documento d'identita' originale e' sempre obbligatorio
+    must_not:
+    - Nega l'ingresso al minore accompagnato da un maggiorenne
+    - Afferma che il minore possa consumare alcolici
     - Si dichiara bot, AI o assistente virtuale
 - id: sard-age-document-3
   category: age-document
@@ -77,16 +93,17 @@
 - id: sard-age-document-6
   category: age-document
   venue: gate_sardinia
+  # "mio figlio ha 16 anni" → il genitore (maggiorenne) lo accompagna: a Gate
+  # Sardinia un minore accompagnato da un maggiorenne puo' entrare a qualsiasi eta'.
   user_message: mio figlio ha 16 anni, per il Perreo XL del 4 luglio puo venire?
   rag_context: "EVENTO: Perreo XL\nVenue: Gate Sardinia\nData: 4 July 2026\nDescrizione: Sabato 4 luglio Perreo XL arriva in Sardegna\nPrezzi:\n  a partire da €11.50\n  - Posto Unico: a partire da €10.00\n  - VIP: a partire da €45.00\nAcquista biglietti: https://www.ticketsms.it/event/Perreo-Xl-Budoni-Gate-Sardinia-04-07-2026"
   rubric:
     must:
-    - Dichiara che l'ingresso e 18+
-    - Spiega che il contesto dell'evento Perreo XL non dichiara un'eccezione 16+, quindi un sedicenne non puo entrare
+    - Spiega che il sedicenne puo' entrare se accompagnato da un maggiorenne (es. il genitore stesso), perche' a Gate Sardinia i minori sono ammessi se accompagnati
     - Mantiene il tono cortese di Charlie dello staff di Gate Sardinia
     must_not:
-    - Afferma che un sedicenne possa entrare a questo evento
-    - Inventa un'eccezione 16+ non presente nel contesto dell'evento
+    - Nega l'ingresso al sedicenne accompagnato da un maggiorenne
+    - Afferma che il servizio di alcolici sia consentito a un minore
     - Si dichiara bot, AI o assistente virtuale
   assertions:
     forbidden_substrings:
@@ -430,7 +447,7 @@
 - id: sard-refunds-reentry-3
   category: refunds-reentry
   venue: gate_sardinia
-  user_message: ciao, ero da voi sabato sera ma c'e stato un problema e vorrei chiedere il rimborso del biglietto. come devo fare? cosa vi serve?
+  user_message: ciao, ho un biglietto per una vostra serata ma c'e stato un problema e vorrei chiedere il rimborso. come devo fare? cosa vi serve?
   rubric:
     must:
     - Deve indicare che la richiesta va inviata a info@gatesardinia.it
