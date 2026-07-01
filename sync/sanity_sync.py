@@ -2,11 +2,23 @@ import re
 import json
 import httpx
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 from rag.event_store import upsert_event, delete_stale_events
+from rag.date_utils import CLUB_NIGHT_ROLLOVER_HOUR
 
 _ROME = ZoneInfo("Europe/Rome")
+
+
+def _service_day(dt_rome: datetime):
+    """Giorno 'di servizio' del club per un istante già in fuso Rome: una serata che
+    inizia dopo mezzanotte appartiene ancora alla NOTTE precedente, quindi applichiamo
+    lo stesso rollover di date_utils.business_now (−6h).
+
+    Necessario perché Sanity Sardegna salva le date come '<giorno>T22:00:00Z', cioè
+    00:00 Rome del GIORNO DOPO: senza rollover l'evento del 4 luglio finirebbe
+    indicizzato (e mostrato) come 5 luglio, e 'questo sabato' non lo troverebbe."""
+    return (dt_rome - timedelta(hours=CLUB_NIGHT_ROLLOVER_HOUR)).date()
 
 logger = logging.getLogger(__name__)
 
@@ -269,7 +281,12 @@ def _format_date(date_str: str) -> str:
         if "T" in date_str:
             dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
             dt_rome = dt.astimezone(_ROME)
-            return dt_rome.strftime("%-d %B %Y, ore %H:%M")
+            svc = _service_day(dt_rome)
+            # Ora reale d'inizio; se è mezzanotte (data inserita senza orario) mostra
+            # solo il giorno per non scrivere un fuorviante "ore 00:00".
+            if dt_rome.hour == 0 and dt_rome.minute == 0:
+                return svc.strftime("%-d %B %Y")
+            return f"{svc.strftime('%-d %B %Y')}, ore {dt_rome.strftime('%H:%M')}"
         else:
             dt = datetime.strptime(date_str, "%Y-%m-%d")
             return dt.strftime("%-d %B %Y")
@@ -329,15 +346,18 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
         f"{ticket_str}"
     ).strip()
 
-    # date_ts: midnight UTC del giorno locale Europe/Rome — per filtraggio ChromaDB
-    # Es: "2026-05-08T22:00Z" = "2026-05-09 00:00 CEST" → date_ts = May 9 midnight UTC
+    # date_ts: midnight UTC del GIORNO DI SERVIZIO (rollover −6h, vedi _service_day).
+    # Es: "2026-07-04T22:00Z" = "2026-07-05 00:00 Rome" → serata del 4 → date_ts = 4 luglio.
+    # Coerente con event_store._today_start_utc / date_utils.business_now, così una serata
+    # a cavallo di mezzanotte è indicizzata sul giorno che l'utente intende ("questo sabato").
     date_ts = 0
     try:
         from datetime import datetime, timezone as tz
         if "T" in date_str:
             dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
             dt_rome = dt.astimezone(_ROME)
-            date_ts = int(datetime(dt_rome.year, dt_rome.month, dt_rome.day, tzinfo=tz.utc).timestamp())
+            svc = _service_day(dt_rome)
+            date_ts = int(datetime(svc.year, svc.month, svc.day, tzinfo=tz.utc).timestamp())
         else:
             date_ts = int(datetime.strptime(date_str[:10], "%Y-%m-%d").replace(tzinfo=tz.utc).timestamp())
     except Exception:
