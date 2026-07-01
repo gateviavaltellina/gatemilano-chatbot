@@ -57,16 +57,24 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     other_venue_name = _OTHER_VENUE_NAME.get(venue, "Gate Milano")
     channel = _VENUE_CHANNEL.get(venue, "gate-milano")
 
-    query_dates = extract_query_dates(text)
-    # Nessuna data esplicita ma l'utente cita un evento per nome/artista (anche oltre
-    # i "prossimi giorni"): risolvilo in data così entrano dettagli evento e tavoli.
-    if not query_dates:
-        query_dates = find_event_dates_by_name(venue, text)
+    explicit_dates = extract_query_dates(text)
+    # Risolvi SEMPRE anche l'evento citato per nome/artista, non solo come fallback
+    # quando manca la data. Caso reale (Perreo XL "questo sabato"): l'utente dà una
+    # data relativa che cade sul giorno X, ma l'evento in Sanity è indicizzato su un
+    # giorno adiacente (orario di inizio a cavallo di mezzanotte → date_ts spostato di
+    # un giorno, vedi sanity_sync._build_document). Con la sola data non troveremmo
+    # l'evento e il bot risponderebbe "non ho i dettagli" pur avendone in Sanity.
+    name_dates = find_event_dates_by_name(venue, text)
     # Cross-venue per nome: se l'artista/evento non è di QUESTA venue, prova l'ALTRA
     # (caso reale: "Guè"/"Melons"/"Rondodasosa" citati sul canale Milano ma in
     # cartellone a Gate Sardinia). Così scattano evento e tavoli dell'altra location.
-    if not query_dates:
-        query_dates = find_event_dates_by_name(other_venue, text)
+    if not name_dates:
+        name_dates = find_event_dates_by_name(other_venue, text)
+    # Le date risolte per nome vengono PRIMA: sono la data esatta in cui l'evento è
+    # archiviato, mentre una data relativa ("questo sabato") è solo l'approssimazione
+    # dell'utente e può cadere su un giorno adiacente. query_dates[0] guida anche il
+    # lookup tavoli VIP, che va fatto sul giorno giusto.
+    query_dates = list(dict.fromkeys(name_dates + explicit_dates))
 
     # Check history for VIP topic — last 6 messages (3 turns)
     history_text = " ".join(
