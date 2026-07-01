@@ -71,6 +71,22 @@ async def test_same_venue_name_wins_over_other(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_named_event_resolved_even_with_relative_date():
+    # Caso reale Perreo XL: l'utente cita l'evento per NOME e dà una data relativa
+    # ("questo sabato" → 4 luglio), ma in Sanity l'evento è indicizzato sul giorno
+    # adiacente (orario di inizio a cavallo di mezzanotte → date_ts sul 5). La sola
+    # data relativa non lo troverebbe; la risoluzione per nome sì. Il bot NON deve
+    # più rispondere "non ho i dettagli" quando l'evento è in Sanity.
+    _seed("gate_sardinia", "ev-perreo", "Perreo XL", "2026-07-05")
+    ctx, dates = await cb.build_rag_context(
+        "gate_sardinia", "che differenza c'è tra i biglietti del Perreo XL di questo sabato?"
+    )
+    # il 4 luglio ("questo sabato") non ha eventi in store, ma il nome risolve il 5
+    assert "2026-07-05" in dates
+    assert "Perreo XL" in ctx
+
+
+@pytest.mark.asyncio
 async def test_same_venue_tables_not_labeled_other(monkeypatch):
     # se l'evento è della stessa venue del canale, nessuna etichetta cross-venue
     async def _milano_tables(name, date_iso):
