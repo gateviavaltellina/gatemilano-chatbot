@@ -3,7 +3,6 @@ import hmac
 import logging
 import uvicorn
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
 from fastapi import FastAPI, BackgroundTasks, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -96,17 +95,16 @@ async def _init_background():
             id="persist_state",
             replace_existing=True,
         )
-        scheduler.add_job(
-            sync_all_venues,
-            "date",
-            run_date=datetime.now() + timedelta(seconds=5),
-            id="sanity_sync_startup",
-        )
         scheduler.start()
         logger.info("Scheduler avviato con %d job", len(scheduler.get_jobs()))
     except Exception:
         logger.exception("Errore avvio scheduler — riprovo sync diretto")
-        asyncio.create_task(sync_all_venues())
+    # Sync di startup DIRETTO, non via scheduler: il vecchio job "date" usava
+    # datetime.now() naive (orologio container = UTC) su scheduler Europe/Rome →
+    # APScheduler lo leggeva come ora di Roma, cioè 2 ore nel passato → misfire
+    # scartato: su Railway il sync di startup NON PARTIVA MAI e il bot restava
+    # senza eventi fino al primo cron utile.
+    asyncio.create_task(sync_all_venues())
     asyncio.create_task(start_discord_bot())
     _ready = True
     logger.info("Bot pronto. In ascolto su porta %d", settings.port)
