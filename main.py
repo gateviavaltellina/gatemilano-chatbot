@@ -23,6 +23,17 @@ async def sync_all_venues():
     await _xceed_sync()
 
 
+async def sync_watchdog():
+    """Rete di sicurezza: se una venue è rimasta SENZA eventi (sync di startup
+    fallito, errore prolungato), riprova il sync senza aspettare il cron da 2 ore.
+    No-op quando lo store è popolato."""
+    from rag.event_store import count
+    empty = [v for v in ("gate_milano", "gate_sardinia") if count(v) == 0]
+    if empty:
+        logger.warning("Watchdog: store eventi vuoto per %s — risincronizzo", ", ".join(empty))
+        await sync_all_venues()
+
+
 async def nightly_cleanup():
     from whatsapp.webhook import prune_conversations
     from instagram.webhook import prune_ig_conversations
@@ -47,18 +58,21 @@ async def _init_background():
     # così un riavvio/deploy non azzera storia chat e human takeover.
     persistence.load_state()
     try:
-        # Sync ogni 2 ore durante la giornata (08-23)
+        # Sync ogni 2 ore, H24. Lo staff di un club pubblica gli eventi di SERA/NOTTE:
+        # il vecchio schema (08-23 + 04:00) lasciava un buco 22:00→04:00→08:00 in cui
+        # un evento appena pubblicato restava invisibile al bot per ore.
         scheduler.add_job(
             sync_all_venues,
-            CronTrigger(hour="8-23", minute=0, step=2),
+            CronTrigger(hour="*/2", minute=0),
             id="sanity_sync_hourly",
             replace_existing=True,
         )
-        # Sync notturno alle 4
+        # Watchdog: se lo store eventi di una venue è vuoto (startup sync fallito),
+        # riprova ogni 10 minuti invece di aspettare il cron.
         scheduler.add_job(
-            sync_all_venues,
-            CronTrigger(hour=4, minute=0),
-            id="sanity_sync_night",
+            sync_watchdog,
+            CronTrigger(minute="*/10"),
+            id="sync_watchdog",
             replace_existing=True,
         )
         scheduler.add_job(

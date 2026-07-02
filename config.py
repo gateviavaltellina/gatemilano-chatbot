@@ -59,6 +59,13 @@ class Settings(BaseSettings):
     # Vuoto = endpoint disabilitato (404).
     eval_export_token: str = ""
 
+    # Token API Sanity (sola lettura). Se impostato, il sync eventi legge anche le
+    # BOZZE (perspective previewDrafts): il bot vede quello che lo staff vede in
+    # Studio, anche PRIMA del publish — un evento creato ma mai pubblicato non
+    # "sparisce" più. Vuoto = solo documenti pubblicati (default sicuro).
+    # Si crea su sanity.io/manage → project → API → Tokens (ruolo Viewer basta).
+    sanity_api_token: str = ""
+
     # Secret per il webhook Sanity (POST /webhook/sanity): permette il sync immediato
     # alla pubblicazione/modifica di un evento, senza aspettare il polling. Lo si passa
     # via header X-Webhook-Secret / Authorization: Bearer, o query ?key=. Vuoto =
