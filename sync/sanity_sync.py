@@ -22,7 +22,9 @@ def _service_day(dt_rome: datetime):
 
 logger = logging.getLogger(__name__)
 
-SANITY_API_VERSION = "2021-10-21"
+# v2023-08-01+ serve per il parametro `perspective` (lettura bozze); le GROQ usate
+# sono basilari e identiche tra versioni.
+SANITY_API_VERSION = "2023-08-01"
 
 SANITY_PROJECTS = {
     "gate_milano": {
@@ -75,13 +77,17 @@ GROQ_BLOG_POSTS = """*[_type == "blogPost"] {
 }"""
 
 
-async def _sanity_get(project_id: str, dataset: str, query: str, params: dict = None) -> dict:
+async def _sanity_get(project_id: str, dataset: str, query: str, params: dict = None,
+                      token: str = "", perspective: str = "") -> dict:
     url = f"https://{project_id}.api.sanity.io/v{SANITY_API_VERSION}/data/query/{dataset}"
     req_params = {"query": query}
     if params:
         req_params.update(params)
+    if perspective:
+        req_params["perspective"] = perspective
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
     async with httpx.AsyncClient(timeout=30) as client:
-        r = await client.get(url, params=req_params)
+        r = await client.get(url, params=req_params, headers=headers)
         r.raise_for_status()
         return r.json()
 
@@ -252,8 +258,16 @@ async def _fetch_events(project_id: str, dataset: str) -> list[dict] | None:
     altrimenti un errore di rete al sync delle 04:00 lascia il bot senza eventi
     fino al sync successivo e risponde 'non ho la programmazione')."""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    from config import settings as _settings
+    token = _settings.sanity_api_token
     try:
-        data = await _sanity_get(project_id, dataset, GROQ_EVENTS, {"$today": f'"{today}"'})
+        # Con token leggiamo anche le BOZZE (previewDrafts): un evento creato in
+        # Studio ma non ancora pubblicato esiste comunque per il bot. Senza token,
+        # solo i pubblicati (l'API pubblica non restituisce i draft).
+        data = await _sanity_get(
+            project_id, dataset, GROQ_EVENTS, {"$today": f'"{today}"'},
+            token=token, perspective="previewDrafts" if token else "",
+        )
         return data.get("result", []) or []
     except Exception as e:
         logger.error("Sanity events fetch error (project=%s): %s", project_id, e)
@@ -307,6 +321,10 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
     raw_title = (event.get("title") or "").strip()
     is_tba = not raw_title or not raw_title.strip("?. …")
     title = "Serata in programma (line-up da annunciare)" if is_tba else raw_title
+    # Bozza Sanity (letta via previewDrafts): l'id è "drafts.<id>". La normalizziamo
+    # all'id pubblicato (per store, dedup e link /tavoli?event=<id>) e segnaliamo nel
+    # documento che i dettagli sono in conferma, così il bot non li vende per definitivi.
+    is_draft = (event.get("_id") or "").startswith("drafts.")
     date_str = event.get("date", "")
     room = event.get("venue") or ""
     ticket_url = event.get("ticketUrl") or ""
@@ -344,6 +362,8 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
     about = xceed.get("about", "")
     about_str = f"\nDescrizione: {about[:600]}" if about else ""
 
+    draft_str = "\nNB: dettagli in via di conferma (evento non ancora pubblicato sul sito)" if is_draft else ""
+
     document = (
         f"EVENTO: {title}\n"
         f"Venue: {venue_label}"
@@ -355,6 +375,7 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
         f"{about_str}"
         f"{prices_str}"
         f"{ticket_str}"
+        f"{draft_str}"
     ).strip()
 
     # date_ts: midnight UTC del GIORNO DI SERVIZIO (rollover −6h, vedi _service_day).
@@ -382,7 +403,9 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
         "date": date_str,
         "date_ts": date_ts,
         "venue": venue_label,
-        "sanity_id": event.get("_id", ""),
+        # id pubblicato anche per le bozze ("drafts.<id>" → "<id>"): usato per i
+        # link /tavoli?event=<id> e per il dedup col documento post-publish.
+        "sanity_id": (event.get("_id") or "").removeprefix("drafts."),
         "ticket_url": ticket_url,
     }
     return document, metadata
@@ -490,7 +513,9 @@ async def sync_all_venues():
         current_ids = []
         if events is not None:
             for event in events:
-                sanity_id = event.get("_id", "")
+                # id pubblicato anche per le bozze: così quando l'evento viene
+                # pubblicato sostituisce la sua bozza nello store invece di duplicarla.
+                sanity_id = (event.get("_id") or "").removeprefix("drafts.")
                 if not sanity_id:
                     continue
                 ticket_url = event.get("ticketUrl", "")
