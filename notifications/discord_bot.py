@@ -40,6 +40,44 @@ def _phone_from_reply(message: discord.Message):
     return _msg_to_phone.get(mid), _msg_context.get(mid)
 
 
+_EVENTI_VENUES = {"gate_milano": "milano", "gate_sardinia": "sardinia"}
+
+
+def parse_eventi_command(text: str) -> list[str] | None:
+    """Riconosce '!eventi [milano|sardinia]'. Ritorna le venue richieste, [] se
+    l'argomento non è riconosciuto, None se non è il comando !eventi."""
+    t = (text or "").strip()
+    if t == "!eventi":
+        return list(_EVENTI_VENUES)
+    if t.startswith("!eventi "):
+        arg = t[len("!eventi "):].strip().lower()
+        if "sard" in arg or "budoni" in arg:
+            return ["gate_sardinia"]
+        if "mil" in arg:
+            return ["gate_milano"]
+        return []
+    return None
+
+
+def handle_eventi(venues: list[str]) -> str:
+    """Diagnostica staff: cosa ha il bot IN MEMORIA adesso (store eventi).
+    Serve a distinguere in 10 secondi 'il sync non ha l'evento' (problema dati/sync,
+    es. evento assente o titolo placeholder su Sanity) da 'il bot ce l'ha ma risponde
+    male' (problema di prompt/recupero) — senza aspettare lo screenshot di un cliente."""
+    from rag.event_store import count, get_upcoming_events_compact
+    if not venues:
+        return "❌ Venue sconosciuta. Usa: !eventi, !eventi milano, !eventi sardinia"
+    parts = []
+    for v in venues:
+        label = v.replace("_", " ").title()
+        compact = get_upcoming_events_compact(v, days=14)
+        header = f"📅 **{label}** — {count(v)} eventi in memoria"
+        parts.append(f"{header}\n{compact}" if compact else f"{header}\n(nessun evento nei prossimi 14 giorni)")
+    out = "\n\n".join(parts)
+    # Limite messaggi Discord: 2000 caratteri
+    return out if len(out) <= 1900 else out[:1900] + "\n…(troncato)"
+
+
 def parse_correction_command(text: str):
     """Riconosce i comandi correzione. Ritorna (cmd, payload) o (None, '').
 
@@ -125,6 +163,13 @@ async def on_message(message: discord.Message):
 
     content = message.content.strip()
     phone, ctx = _phone_from_reply(message)
+
+    # !eventi è diagnostica read-only: funziona in QUALUNQUE canale il bot legga
+    # (lo staff usa canali diversi per venue), quindi PRIMA del filtro canale.
+    eventi_venues = parse_eventi_command(content)
+    if eventi_venues is not None:
+        await message.reply(handle_eventi(eventi_venues), mention_author=False)
+        return
 
     # Le notifiche WhatsApp e Instagram vivono su canali Discord DIVERSI. Una reply
     # a una notifica registrata del bot va gestita in QUALUNQUE canale (altrimenti

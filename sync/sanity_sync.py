@@ -41,7 +41,7 @@ SANITY_PROJECTS = {
     },
 }
 
-GROQ_EVENTS = """*[_type == "event" && date >= $today && defined(title) && title != "?????"] | order(date asc) {
+GROQ_EVENTS = """*[_type == "event" && date >= $today] | order(date asc) {
   _id,
   title,
   date,
@@ -245,14 +245,19 @@ async def _fetch_xceed_enrichment(xceed_id: str, xceed_api_key: str) -> dict:
     return result
 
 
-async def _fetch_events(project_id: str, dataset: str) -> list[dict]:
+async def _fetch_events(project_id: str, dataset: str) -> list[dict] | None:
+    """Lista eventi futuri, o None su ERRORE di fetch. La distinzione []/None è
+    fondamentale: [] = 'Sanity dice che non ci sono eventi' (ok svuotare lo store),
+    None = 'non ho potuto chiedere a Sanity' (lo store esistente va PRESERVATO,
+    altrimenti un errore di rete al sync delle 04:00 lascia il bot senza eventi
+    fino al sync successivo e risponde 'non ho la programmazione')."""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     try:
         data = await _sanity_get(project_id, dataset, GROQ_EVENTS, {"$today": f'"{today}"'})
         return data.get("result", []) or []
     except Exception as e:
         logger.error("Sanity events fetch error (project=%s): %s", project_id, e)
-        return []
+        return None
 
 
 async def _fetch_site_settings(project_id: str, dataset: str) -> dict:
@@ -295,7 +300,13 @@ def _format_date(date_str: str) -> str:
 
 
 def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[str, dict]:
-    title = event.get("title", "Evento").strip()
+    # Titoli placeholder ("?????", vuoti): l'evento ESISTE in cartellone e va comunque
+    # indicizzato — data, sala, prezzi e link biglietti sono informazioni vere. Prima
+    # questi eventi venivano filtrati via nella GROQ e il bot rispondeva "non ho la
+    # programmazione" pur avendo l'evento su Sanity (caso reale sabato 4 luglio).
+    raw_title = (event.get("title") or "").strip()
+    is_tba = not raw_title or not raw_title.strip("?. …")
+    title = "Serata in programma (line-up da annunciare)" if is_tba else raw_title
     date_str = event.get("date", "")
     room = event.get("venue") or ""
     ticket_url = event.get("ticketUrl") or ""
@@ -464,30 +475,40 @@ async def sync_all_venues():
         project_id = cfg["project_id"]
         dataset = cfg["dataset"]
 
-        # Events
+        # Events. Se il fetch FALLISCE (None) non tocchiamo lo store: meglio dati
+        # di qualche ora fa che nessun dato — senza questa guardia un errore di rete
+        # cancellava TUTTI gli eventi della venue (delete_stale con lista vuota) e il
+        # bot rispondeva "non ho la programmazione" fino al sync successivo.
         events = await _fetch_events(project_id, dataset)
-        logger.info("Sanity: %d eventi futuri per %s", len(events), label)
+        if events is None:
+            from rag.event_store import count as _count
+            logger.error(
+                "Sanity: fetch eventi FALLITO per %s — mantengo i %d eventi già in memoria",
+                label, _count(venue_key),
+            )
         from config import settings as _settings
         current_ids = []
-        for event in events:
-            sanity_id = event.get("_id", "")
-            if not sanity_id:
-                continue
-            ticket_url = event.get("ticketUrl", "")
-            xceed_id = _extract_xceed_id(ticket_url)
-            if xceed_id:
-                xceed_data = await _fetch_xceed_enrichment(xceed_id, _settings.xceed_api_key)
-            elif "dice.fm" in ticket_url:
-                desc = await _fetch_dice_description(ticket_url)
-                xceed_data = {"about": desc, "prices_str": ""}
-            elif "ticketsms" in ticket_url:
-                xceed_data = await _fetch_ticketsms_enrichment(ticket_url)
-            else:
-                xceed_data = {"about": "", "prices_str": ""}
-            doc, meta = _build_document(event, label, xceed_data)
-            upsert_event(venue_key, sanity_id, doc, meta)
-            current_ids.append(sanity_id)
-        delete_stale_events(venue_key, current_ids, source="sanity")
+        if events is not None:
+            for event in events:
+                sanity_id = event.get("_id", "")
+                if not sanity_id:
+                    continue
+                ticket_url = event.get("ticketUrl", "")
+                xceed_id = _extract_xceed_id(ticket_url)
+                if xceed_id:
+                    xceed_data = await _fetch_xceed_enrichment(xceed_id, _settings.xceed_api_key)
+                elif "dice.fm" in ticket_url:
+                    desc = await _fetch_dice_description(ticket_url)
+                    xceed_data = {"about": desc, "prices_str": ""}
+                elif "ticketsms" in ticket_url:
+                    xceed_data = await _fetch_ticketsms_enrichment(ticket_url)
+                else:
+                    xceed_data = {"about": "", "prices_str": ""}
+                doc, meta = _build_document(event, label, xceed_data)
+                upsert_event(venue_key, sanity_id, doc, meta)
+                current_ids.append(sanity_id)
+            logger.info("Sanity: %d eventi futuri per %s", len(events), label)
+            delete_stale_events(venue_key, current_ids, source="sanity")
 
         # Site settings (Milano only)
         if cfg.get("has_site_settings"):
