@@ -151,6 +151,17 @@ async def debug_events():
     return {"gate_milano": count("gate_milano"), "gate_sardinia": count("gate_sardinia")}
 
 
+@app.get("/debug/context")
+async def debug_context(venue: str = "gate_sardinia", text: str = "che eventi ci sono sabato?"):
+    """Diagnostica: il contesto RAG COMPLETO che il bot vedrebbe per un messaggio.
+    Permette di distinguere subito 'l'evento non è nello store' (problema sync/dati)
+    da 'c'è ma il bot risponde male' (problema prompt), senza attendere un cliente."""
+    from rag.context_builder import build_rag_context
+    from rag.event_store import count
+    ctx, dates = await build_rag_context(venue, text)
+    return {"venue": venue, "events_in_store": count(venue), "query_dates": dates, "context": ctx}
+
+
 @app.get("/debug/vip")
 async def debug_vip(venue: str = "gate_milano", text: str = "vorrei un tavolo vip"):
     from rag.context_builder import build_rag_context
