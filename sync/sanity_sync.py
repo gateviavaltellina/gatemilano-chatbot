@@ -374,6 +374,14 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
     about_str = f"\nDescrizione: {about[:600]}" if about else ""
 
     draft_str = "\nNB: dettagli in via di conferma (evento non ancora pubblicato sul sito)" if is_draft else ""
+    # Le serate col titolo "?????" sono TOP SECRET di proposito (headliner a
+    # sorpresa): il bot deve confermare la data e creare attesa per l'annuncio,
+    # NON dire "non ho informazioni".
+    tba_str = (
+        "\nNB: data CONFERMATA, line-up top secret — l'annuncio ufficiale arriverà "
+        "a breve sui canali della venue (Instagram): si preannuncia una serata "
+        "da non perdere, tieni d'occhio il profilo."
+    ) if is_tba else ""
 
     document = (
         f"EVENTO: {title}\n"
@@ -386,6 +394,7 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
         f"{about_str}"
         f"{prices_str}"
         f"{ticket_str}"
+        f"{tba_str}"
         f"{draft_str}"
     ).strip()
 
