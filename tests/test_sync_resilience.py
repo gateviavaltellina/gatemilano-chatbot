@@ -58,6 +58,60 @@ async def test_successful_sync_still_removes_stale(monkeypatch):
     assert ids == ["ev-nuovo"]
 
 
+async def test_null_ticketurl_does_not_kill_venue_sync(monkeypatch):
+    # BUG REALE che azzerava Gate Sardinia: le schede TBA hanno "ticketUrl": null
+    # e .get("ticketUrl", "") ritorna None (il default vale solo a chiave assente)
+    # → '"dice.fm" in None' → TypeError al PRIMO evento → 0 eventi per la venue.
+    # Riproduce il payload vero: eventi date-only con ticketUrl null.
+    async def _fake_get(project_id, dataset, query, params=None, token="", perspective=""):
+        if "siteSettings" in query:
+            return {"result": None}
+        if "blogPost" in query:
+            return {"result": []}
+        return {"result": [
+            {"_id": "tba-2026-07-03-x", "title": "Ale De Tuglie", "date": "2026-07-03", "ticketUrl": None},
+            {"_id": "tba-2026-07-04-y", "title": "Perreo XL", "date": "2026-07-04", "ticketUrl": None},
+        ]}
+    monkeypatch.setattr(ss, "_sanity_get", _fake_get)
+
+    await ss.sync_all_venues()
+    assert es.count("gate_sardinia") == 2
+    status = ss.get_last_sync_status()["gate_sardinia"]
+    assert status["ok"] is True
+    assert status["indexed"] == 2
+    assert status["skipped_bad"] == 0
+
+
+async def test_one_bad_event_does_not_block_the_others(monkeypatch):
+    # Una singola scheda malformata si salta (e si conta in skipped_bad),
+    # le altre si indicizzano comunque.
+    async def _fake_get(project_id, dataset, query, params=None, token="", perspective=""):
+        if "siteSettings" in query:
+            return {"result": None}
+        if "blogPost" in query:
+            return {"result": []}
+        return {"result": [
+            {"_id": "ev-bad", "title": "Rotto", "date": "2026-07-03"},
+            {"_id": "ev-ok", "title": "Buono", "date": "2026-07-04"},
+        ]}
+    monkeypatch.setattr(ss, "_sanity_get", _fake_get)
+
+    real_build = ss._build_document
+
+    def _fragile(event, label, xceed=None):
+        if event.get("_id") == "ev-bad":
+            raise TypeError("scheda malformata")
+        return real_build(event, label, xceed)
+    monkeypatch.setattr(ss, "_build_document", _fragile)
+
+    await ss.sync_all_venues()
+    ids = [e["id"] for e in es._store["gate_sardinia"] if e["metadata"].get("type") == "event"]
+    assert ids == ["ev-ok"]
+    status = ss.get_last_sync_status()["gate_sardinia"]
+    assert status["skipped_bad"] == 1
+    assert status["indexed"] == 1
+
+
 async def test_draft_event_is_indexed_with_published_id(monkeypatch):
     # Con SANITY_API_TOKEN il sync legge anche le BOZZE (previewDrafts): un evento
     # creato in Studio ma mai pubblicato non deve "non esistere" per il bot.

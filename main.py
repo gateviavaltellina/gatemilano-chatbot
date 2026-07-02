@@ -19,8 +19,16 @@ import persistence
 
 
 async def sync_all_venues():
-    await _sanity_sync()
-    await _xceed_sync()
+    # I due sync sono isolati: se Sanity solleva, Xceed gira comunque (e viceversa
+    # non serve: Xceed è per ultimo). Un crash qui prima azzerava l'intero giro.
+    try:
+        await _sanity_sync()
+    except Exception:
+        logger.exception("Sync Sanity fallito — continuo con Xceed")
+    try:
+        await _xceed_sync()
+    except Exception:
+        logger.exception("Sync Xceed fallito")
 
 
 async def sync_watchdog():
@@ -182,7 +190,14 @@ async def sanity_webhook(request: Request, background_tasks: BackgroundTasks, ke
 @app.get("/debug/events")
 async def debug_events():
     from rag.event_store import count
-    return {"gate_milano": count("gate_milano"), "gate_sardinia": count("gate_sardinia")}
+    from sync.sanity_sync import get_last_sync_status
+    return {
+        "gate_milano": count("gate_milano"),
+        "gate_sardinia": count("gate_sardinia"),
+        # Esito dell'ultimo sync Sanity per venue (ok/fetched/indexed/skipped_bad/
+        # error/at): dice PERCHÉ una venue è eventualmente senza eventi.
+        "last_sync": get_last_sync_status(),
+    }
 
 
 @app.get("/debug/context")
