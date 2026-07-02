@@ -22,6 +22,14 @@ def _service_day(dt_rome: datetime):
 
 logger = logging.getLogger(__name__)
 
+# Telemetria ultimo sync per venue (esposta su /debug/events): permette di
+# diagnosticare da browser PERCHÉ una venue è senza eventi, senza leggere i log.
+_last_sync: dict[str, dict] = {}
+
+
+def get_last_sync_status() -> dict[str, dict]:
+    return _last_sync
+
 # v2023-08-01+ serve per il parametro `perspective` (lettura bozze); le GROQ usate
 # sono basilari e identiche tra versioni.
 SANITY_API_VERSION = "2023-08-01"
@@ -330,12 +338,15 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
     ticket_url = event.get("ticketUrl") or ""
     is_sold_out = event.get("isSoldOut") or False
     is_selling_fast = event.get("isSellingFast") or False
-    genres = event.get("genres") or []
+    # Le liste da Sanity possono contenere null o riferimenti non risolti: teniamo
+    # solo le stringhe, un valore sporco non deve far saltare l'indicizzazione.
+    genres = [g for g in (event.get("genres") or []) if isinstance(g, str) and g.strip()]
     min_age = event.get("minAge")
     # Lineup completa (Sanity `artists`): può contenere artisti NON presenti nel
     # titolo. Va nel documento (così il bot sa dire chi suona) e nei metadata (così
     # find_event_dates_by_name risolve la data anche dal nome di un artista in lineup).
-    artists = [a.strip() for a in (event.get("artists") or []) if a and a.strip()]
+    artists = [a.strip() for a in (event.get("artists") or [])
+               if isinstance(a, str) and a.strip()]
 
     date_fmt = _format_date(date_str)
     room_str = f"\nSala: {room}" if room else ""
@@ -497,6 +508,9 @@ async def sync_all_venues():
         label = cfg["label"]
         project_id = cfg["project_id"]
         dataset = cfg["dataset"]
+        status = {"ok": False, "fetched": 0, "indexed": 0, "skipped_bad": 0, "error": "",
+                  "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+        _last_sync[venue_key] = status
 
         # Events. Se il fetch FALLISCE (None) non tocchiamo lo store: meglio dati
         # di qualche ora fa che nessun dato — senza questa guardia un errore di rete
@@ -505,6 +519,7 @@ async def sync_all_venues():
         events = await _fetch_events(project_id, dataset)
         if events is None:
             from rag.event_store import count as _count
+            status["error"] = "fetch fallito — store preservato"
             logger.error(
                 "Sanity: fetch eventi FALLITO per %s — mantengo i %d eventi già in memoria",
                 label, _count(venue_key),
@@ -512,50 +527,72 @@ async def sync_all_venues():
         from config import settings as _settings
         current_ids = []
         if events is not None:
+            status["fetched"] = len(events)
             for event in events:
-                # id pubblicato anche per le bozze: così quando l'evento viene
-                # pubblicato sostituisce la sua bozza nello store invece di duplicarla.
-                sanity_id = (event.get("_id") or "").removeprefix("drafts.")
-                if not sanity_id:
-                    continue
-                ticket_url = event.get("ticketUrl", "")
-                xceed_id = _extract_xceed_id(ticket_url)
-                if xceed_id:
-                    xceed_data = await _fetch_xceed_enrichment(xceed_id, _settings.xceed_api_key)
-                elif "dice.fm" in ticket_url:
-                    desc = await _fetch_dice_description(ticket_url)
-                    xceed_data = {"about": desc, "prices_str": ""}
-                elif "ticketsms" in ticket_url:
-                    xceed_data = await _fetch_ticketsms_enrichment(ticket_url)
-                else:
-                    xceed_data = {"about": "", "prices_str": ""}
-                doc, meta = _build_document(event, label, xceed_data)
-                upsert_event(venue_key, sanity_id, doc, meta)
-                current_ids.append(sanity_id)
-            logger.info("Sanity: %d eventi futuri per %s", len(events), label)
+                # Ogni evento è isolato: una SINGOLA scheda malformata (es. ticketUrl
+                # null — bug reale che azzerava Gate Sardinia: "dice.fm" in None →
+                # TypeError al primo evento TBA) non deve mai più far saltare
+                # l'intera venue. La scheda cattiva si salta e si logga.
+                try:
+                    # id pubblicato anche per le bozze: così quando l'evento viene
+                    # pubblicato sostituisce la sua bozza nello store invece di duplicarla.
+                    sanity_id = (event.get("_id") or "").removeprefix("drafts.")
+                    if not sanity_id:
+                        continue
+                    # NB: .get("ticketUrl", "") NON basta — Sanity ritorna la chiave
+                    # con valore null e .get restituirebbe None.
+                    ticket_url = event.get("ticketUrl") or ""
+                    xceed_id = _extract_xceed_id(ticket_url)
+                    if xceed_id:
+                        xceed_data = await _fetch_xceed_enrichment(xceed_id, _settings.xceed_api_key)
+                    elif "dice.fm" in ticket_url:
+                        desc = await _fetch_dice_description(ticket_url)
+                        xceed_data = {"about": desc, "prices_str": ""}
+                    elif "ticketsms" in ticket_url:
+                        xceed_data = await _fetch_ticketsms_enrichment(ticket_url)
+                    else:
+                        xceed_data = {"about": "", "prices_str": ""}
+                    doc, meta = _build_document(event, label, xceed_data)
+                    upsert_event(venue_key, sanity_id, doc, meta)
+                    current_ids.append(sanity_id)
+                except Exception:
+                    status["skipped_bad"] += 1
+                    logger.exception("Sanity: evento malformato saltato (%s, id=%s)",
+                                     label, event.get("_id"))
+            status["indexed"] = len(current_ids)
+            status["ok"] = True
+            logger.info("Sanity: %d eventi futuri per %s (%d indicizzati, %d saltati)",
+                        len(events), label, len(current_ids), status["skipped_bad"])
             delete_stale_events(venue_key, current_ids, source="sanity")
 
-        # Site settings (Milano only)
-        if cfg.get("has_site_settings"):
-            settings = await _fetch_site_settings(project_id, dataset)
-            if settings:
-                doc, meta = _build_site_settings_document(settings, label)
-                upsert_event(venue_key, f"site_settings_{venue_key}", doc, meta)
-                logger.info("Sync siteSettings per %s", label)
+        # Site settings (Milano only) — isolato: un errore qui non deve bloccare
+        # il sync della venue successiva.
+        try:
+            if cfg.get("has_site_settings"):
+                settings = await _fetch_site_settings(project_id, dataset)
+                if settings:
+                    doc, meta = _build_site_settings_document(settings, label)
+                    upsert_event(venue_key, f"site_settings_{venue_key}", doc, meta)
+                    logger.info("Sync siteSettings per %s", label)
+        except Exception:
+            logger.exception("Sanity: siteSettings falliti per %s — continuo", label)
 
-        # Blog posts (Sardinia only)
-        if cfg.get("has_blog_posts"):
-            posts = await _fetch_blog_posts(project_id, dataset)
-            logger.info("Sanity: %d blog posts per %s", len(posts), label)
-            for post in posts:
-                post_id = post.get("_id", "")
-                if not post_id:
-                    continue
-                body_text = _portable_text_to_str(post.get("bodyEn") or post.get("body") or [])
-                if not body_text:
-                    continue
-                doc, meta = _build_blog_document(post, label)
-                upsert_event(venue_key, post_id, doc, meta)
+        # Blog posts (Sardinia only) — isolato come sopra.
+        try:
+            if cfg.get("has_blog_posts"):
+                posts = await _fetch_blog_posts(project_id, dataset)
+                logger.info("Sanity: %d blog posts per %s", len(posts), label)
+                for post in posts:
+                    post_id = post.get("_id", "")
+                    if not post_id:
+                        continue
+                    body_text = _portable_text_to_str(post.get("bodyEn") or post.get("body") or [])
+                    if not body_text:
+                        continue
+                    doc, meta = _build_blog_document(post, label)
+                    upsert_event(venue_key, post_id, doc, meta)
+        except Exception:
+            logger.exception("Sanity: blog posts falliti per %s — continuo", label)
 
         logger.info("Sync Sanity completato per %s: %d eventi", label, len(current_ids))
 
