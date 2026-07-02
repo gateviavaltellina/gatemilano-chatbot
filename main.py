@@ -105,9 +105,29 @@ app.include_router(webhook_router, prefix="/webhook")
 app.include_router(ig_router, prefix="/webhook/instagram")
 
 
+def _git_sha() -> str:
+    """SHA del commit in esecuzione, per verificare che un fix sia DEPLOYATO
+    (il bot gira su un Mac via launchd / su Railway: il push su GitHub da solo
+    non aggiorna nulla). Railway inietta la env var; sul Mac usiamo git."""
+    import os, subprocess
+    for var in ("RAILWAY_GIT_COMMIT_SHA", "GIT_SHA"):
+        if os.environ.get(var):
+            return os.environ[var][:12]
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=os.path.dirname(os.path.abspath(__file__)), text=True, timeout=3,
+        ).strip()
+    except Exception:
+        return "unknown"
+
+
+_GIT_SHA = _git_sha()
+
+
 @app.get("/health")
 async def health():
-    return {"status": "ok" if _ready else "starting", "model": settings.model}
+    return {"status": "ok" if _ready else "starting", "model": settings.model, "version": _GIT_SHA}
 
 
 @app.post("/sync/xceed")
