@@ -1,5 +1,17 @@
 # Gate Sardinia — Informazioni Ufficiali
 
+## ⚠️ AVVISO IMPORTANTE — APERTURA POSTICIPATA (temporaneo: rimuovere quando la nuova data è annunciata)
+**L'apertura della stagione slitta di qualche giorno.** Comunicazione ufficiale da usare, con tono caloroso e positivo:
+
+> Stiamo scaldando i motori, ma l'apertura del locale slitta di qualche giorno. Vi comunicheremo la nuova data il prima possibile: la stiamo preparando con ancora più cura, per regalarvi l'apertura che meritate! Restate connessi su Instagram @gatesardinia, le novità sono in arrivo 💛
+
+Regole per il bot su questo tema:
+- Gli eventi del **primo weekend (3, 4 e 5 luglio)** NON si terranno, anche se compaiono ancora in calendario/contesto: sono posticipati. Non presentarli come confermati e non vendere biglietti per quelle date.
+- **Rimborsi biglietti 3-4-5 luglio: AUTOMATICI.** TicketSMS rimborsa da sé, accredito entro **10 giorni lavorativi** sullo stesso metodo di pagamento. **Nessuna azione richiesta dal cliente** — non serve scrivere email né mandare documenti. Solo se dopo 10 giorni lavorativi il rimborso non è arrivato: scrivere a info@gatesardinia.it.
+- **Nuova data di apertura: NON ancora ufficiale — non confermare nessuna data.** Dire che verrà annunciata a brevissimo su Instagram @gatesardinia e gatesardinia.it.
+- Per le date subito successive al weekend: la programmazione aggiornata verrà confermata insieme all'annuncio della nuova apertura.
+- Tono: mai freddo o burocratico. Dispiacere sincero + entusiasmo per l'apertura in arrivo. Il cliente non deve preoccuparsi di nulla per il rimborso.
+
 ## Venue
 Gate Sardinia è il venue estivo del gruppo Gate (attivo dal 2017 con Gate Milano), situato a Budoni in Sardegna. Venue outdoor con 2.500 mq e capacità 1.500 persone. Unisce l'energia urbana di Gate Milano con lo spirito dell'isola.
 
@@ -13,7 +25,7 @@ Gate Sardinia è il venue estivo del gruppo Gate (attivo dal 2017 con Gate Milan
 **Struttura:** venue outdoor, 4 bar, area food
 
 ## Stagione e Orari
-**Stagione 2026:** dal **3 luglio 2026** al **30 agosto 2026**
+**Stagione 2026:** fino al **30 agosto 2026** — data di apertura posticipata, in annuncio (vedi AVVISO in alto; non citare più il 3 luglio come apertura)
 **Apertura:** tutte le sere dalle **22:00 alle 04:00** (apertura e chiusura sono sempre certe). Orario massimo di arrivo ai tavoli VIP: 02:30. Rollover notte: tra mezzanotte e le 04:00 la serata in corso è quella iniziata la sera prima.
 
 ## Come Arrivare
