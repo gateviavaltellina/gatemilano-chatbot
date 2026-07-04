@@ -111,45 +111,50 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
                 events.append(change.get("value", {}))
 
         for event in events:
-            ig_account_id = (
-                event.get("recipient", {}).get("id", "")
-                or entry.get("id", "")
-            )
-            sender_id = event.get("sender", {}).get("id", "")
-            if not sender_id:
-                continue
-            all_bot_ids = _SARDINIA_IDS | _MILANO_IDS
-            if sender_id in all_bot_ids:
-                continue
+            # Ogni evento è isolato: un payload malformato (es. text null) non deve
+            # mai far perdere gli ALTRI messaggi del batch.
+            try:
+                ig_account_id = (
+                    (event.get("recipient") or {}).get("id") or ""
+                    or entry.get("id") or ""
+                )
+                sender_id = (event.get("sender") or {}).get("id") or ""
+                if not sender_id:
+                    continue
+                all_bot_ids = _SARDINIA_IDS | _MILANO_IDS
+                if sender_id in all_bot_ids:
+                    continue
 
-            # Reaction a una nostra storia/messaggio → reagiamo a nostra volta (no testo)
-            reaction = event.get("reaction")
-            if reaction:
-                rid = reaction.get("mid", "")
-                if reaction.get("action") == "react" and rid and _mark_processed(f"rx:{rid}:{sender_id}"):
-                    background_tasks.add_task(process_ig_reaction, ig_account_id, sender_id, rid)
-                continue
+                # Reaction a una nostra storia/messaggio → reagiamo a nostra volta (no testo)
+                reaction = event.get("reaction")
+                if reaction:
+                    rid = reaction.get("mid") or ""
+                    if reaction.get("action") == "react" and rid and _mark_processed(f"rx:{rid}:{sender_id}"):
+                        background_tasks.add_task(process_ig_reaction, ig_account_id, sender_id, rid)
+                    continue
 
-            msg = event.get("message", {})
-            if msg.get("is_echo"):
-                continue
-            text = msg.get("text", "").strip()
-            msg_id = msg.get("mid", "")
-            if not msg_id:
-                continue
-            if not _mark_processed(msg_id):
-                continue
+                msg = event.get("message") or {}
+                if msg.get("is_echo"):
+                    continue
+                text = (msg.get("text") or "").strip()
+                msg_id = msg.get("mid") or ""
+                if not msg_id:
+                    continue
+                if not _mark_processed(msg_id):
+                    continue
 
-            attachments = msg.get("attachments") or []
-            att_type = attachments[0].get("type", "") if attachments else ""
-            if text:
-                background_tasks.add_task(process_ig_message, ig_account_id, sender_id, text)
-            elif att_type in ("story_mention", "share"):
-                # menzione/post nella storia → mettiamo un like ❤️ invece di un testo
-                background_tasks.add_task(process_ig_story_mention, ig_account_id, sender_id, msg_id)
-            elif attachments:
-                # foto/vocale/video in DM → fallback testuale (qui il cliente cerca aiuto)
-                background_tasks.add_task(process_ig_non_text, ig_account_id, sender_id)
+                attachments = msg.get("attachments") or []
+                att_type = (attachments[0] or {}).get("type", "") if attachments else ""
+                if text:
+                    background_tasks.add_task(process_ig_message, ig_account_id, sender_id, text)
+                elif att_type in ("story_mention", "share"):
+                    # menzione/post nella storia → mettiamo un like ❤️ invece di un testo
+                    background_tasks.add_task(process_ig_story_mention, ig_account_id, sender_id, msg_id)
+                elif attachments:
+                    # foto/vocale/video in DM → fallback testuale (qui il cliente cerca aiuto)
+                    background_tasks.add_task(process_ig_non_text, ig_account_id, sender_id)
+            except Exception:
+                logger.exception("IG: evento malformato saltato")
 
     return {"status": "ok"}
 

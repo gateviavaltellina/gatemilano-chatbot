@@ -82,6 +82,15 @@ async def _init_background():
             id="sync_watchdog",
             replace_existing=True,
         )
+        # Health check token Meta (IG/WA) ogni ora: un token scaduto fa fallire
+        # TUTTI gli invii — meglio un alert proattivo che scoprirlo da un cliente.
+        from notifications.token_health import check_tokens
+        scheduler.add_job(
+            check_tokens,
+            CronTrigger(minute=30),
+            id="token_health",
+            replace_existing=True,
+        )
         scheduler.add_job(
             nightly_cleanup,
             CronTrigger(hour=4, minute=5),
@@ -196,6 +205,14 @@ async def debug_events():
         # error/at): dice PERCHÉ una venue è eventualmente senza eventi.
         "last_sync": get_last_sync_status(),
     }
+
+
+@app.get("/debug/tokens")
+async def debug_tokens():
+    """Verifica AL MOMENTO la validità dei token Meta (IG/WA) e riporta l'esito.
+    true = valido, false = scaduto/non valido, null = check non concludente."""
+    from notifications.token_health import check_tokens
+    return {"tokens": await check_tokens()}
 
 
 @app.get("/debug/context")
