@@ -207,6 +207,14 @@ async def debug_events():
     }
 
 
+@app.get("/debug/last-messages")
+async def debug_last_messages():
+    """Ultimi messaggi in arrivo e loro esito — per capire in 5 secondi se un DM
+    di prova ARRIVA al bot e cosa succede dopo (ricezione vs invio vs takeover)."""
+    from notifications.debug_trace import recent
+    return {"events": recent()}
+
+
 @app.get("/debug/tokens")
 async def debug_tokens():
     """Verifica AL MOMENTO la validità dei token Meta (IG/WA) e riporta l'esito.

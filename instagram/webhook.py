@@ -14,6 +14,7 @@ from notifications.discord import notify_conversation, notify_human_message, not
 from notifications.discord_bot import is_human_takeover
 from notifications.escalation import detect_sensitive
 from notifications.drinklist import should_send_drinklist, drinklist_link_message
+from notifications.debug_trace import record as _trace
 from instagram.client import send_ig_message, react_to_message
 
 router = APIRouter()
@@ -146,6 +147,7 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
                 attachments = msg.get("attachments") or []
                 att_type = (attachments[0] or {}).get("type", "") if attachments else ""
                 if text:
+                    _trace("ig", sender_id, text, "webhook in ingresso", account=ig_account_id)
                     background_tasks.add_task(process_ig_message, ig_account_id, sender_id, text)
                 elif att_type in ("story_mention", "share"):
                     # menzione/post nella storia → mettiamo un like ❤️ invece di un testo
@@ -190,8 +192,10 @@ async def _process_ig_message(ig_account_id: str, sender_id: str, text: str) -> 
     conv = _get_conversation(ig_account_id, sender_id)
     phone = f"ig:{sender_id[:12]}"
     context = {"ig_account_id": ig_account_id, "sender_id": sender_id}
+    _trace("ig", sender_id, text, "ricevuto", venue=venue, account=ig_account_id)
 
     if is_human_takeover(phone):
+        _trace("ig", sender_id, text, "takeover (bot in pausa)")
         await notify_human_message(phone, venue, text, context)
         return
 
@@ -207,6 +211,7 @@ async def _process_ig_message(ig_account_id: str, sender_id: str, text: str) -> 
     _add_to_history(conv, "assistant", reply)
 
     sent = await send_ig_message(ig_account_id, sender_id, reply)
+    _trace("ig", sender_id, reply, "risposta", inviata=("SI" if sent else "NO"))
 
     # Drinklist: IG non può allegare PDF → invia il LINK come testo. Flag per
     # conversazione (persistito con la conv) per non re-inviarlo a ogni messaggio.
