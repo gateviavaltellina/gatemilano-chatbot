@@ -16,6 +16,7 @@ from ai.claude_client import generate_response
 from notifications.discord import notify_conversation, notify_human_message, notify_escalation
 from notifications.discord_bot import is_human_takeover
 from notifications.escalation import detect_sensitive
+from notifications.debug_trace import record as _trace
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -238,9 +239,11 @@ async def _process_message(phone: str, msg_id: str, text: str) -> None:
         return
     await mark_as_read(msg_id)
     conv = _get_conversation(phone)
+    _trace("wa", phone, text, "ricevuto")
 
     if is_human_takeover(phone):
         venue = conv.get("venue") or "gate_milano"
+        _trace("wa", phone, text, "takeover (bot in pausa)")
         await notify_human_message(phone, venue, text)
         return
 
@@ -261,6 +264,7 @@ async def _process_message(phone: str, msg_id: str, text: str) -> None:
     _add_to_history(conv, "assistant", reply, settings.max_history)
 
     sent = await send_message(phone, reply)
+    _trace("wa", phone, reply, "risposta", inviata=("SI" if sent else "NO"))
 
     # Tema sensibile (accessibilità/rimborsi/salute/reclami) → alert staff in parallelo
     sensitive = detect_sensitive(text)
