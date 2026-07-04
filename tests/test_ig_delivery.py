@@ -6,8 +6,24 @@ rifiutato l'invio — il cliente non riceveva nulla e lo staff se n'è accorto
 5 ore dopo, rispondendo a mano."""
 import pytest
 
-from instagram.client import split_for_ig, _IG_TEXT_LIMIT
+from instagram.client import (
+    split_for_ig, _IG_TEXT_LIMIT, _send_id_for_account,
+    _MILANO_SEND_ID, _SARDINIA_SEND_ID,
+)
 import instagram.webhook as igw
+
+
+# --- canonicalizzazione ID di invio (Graph API richiede l'IG business id 17841...) ---
+
+def test_send_id_maps_legacy_and_business_ids():
+    # id app-scoped storico → id business inviabile
+    assert _send_id_for_account("35517015101275600") == _MILANO_SEND_ID
+    assert _send_id_for_account("24588954374135134") == _SARDINIA_SEND_ID
+    # id business già corretto → invariato
+    assert _send_id_for_account(_MILANO_SEND_ID) == _MILANO_SEND_ID
+    assert _send_id_for_account(_SARDINIA_SEND_ID) == _SARDINIA_SEND_ID
+    # id sconosciuto → passa così com'è (nessuna perdita silenziosa)
+    assert _send_id_for_account("999") == "999"
 
 
 # --- split_for_ig ---
