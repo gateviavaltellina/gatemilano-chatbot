@@ -8,12 +8,30 @@ logger = logging.getLogger(__name__)
 _MILANO_IDS = {"35517015101275600", "17841405933946552"}
 _SARDINIA_IDS = {"24588954374135134", "17841452139166980"}
 
+# ID Instagram business "inviabile" via Graph API (graph.facebook.com): l'endpoint
+# di invio /{id}/messages richiede l'IG business account id (17841...), NON gli id
+# app-scoped storici (35517.../24588...) che il token System User non risolve. Il
+# webhook può consegnare l'uno o l'altro: normalizziamo SEMPRE su questo per l'invio.
+_MILANO_SEND_ID = "17841405933946552"
+_SARDINIA_SEND_ID = "17841452139166980"
+
+
 def _token_for_account(ig_account_id: str) -> str:
     if ig_account_id in _MILANO_IDS:
         return settings.ig_gatemilano_token
     if ig_account_id in _SARDINIA_IDS:
         return settings.ig_gatesardinia_token
     return ""
+
+
+def _send_id_for_account(ig_account_id: str) -> str:
+    """ID da usare NELL'URL di invio: canonicalizza sull'IG business id (17841...)
+    a prescindere da quale id abbia consegnato il webhook."""
+    if ig_account_id in _MILANO_IDS:
+        return _MILANO_SEND_ID
+    if ig_account_id in _SARDINIA_IDS:
+        return _SARDINIA_SEND_ID
+    return ig_account_id
 
 
 # Limite reale dell'API Instagram: 1000 caratteri UTF-8 per messaggio.
@@ -49,11 +67,12 @@ async def _post_ig_payload(ig_account_id: str, token: str, payload: dict, what: 
     """POST all'API IG con UN retry sugli errori transitori (timeout / 5xx).
     Gli errori permanenti (4xx: token scaduto, testo rifiutato) non si ritentano."""
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    send_id = _send_id_for_account(ig_account_id)
     async with httpx.AsyncClient(timeout=15) as client:
         for attempt in (1, 2):
             try:
                 r = await client.post(
-                    f"{settings.ig_api_url}/{ig_account_id}/messages",
+                    f"{settings.ig_api_url}/{send_id}/messages",
                     headers=headers,
                     json=payload,
                 )
@@ -108,10 +127,11 @@ async def react_to_message(ig_account_id: str, recipient_id: str, message_id: st
         "sender_action": "react",
         "payload": {"message_id": message_id, "reaction": reaction},
     }
+    send_id = _send_id_for_account(ig_account_id)
     async with httpx.AsyncClient(timeout=15) as client:
         try:
             r = await client.post(
-                f"{settings.ig_api_url}/{ig_account_id}/messages",
+                f"{settings.ig_api_url}/{send_id}/messages",
                 headers=headers,
                 json=payload,
             )
