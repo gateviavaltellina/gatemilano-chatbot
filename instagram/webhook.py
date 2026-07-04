@@ -154,7 +154,33 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
     return {"status": "ok"}
 
 
+# Rete di sicurezza: se la pipeline (RAG/LLM) esplode, il cliente riceve almeno
+# un messaggio di cortesia e lo staff un allarme — mai più messaggi spariti nel
+# nulla (task in background morto in silenzio: né risposta né notifica).
+_ERROR_FALLBACK_REPLY = (
+    "Scusami, ho avuto un intoppo tecnico proprio ora 🙏 "
+    "Riprova a scrivermi tra qualche minuto, oppure ti risponde lo staff appena possibile."
+)
+
+
 async def process_ig_message(ig_account_id: str, sender_id: str, text: str) -> None:
+    try:
+        await _process_ig_message(ig_account_id, sender_id, text)
+    except Exception:
+        logger.exception("IG: errore processando il messaggio di %s — fallback + alert staff", sender_id)
+        venue = _venue_for_account(ig_account_id)
+        phone = f"ig:{sender_id[:12]}"
+        context = {"ig_account_id": ig_account_id, "sender_id": sender_id}
+        sent = await send_ig_message(ig_account_id, sender_id, _ERROR_FALLBACK_REPLY)
+        await notify_conversation(
+            phone, venue, text,
+            "[⚠️ ERRORE TECNICO — il bot NON ha risposto alla domanda]\n"
+            f"Messaggio di cortesia {'inviato' if sent else 'NON inviato'} al cliente.",
+            context, delivered=False,
+        )
+
+
+async def _process_ig_message(ig_account_id: str, sender_id: str, text: str) -> None:
     venue = _venue_for_account(ig_account_id)
     conv = _get_conversation(ig_account_id, sender_id)
     phone = f"ig:{sender_id[:12]}"

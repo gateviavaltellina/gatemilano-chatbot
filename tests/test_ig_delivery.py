@@ -90,3 +90,51 @@ async def test_successful_send_flags_delivered(_wired, monkeypatch):
     conv = igw._get_conversation("24588954374135134", "user2")
     assert conv.get("drinklist_sent") is True
     assert len(_wired["sends"]) == 2
+
+
+# --- rete di sicurezza: pipeline in errore → cortesia al cliente + allarme staff ---
+
+async def test_pipeline_error_sends_fallback_and_alerts(_wired, monkeypatch):
+    async def _boom(**k):
+        raise RuntimeError("LLM giù")
+    monkeypatch.setattr(igw, "generate_response", _boom)
+
+    async def _send_ok(ig_id, sender, text):
+        _wired["sends"].append(text)
+        return True
+    monkeypatch.setattr(igw, "send_ig_message", _send_ok)
+
+    # non deve sollevare: il task in background non muore più in silenzio
+    await igw.process_ig_message("24588954374135134", "user3", "info tavoli?")
+    assert len(_wired["sends"]) == 1
+    assert "intoppo tecnico" in _wired["sends"][0]
+    assert _wired["notify"]["delivered"] is False
+    assert "ERRORE TECNICO" in _wired["notify"]["reply"]
+
+
+async def test_wa_pipeline_error_sends_fallback_and_alerts(monkeypatch):
+    import whatsapp.webhook as waw
+    calls = {"notify": None, "sends": []}
+
+    async def _boom(**k):
+        raise RuntimeError("LLM giù")
+    monkeypatch.setattr(waw, "generate_response", _boom)
+
+    async def _mark(*a, **k):
+        return True
+    monkeypatch.setattr(waw, "mark_as_read", _mark)
+
+    async def _send_ok(phone, text):
+        calls["sends"].append(text)
+        return True
+    monkeypatch.setattr(waw, "send_message", _send_ok)
+
+    async def _notify(phone, venue, user_msg, bot_reply, context=None, delivered=True):
+        calls["notify"] = {"delivered": delivered, "reply": bot_reply}
+    monkeypatch.setattr(waw, "notify_conversation", _notify)
+
+    await waw.process_message("393331112223", "wamid.x", "info tavoli?")
+    assert len(calls["sends"]) == 1
+    assert "intoppo tecnico" in calls["sends"][0]
+    assert calls["notify"]["delivered"] is False
+    assert "ERRORE TECNICO" in calls["notify"]["reply"]
