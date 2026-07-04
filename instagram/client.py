@@ -25,8 +25,14 @@ def _token_for_account(ig_account_id: str) -> str:
 
 
 def _send_id_for_account(ig_account_id: str) -> str:
-    """ID da usare NELL'URL di invio: canonicalizza sull'IG business id (17841...)
-    a prescindere da quale id abbia consegnato il webhook."""
+    """ID da usare NELL'URL di invio.
+
+    Solo per l'API via Facebook (graph.facebook.com) l'endpoint richiede l'IG
+    business id (17841...). Con l'API Instagram Login (graph.instagram.com, il
+    setup nativo di questa app) si usa invece l'id consegnato dal webbook così
+    com'è. Condizioniamo sull'host per non rompere nessuno dei due percorsi."""
+    if "facebook.com" not in (settings.ig_api_url or ""):
+        return ig_account_id
     if ig_account_id in _MILANO_IDS:
         return _MILANO_SEND_ID
     if ig_account_id in _SARDINIA_IDS:

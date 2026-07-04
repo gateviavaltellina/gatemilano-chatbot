@@ -15,15 +15,20 @@ import instagram.webhook as igw
 
 # --- canonicalizzazione ID di invio (Graph API richiede l'IG business id 17841...) ---
 
-def test_send_id_maps_legacy_and_business_ids():
-    # id app-scoped storico → id business inviabile
+def test_send_id_maps_only_on_facebook_api(monkeypatch):
+    # via graph.facebook.com: canonicalizza sull'IG business id
+    monkeypatch.setattr("config.settings.ig_api_url", "https://graph.facebook.com/v22.0")
     assert _send_id_for_account("35517015101275600") == _MILANO_SEND_ID
     assert _send_id_for_account("24588954374135134") == _SARDINIA_SEND_ID
-    # id business già corretto → invariato
     assert _send_id_for_account(_MILANO_SEND_ID) == _MILANO_SEND_ID
-    assert _send_id_for_account(_SARDINIA_SEND_ID) == _SARDINIA_SEND_ID
-    # id sconosciuto → passa così com'è (nessuna perdita silenziosa)
     assert _send_id_for_account("999") == "999"
+
+
+def test_send_id_passthrough_on_instagram_login_api(monkeypatch):
+    # via graph.instagram.com (setup nativo): id consegnato dal webhook, invariato
+    monkeypatch.setattr("config.settings.ig_api_url", "https://graph.instagram.com/v22.0")
+    assert _send_id_for_account("35517015101275600") == "35517015101275600"
+    assert _send_id_for_account("24588954374135134") == "24588954374135134"
 
 
 # --- split_for_ig ---
