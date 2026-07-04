@@ -115,20 +115,30 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
 
     # Instagram DM (shared webhook endpoint)
     if body.get("object") == "instagram":
-        from instagram.webhook import process_ig_message
+        from instagram.webhook import process_ig_message, process_ig_non_text
         for entry in body.get("entry", []):
             ig_account_id = entry.get("id", "")
             for messaging in entry.get("messaging", []):
-                msg = messaging.get("message", {})
-                msg_id = msg.get("mid", "")
-                sender_id = messaging.get("sender", {}).get("id", "")
-                text = msg.get("text", "").strip()
-                ig_bot_ids = {settings.ig_gatemilano_id, settings.ig_gatesardinia_id}
-                if not sender_id or not text or not msg_id or sender_id in ig_bot_ids:
-                    continue
-                if not _mark_processed(msg_id):
-                    continue
-                background_tasks.add_task(process_ig_message, ig_account_id, sender_id, text)
+                # Ogni evento è isolato: un payload malformato (es. text null) non
+                # deve mai far saltare il parsing degli ALTRI messaggi del batch.
+                try:
+                    msg = messaging.get("message") or {}
+                    msg_id = msg.get("mid") or ""
+                    sender_id = (messaging.get("sender") or {}).get("id") or ""
+                    text = (msg.get("text") or "").strip()
+                    ig_bot_ids = {settings.ig_gatemilano_id, settings.ig_gatesardinia_id}
+                    if not sender_id or not msg_id or sender_id in ig_bot_ids or msg.get("is_echo"):
+                        continue
+                    if not _mark_processed(msg_id):
+                        continue
+                    if text:
+                        background_tasks.add_task(process_ig_message, ig_account_id, sender_id, text)
+                    elif msg.get("attachments"):
+                        # foto/vocale/condivisione senza testo → fallback gentile,
+                        # non silenzio (prima veniva scartato senza risposta)
+                        background_tasks.add_task(process_ig_non_text, ig_account_id, sender_id)
+                except Exception:
+                    logger.exception("IG (endpoint condiviso): evento malformato saltato")
         return {"status": "ok"}
 
     if body.get("object") != "whatsapp_business_account":
@@ -136,32 +146,37 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
 
     for entry in body.get("entry", []):
         for change in entry.get("changes", []):
-            value = change.get("value", {})
-            for msg in value.get("messages", []):
-                msg_id = msg.get("id", "")
-                if not _mark_processed(msg_id):
-                    continue
-                # Messaggio di gruppo (Cloud API Groups): ha un campo group_id.
-                # Ramo separato: solo comandi staff con prefisso, niente flusso 1-1.
-                group_id = msg.get("group_id", "")
-                if group_id:
-                    from whatsapp.group import process_group_message
-                    g_text = msg.get("text", {}).get("body", "") if msg.get("type") == "text" else ""
-                    background_tasks.add_task(
-                        process_group_message, group_id, msg.get("from", ""), msg_id, g_text
-                    )
-                    continue
-                phone = msg.get("from", "")
-                if not phone:
-                    continue
-                if msg.get("type") == "text":
-                    text = msg.get("text", {}).get("body", "").strip()
-                    if not text:
+            value = change.get("value") or {}
+            for msg in value.get("messages") or []:
+                # Ogni messaggio è isolato: un payload malformato non deve mai
+                # far perdere gli ALTRI messaggi del batch.
+                try:
+                    msg_id = msg.get("id") or ""
+                    if not msg_id or not _mark_processed(msg_id):
                         continue
-                    background_tasks.add_task(process_message, phone, msg_id, text)
-                else:
-                    # vocali/foto/video/ecc.: niente più silenzio — fallback gentile
-                    background_tasks.add_task(process_non_text, phone, msg_id, msg.get("type", ""))
+                    # Messaggio di gruppo (Cloud API Groups): ha un campo group_id.
+                    # Ramo separato: solo comandi staff con prefisso, niente flusso 1-1.
+                    group_id = msg.get("group_id") or ""
+                    if group_id:
+                        from whatsapp.group import process_group_message
+                        g_text = (msg.get("text") or {}).get("body") or "" if msg.get("type") == "text" else ""
+                        background_tasks.add_task(
+                            process_group_message, group_id, msg.get("from") or "", msg_id, g_text
+                        )
+                        continue
+                    phone = msg.get("from") or ""
+                    if not phone:
+                        continue
+                    if msg.get("type") == "text":
+                        text = ((msg.get("text") or {}).get("body") or "").strip()
+                        if not text:
+                            continue
+                        background_tasks.add_task(process_message, phone, msg_id, text)
+                    else:
+                        # vocali/foto/video/ecc.: niente più silenzio — fallback gentile
+                        background_tasks.add_task(process_non_text, phone, msg_id, msg.get("type") or "")
+                except Exception:
+                    logger.exception("WA: messaggio malformato saltato")
 
     return {"status": "ok"}
 

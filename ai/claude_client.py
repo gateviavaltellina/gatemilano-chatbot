@@ -12,7 +12,11 @@ from config import settings
 
 logger = logging.getLogger(__name__)
 
-_client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+# max_retries: l'SDK ritenta da solo su errori transitori (connessione, 408/429/5xx)
+# con backoff esponenziale. Il default è 2; 4 assorbe anche i picchi di sovraccarico
+# serali (proprio quando scrivono i clienti) prima di degradare al fallback
+# "non riesco a rispondere" di generate_response.
+_client = AsyncAnthropic(api_key=settings.anthropic_api_key, max_retries=4)
 
 VENUE_NAMES = {
     "gate_milano": "Gate Milano",

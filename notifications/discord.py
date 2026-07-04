@@ -73,16 +73,30 @@ async def notify_conversation(phone: str, venue: str, user_msg: str, bot_reply: 
             "Rispondi tu con `!r <testo>` in reply a questo messaggio."
         )
     # ?wait=true → Discord restituisce il messaggio con l'ID (necessario per human takeover)
+    await _post_and_register(url, payload, phone, _conversation_context(context, venue, user_msg, bot_reply))
+
+
+async def _post_and_register(url: str, payload: dict, phone: str, context: dict | None,
+                             attempts: int = 2) -> None:
+    """POST a Discord con retry: le notifiche (soprattutto gli allarmi INVIO
+    FALLITO) sono l'ultima rete di sicurezza — un singhiozzo di Discord non deve
+    farle sparire. Registra l'ID messaggio per il takeover (!t / !r in reply)."""
+    import asyncio
     async with httpx.AsyncClient(timeout=10) as client:
-        try:
-            r = await client.post(url, json=payload)
-            r.raise_for_status()
-            msg_id = r.json().get("id")
-            if msg_id:
-                from notifications.discord_bot import register_message
-                register_message(msg_id, phone, _conversation_context(context, venue, user_msg, bot_reply))
-        except Exception as e:
-            logger.warning("Discord notify failed: %s", e)
+        for i in range(1, attempts + 1):
+            try:
+                r = await client.post(url, json=payload)
+                r.raise_for_status()
+                msg_id = r.json().get("id")
+                if msg_id:
+                    from notifications.discord_bot import register_message
+                    register_message(msg_id, phone, context)
+                return
+            except Exception as e:
+                if i < attempts:
+                    await asyncio.sleep(2)
+                    continue
+                logger.warning("Discord notify failed (%d tentativi): %s", attempts, e)
 
 
 async def notify_human_message(phone: str, venue: str, user_msg: str, context: dict = None) -> None:
@@ -105,16 +119,7 @@ async def notify_human_message(phone: str, venue: str, user_msg: str, context: d
         ]
     }
     url = _webhook_url_for(phone)
-    async with httpx.AsyncClient(timeout=10) as client:
-        try:
-            r = await client.post(url, json=payload)
-            r.raise_for_status()
-            msg_id = r.json().get("id")
-            if msg_id:
-                from notifications.discord_bot import register_message
-                register_message(msg_id, phone, context)
-        except Exception as e:
-            logger.warning("Discord notify_human failed: %s", e)
+    await _post_and_register(url, payload, phone, context)
 
 
 async def notify_escalation(
@@ -146,16 +151,7 @@ async def notify_escalation(
         ],
     }
     url = _webhook_url_for(phone)
-    async with httpx.AsyncClient(timeout=10) as client:
-        try:
-            r = await client.post(url, json=payload)
-            r.raise_for_status()
-            msg_id = r.json().get("id")
-            if msg_id:
-                from notifications.discord_bot import register_message
-                register_message(msg_id, phone, context)
-        except Exception as e:
-            logger.warning("Discord notify_escalation failed: %s", e)
+    await _post_and_register(url, payload, phone, context)
 
 
 async def notify_group_event(group_id: str, sender: str, user_msg: str, bot_reply: str = None, enabled: bool = True) -> None:
