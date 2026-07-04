@@ -194,7 +194,30 @@ async def process_non_text(phone: str, msg_id: str, mtype: str) -> None:
     await notify_conversation(phone, venue, f"[{label} ricevuto]", reply, delivered=sent)
 
 
+# Rete di sicurezza: se la pipeline (RAG/LLM) esplode, il cliente riceve almeno
+# un messaggio di cortesia e lo staff un allarme — mai più messaggi senza risposta.
+_ERROR_FALLBACK_REPLY = (
+    "Scusami, ho avuto un intoppo tecnico proprio ora 🙏 "
+    "Riprova a scrivermi tra qualche minuto, oppure ti risponde lo staff appena possibile."
+)
+
+
 async def process_message(phone: str, msg_id: str, text: str) -> None:
+    try:
+        await _process_message(phone, msg_id, text)
+    except Exception:
+        logger.exception("WA: errore processando il messaggio di %s — fallback + alert staff", phone)
+        venue = _get_conversation(phone).get("venue") or "gate_milano"
+        sent = await send_message(phone, _ERROR_FALLBACK_REPLY)
+        await notify_conversation(
+            phone, venue, text,
+            "[⚠️ ERRORE TECNICO — il bot NON ha risposto alla domanda]\n"
+            f"Messaggio di cortesia {'inviato' if sent else 'NON inviato'} al cliente.",
+            delivered=False,
+        )
+
+
+async def _process_message(phone: str, msg_id: str, text: str) -> None:
     if phone in _get_ignored_phones():
         logger.debug("Messaggio ignorato da numero bot: %s", phone)
         return
