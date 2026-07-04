@@ -190,8 +190,8 @@ async def process_non_text(phone: str, msg_id: str, mtype: str) -> None:
         await notify_human_message(phone, venue, f"[{label}]")
         return
     reply = _NON_TEXT_FALLBACK.get(mtype, _NON_TEXT_DEFAULT)
-    await send_message(phone, reply)
-    await notify_conversation(phone, venue, f"[{label} ricevuto]", reply)
+    sent = await send_message(phone, reply)
+    await notify_conversation(phone, venue, f"[{label} ricevuto]", reply, delivered=sent)
 
 
 async def process_message(phone: str, msg_id: str, text: str) -> None:
@@ -222,7 +222,7 @@ async def process_message(phone: str, msg_id: str, text: str) -> None:
     )
     _add_to_history(conv, "assistant", reply, settings.max_history)
 
-    await send_message(phone, reply)
+    sent = await send_message(phone, reply)
 
     # Tema sensibile (accessibilità/rimborsi/salute/reclami) → alert staff in parallelo
     sensitive = detect_sensitive(text)
@@ -231,9 +231,9 @@ async def process_message(phone: str, msg_id: str, text: str) -> None:
 
     lower_text = text.lower()
     lower_reply = reply.lower()
-    if _should_send_drinklist(venue, lower_text, lower_reply, phone in _drinklist_sent):
+    if sent and _should_send_drinklist(venue, lower_text, lower_reply, phone in _drinklist_sent):
         url, filename = _DRINKLISTS[venue]
-        await send_document(phone, url, filename)
-        _drinklist_sent.add(phone)
+        if await send_document(phone, url, filename):
+            _drinklist_sent.add(phone)
 
-    await notify_conversation(phone, venue, text, reply)
+    await notify_conversation(phone, venue, text, reply, delivered=sent)

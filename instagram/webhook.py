@@ -175,21 +175,21 @@ async def process_ig_message(ig_account_id: str, sender_id: str, text: str) -> N
     )
     _add_to_history(conv, "assistant", reply)
 
-    await send_ig_message(ig_account_id, sender_id, reply)
+    sent = await send_ig_message(ig_account_id, sender_id, reply)
 
     # Drinklist: IG non può allegare PDF → invia il LINK come testo. Flag per
     # conversazione (persistito con la conv) per non re-inviarlo a ogni messaggio.
-    if should_send_drinklist(venue, text.lower(), reply.lower(), conv.get("drinklist_sent", False)):
+    # Il flag si alza SOLO se l'invio è riuscito, così al giro dopo si ritenta.
+    if sent and should_send_drinklist(venue, text.lower(), reply.lower(), conv.get("drinklist_sent", False)):
         link_msg = drinklist_link_message(venue)
-        if link_msg:
-            await send_ig_message(ig_account_id, sender_id, link_msg)
+        if link_msg and await send_ig_message(ig_account_id, sender_id, link_msg):
             conv["drinklist_sent"] = True
 
     sensitive = detect_sensitive(text)
     if sensitive:
         await notify_escalation(phone, venue, text, sensitive, context)
 
-    await notify_conversation(phone, venue, text, reply, context)
+    await notify_conversation(phone, venue, text, reply, context, delivered=sent)
 
 
 async def process_ig_non_text(ig_account_id: str, sender_id: str) -> None:
@@ -203,8 +203,8 @@ async def process_ig_non_text(ig_account_id: str, sender_id: str) -> None:
         await notify_human_message(phone, venue, "[allegato]", context)
         return
     reply = "Ciao! Scrivimi pure a parole cosa ti serve (evento, biglietti, tavoli, info) e ti rispondo subito 🙂"
-    await send_ig_message(ig_account_id, sender_id, reply)
-    await notify_conversation(phone, venue, "[allegato ricevuto]", reply, context)
+    sent = await send_ig_message(ig_account_id, sender_id, reply)
+    await notify_conversation(phone, venue, "[allegato ricevuto]", reply, context, delivered=sent)
 
 
 async def process_ig_story_mention(ig_account_id: str, sender_id: str, msg_id: str) -> None:

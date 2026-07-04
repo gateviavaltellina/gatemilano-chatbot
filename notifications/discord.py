@@ -38,7 +38,8 @@ def _conversation_context(context: dict | None, venue: str, user_msg: str, bot_r
     }
 
 
-async def notify_conversation(phone: str, venue: str, user_msg: str, bot_reply: str, context: dict = None) -> None:
+async def notify_conversation(phone: str, venue: str, user_msg: str, bot_reply: str,
+                              context: dict = None, delivered: bool = True) -> None:
     if not settings.discord_webhook_url and not settings.discord_ig_webhook_url:
         return
     url = _webhook_url_for(phone)
@@ -49,18 +50,28 @@ async def notify_conversation(phone: str, venue: str, user_msg: str, bot_reply: 
     source = "📸 IG" if is_ig else "💬 WA"
     venue_label = {"gate_milano": "Gate Milano", "gate_sardinia": "Gate Sardinia"}.get(venue or "", "Venue sconosciuto")
     masked = _mask_phone(phone)
+    # delivered=False: l'API (IG/WA) ha RIFIUTATO l'invio — il cliente non ha
+    # ricevuto la risposta. Senza allarme, su Discord sembrerebbe tutto ok e il
+    # cliente resterebbe nel vuoto (caso reale: risposta manuale arrivata 5 ore dopo).
+    bot_field = "🤖 Bot" if delivered else "🤖 Bot — ⚠️ NON CONSEGNATO"
     payload = {
         "embeds": [
             {
-                "color": 0xE1306C if is_ig else 0x7C3AED,
-                "description": f"{emoji} {venue_label} · {source} · {masked}",
+                "color": (0xE1306C if is_ig else 0x7C3AED) if delivered else 0xDC2626,
+                "description": f"{emoji} {venue_label} · {source} · {masked}"
+                + ("" if delivered else " — ⚠️ INVIO FALLITO"),
                 "fields": [
                     {"name": "👤 Utente", "value": user_msg[:1024] or "​", "inline": False},
-                    {"name": "🤖 Bot", "value": bot_reply[:1024] or "​", "inline": False},
+                    {"name": bot_field, "value": bot_reply[:1024] or "​", "inline": False},
                 ],
             }
         ]
     }
+    if not delivered:
+        payload["content"] = (
+            "⚠️ **INVIO FALLITO** — il cliente NON ha ricevuto questa risposta. "
+            "Rispondi tu con `!r <testo>` in reply a questo messaggio."
+        )
     # ?wait=true → Discord restituisce il messaggio con l'ID (necessario per human takeover)
     async with httpx.AsyncClient(timeout=10) as client:
         try:
