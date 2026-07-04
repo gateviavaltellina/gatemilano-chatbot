@@ -106,13 +106,14 @@ async def test_token_alert_on_transition_only(monkeypatch):
     verdicts = iter([True, False, False, None, True])
 
     async def _ok(url, token):
-        return next(verdicts)
+        v = next(verdicts)
+        return v, "session invalidated" if v is False else "ok"
     monkeypatch.setattr(th, "_token_ok", _ok)
 
     await th.check_tokens()          # True: nessun alert
     assert alerts == []
-    await th.check_tokens()          # True→False: alert scaduto
-    assert len(alerts) == 1 and "SCADUTO" in alerts[0]
+    await th.check_tokens()          # True→False: alert scaduto, con errore Meta
+    assert len(alerts) == 1 and "SCADUTO" in alerts[0] and "session invalidated" in alerts[0]
     await th.check_tokens()          # False→False: nessun nuovo alert
     assert len(alerts) == 1
     await th.check_tokens()          # None (rete): stato invariato, nessun alert
