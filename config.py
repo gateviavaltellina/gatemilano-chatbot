@@ -72,6 +72,11 @@ class Settings(BaseSettings):
     # endpoint NON protetto (sync attivabile da chiunque: sconsigliato in prod).
     sanity_webhook_secret: str = ""
 
+    # Chiave per proteggere gli endpoint /debug/* (mostrano contenuti dei DM e
+    # /debug/refresh-tokens muta i token). Se valorizzata, i /debug richiedono ?key=.
+    # Vuota = aperti (retro-compatibile, ma logga un warning): impostala in produzione.
+    debug_key: str = ""
+
     # App
     max_history: int = 8
     port: int = 8000

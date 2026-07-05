@@ -11,15 +11,11 @@ import logging
 
 import httpx
 
-from config import settings
 from instagram import token_store
 
 logger = logging.getLogger(__name__)
 
 _REFRESH_URL = "https://graph.instagram.com/refresh_access_token"
-
-# stato ultimo rinnovo per venue → alert Discord solo al passaggio ok→fail
-_last_ok: dict[str, bool] = {}
 
 
 async def _refresh_one(token: str) -> str | None:
@@ -38,19 +34,15 @@ async def _refresh_one(token: str) -> str | None:
     return None
 
 
-async def _alert(text: str) -> None:
-    url = settings.discord_webhook_url or settings.discord_ig_webhook_url
-    if not url:
-        return
-    try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            await client.post(url.split("?")[0], json={"content": text})
-    except Exception as e:
-        logger.warning("Alert rinnovo su Discord fallito: %s", e)
-
-
 async def refresh_all() -> dict[str, bool]:
-    """Rinnova entrambi i token IG. Ritorna {venue: rinnovato?}."""
+    """Rinnova entrambi i token IG e li persiste. Ritorna {venue: rinnovato?}.
+
+    Nessun alert Discord da qui: un singolo rinnovo mancato NON è un problema (il
+    token resta valido settimane, e il job gira ~8 volte prima della scadenza — basta
+    un successo per riestendere a 60gg). L'unica fonte di verità sugli allarmi è la
+    sentinella oraria (notifications.token_health), che avvisa solo quando un token è
+    DAVVERO invalido — così evitiamo falsi positivi (refresh <24h) e stato di dedup
+    fragile in memoria. Su fallimento logghiamo soltanto."""
     results: dict[str, bool] = {}
     for venue in token_store.VENUES:
         tok = token_store.get(venue)
@@ -61,12 +53,9 @@ async def refresh_all() -> dict[str, bool]:
         if new:
             token_store.set_token(venue, new)
             logger.info("Token IG %s rinnovato (+~60 giorni)", venue)
-        elif _last_ok.get(venue, True):
-            # primo fallimento dopo una serie di successi: avvisa senza allarmare
-            await _alert(
-                f"⚠️ Rinnovo automatico token Instagram **{venue}** non riuscito. "
-                "Non è urgente (il token corrente è ancora valido per settimane), ma "
-                "se il problema persiste andrà rigenerato a mano dal dashboard Meta."
+        else:
+            logger.warning(
+                "Rinnovo IG %s non riuscito (token ancora valido; la sentinella "
+                "token avvisa se scade davvero)", venue,
             )
-        _last_ok[venue] = bool(new)
     return results

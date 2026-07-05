@@ -37,23 +37,35 @@ def _path() -> Path | None:
 
 
 def load() -> None:
-    """Popola lo store all'avvio: token persistito se discende dall'env attuale,
-    altrimenti il valore env (rotazione manuale o primo avvio)."""
+    """Popola lo store all'avvio.
+
+    Regola: si usa il token persistito (rinnovato) TRANNE quando è avvenuta una
+    rotazione MANUALE, cioè quando l'env è valorizzata e DIVERSA dall'origin da cui
+    il persistito discende. Un'env vuota NON conta come rotazione (potrebbe essere un
+    glitch di caricamento secret): in quel caso si tiene comunque il token persistito
+    valido, per non perderlo."""
     saved = {}
     p = _path()
     if p and p.exists():
         try:
-            saved = json.loads(p.read_text(encoding="utf-8")) or {}
+            raw = json.loads(p.read_text(encoding="utf-8"))
+            saved = raw if isinstance(raw, dict) else {}
+            if not isinstance(raw, dict):
+                logger.warning("token_store: contenuto non-oggetto, ignoro e uso le env var")
         except Exception:
             logger.exception("token_store: file persistito illeggibile, uso le env var")
     for v in VENUES:
         env = _env_token(v)
-        entry = saved.get(v) or {}
-        if env and entry.get("token") and entry.get("origin") == env:
-            _tokens[v] = entry["token"]     # token rinnovato, stessa lineage dell'env attuale
+        entry = saved.get(v) if isinstance(saved.get(v), dict) else {}
+        persisted = entry.get("token") or ""
+        origin = entry.get("origin") or ""
+        manual_rotation = bool(env) and origin != env
+        if persisted and not manual_rotation:
+            _tokens[v] = persisted          # token rinnovato (o env vuota = glitch: non buttarlo)
+            _origin[v] = origin or env
         else:
-            _tokens[v] = env                # env cambiato a mano, o niente di persistito
-        _origin[v] = env
+            _tokens[v] = env                # rotazione manuale (env nuova != origin), o niente persistito
+            _origin[v] = env
     logger.info(
         "token_store caricato (milano=%s, sardinia=%s)",
         "set" if _tokens.get("gate_milano") else "vuoto",
@@ -85,8 +97,16 @@ def _save() -> None:
                 for v in VENUES}
         p.parent.mkdir(parents=True, exist_ok=True)
         fd, tmp = tempfile.mkstemp(dir=str(p.parent), suffix=".tmp")
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(data, f)
-        os.replace(tmp, p)   # scrittura atomica
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(data, f)
+            os.replace(tmp, p)   # scrittura atomica
+        except Exception:
+            # niente .tmp orfani (es. disco pieno): rimuovi prima di propagare
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+            raise
     except Exception:
         logger.exception("token_store: salvataggio fallito")

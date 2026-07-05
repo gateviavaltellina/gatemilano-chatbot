@@ -11,7 +11,6 @@ from instagram import token_store, token_refresh, client as ig_client
 def _clean(monkeypatch, tmp_path):
     token_store._tokens.clear()
     token_store._origin.clear()
-    token_refresh._last_ok.clear()
     monkeypatch.setattr("config.settings.persist_dir", str(tmp_path))
     monkeypatch.setattr("config.settings.ig_gatemilano_token", "env-milano")
     monkeypatch.setattr("config.settings.ig_gatesardinia_token", "env-sardinia")
@@ -47,6 +46,24 @@ def test_manual_env_rotation_overrides_persisted(monkeypatch):
     assert token_store.get("gate_sardinia") == "env-nuovo-manuale"
 
 
+def test_empty_env_keeps_persisted_token(monkeypatch):
+    # env temporaneamente vuota (glitch secret) NON deve buttare via il token buono
+    token_store.load()
+    token_store.set_token("gate_sardinia", "refreshed-buono")
+    monkeypatch.setattr("config.settings.ig_gatesardinia_token", "")
+    token_store._tokens.clear(); token_store._origin.clear()
+    token_store.load()
+    assert token_store.get("gate_sardinia") == "refreshed-buono"
+
+
+def test_non_dict_json_does_not_crash_load(tmp_path, monkeypatch):
+    # un file JSON valido ma non-oggetto (es. un numero) non deve far crashare load()
+    (tmp_path / "ig_tokens.json").write_text("123", encoding="utf-8")
+    token_store._tokens.clear(); token_store._origin.clear()
+    token_store.load()  # non solleva
+    assert token_store.get("gate_milano") == "env-milano"
+
+
 def test_get_without_load_uses_env():
     # se lo store non è stato caricato, get() ricade sull'env (nessun crash)
     assert token_store.get("gate_milano") == "env-milano"
@@ -74,34 +91,24 @@ async def test_refresh_all_updates_store(monkeypatch):
     assert token_store.get("gate_sardinia") == "NEW::env-sardinia"
 
 
-async def test_refresh_failure_alerts_once(monkeypatch):
+async def test_refresh_failure_does_not_overwrite_store(monkeypatch):
     token_store.load()
-    alerts = []
 
     async def _fail(token):
         return None
-    async def _alert(text):
-        alerts.append(text)
     monkeypatch.setattr(token_refresh, "_refresh_one", _fail)
-    monkeypatch.setattr(token_refresh, "_alert", _alert)
 
-    await token_refresh.refresh_all()          # primo fail → 1 alert per venue
-    assert len(alerts) == 2
-    await token_refresh.refresh_all()          # ancora fail → nessun nuovo alert (no spam)
-    assert len(alerts) == 2
-    # lo store NON viene sovrascritto con None su fallimento
+    res = await token_refresh.refresh_all()
+    assert res == {"gate_milano": False, "gate_sardinia": False}
+    # lo store NON viene sovrascritto con None su fallimento: resta il token valido
     assert token_store.get("gate_milano") == "env-milano"
+    assert token_store.get("gate_sardinia") == "env-sardinia"
 
 
 async def test_refresh_recovers_after_failure(monkeypatch):
     token_store.load()
-    alerts = []
-
-    async def _alert(text):
-        alerts.append(text)
-    monkeypatch.setattr(token_refresh, "_alert", _alert)
-
     seq = {"n": 0}
+
     async def _flaky(token):
         seq["n"] += 1
         return None if seq["n"] <= 2 else f"NEW::{token}"
