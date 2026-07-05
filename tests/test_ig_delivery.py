@@ -117,10 +117,14 @@ async def test_successful_send_flags_delivered(_wired, monkeypatch):
 
     await igw.process_ig_message("24588954374135134", "user2", "vorrei un tavolo")
     assert _wired["notify"]["delivered"] is True
-    # trigger tavolo → drinklist inviata e flag alzato
+    # trigger tavolo → drinklist inclusa e flag alzato
     conv = igw._get_conversation("24588954374135134", "user2")
     assert conv.get("drinklist_sent") is True
-    assert len(_wired["sends"]) == 2
+    # UN SOLO messaggio: risposta + link accodato (niente messaggio separato che non parte)
+    assert len(_wired["sends"]) == 1
+    msg = _wired["sends"][0][2]
+    assert "vorrei un tavolo" in msg           # la risposta
+    assert "static/drinklist_sardegna.pdf" in msg  # il link accodato
 
 
 # --- rete di sicurezza: pipeline in errore → cortesia al cliente + allarme staff ---

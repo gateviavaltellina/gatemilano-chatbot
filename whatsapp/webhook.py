@@ -280,8 +280,9 @@ async def _process_message(phone: str, msg_id: str, text: str) -> None:
         if await send_document(phone, url, filename):
             _drinklist_sent.add(phone)
 
-    # Carta drink (prezzi singoli): su richiesta esplicita, allega il PDF del menu.
-    if sent and _should_send_drink_menu(venue, lower_text):
+    # Carta drink (prezzi singoli): su richiesta esplicita (o se il bot la offre),
+    # allega il PDF del menu.
+    if sent and _should_send_drink_menu(venue, lower_text, lower_reply):
         url, filename = _DRINK_MENUS[venue]
         await send_document(phone, url, filename)
 
