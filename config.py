@@ -4,7 +4,7 @@ from pathlib import Path
 class Settings(BaseSettings):
     # Anthropic
     anthropic_api_key: str
-    model: str = "claude-sonnet-4-6"
+    model: str = "claude-sonnet-5"
 
     # Fallback LLM per il rilevamento venue (WhatsApp, numero condiviso): quando le
     # keyword non bastano, un mini-classificatore capisce Milano/Sardegna anche dai
