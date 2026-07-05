@@ -243,15 +243,16 @@ def _has_name_match(query_tokens: set[str], name_tokens: set[str]) -> bool:
     return False
 
 
-def find_event_dates_by_name(venue: str, text: str, days: int = 80, limit: int = 2) -> list[str]:
+def find_event_dates_by_name(venue: str, text: str, days: int = 300, limit: int = 2) -> list[str]:
     """Risolve un evento dal nome/lineup citato nel messaggio (es. un artista) quando
     l'utente NON ha dato una data esplicita. Cerca su tutta la stagione (`days` giorni)
     gli eventi il cui titolo condivide almeno un token significativo (>=4 lettere) col
     messaggio, e ritorna fino a `limit` date YYYY-MM-DD in ordine cronologico.
 
     Serve a far trovare al bot eventi oltre la finestra "prossimi giorni" (es. chiedere
-    di un artista che suona tra 6 settimane) e ad alimentare il lookup tavoli per quella
-    serata.
+    di un artista che suona tra mesi) e ad alimentare il lookup tavoli per quella serata.
+    Finestra ampia (300gg ~ 10 mesi) perché Gate Milano programma la stagione con largo
+    anticipo: un cliente che chiede di un headliner a 4 mesi deve comunque trovarlo.
     """
     tokens = _name_tokens(text) - _NAME_STOPWORDS
     if not tokens:

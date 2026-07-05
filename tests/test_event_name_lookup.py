@@ -54,6 +54,16 @@ def test_ignores_events_past_horizon():
     assert find_event_dates_by_name("gate_sardinia", "biglietti per Faraway", days=80) == []
 
 
+def test_finds_next_season_event_by_name_default_window():
+    # Milano programma mesi avanti: un headliner a ~4 mesi deve essere trovato per nome
+    # con la finestra di default (300gg), non solo dando la data esatta.
+    _seed("gate_milano", "Conway The Machine", 127)
+    ts = _today_start_utc() + 127 * 86400
+    import datetime as _dt
+    expected = _dt.datetime.fromtimestamp(ts, tz=_dt.timezone.utc).strftime("%Y-%m-%d")
+    assert find_event_dates_by_name("gate_milano", "biglietti per Conway?") == [expected]
+
+
 def test_finds_artist_only_in_lineup_real_case():
     # caso reale Sardinia 10/7: il titolo è solo "Davide T" ma Kamelia, Dfifonte,
     # Asci sono in lineup (campo `artists` di Sanity). Chi chiede di Kamelia DEVE
