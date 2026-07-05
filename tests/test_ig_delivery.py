@@ -159,6 +159,10 @@ async def test_wa_pipeline_error_sends_fallback_and_alerts(monkeypatch):
         return True
     monkeypatch.setattr(waw, "mark_as_read", _mark)
 
+    async def _no_classify(t):
+        return None
+    monkeypatch.setattr(waw, "classify_venue", _no_classify)
+
     async def _send_ok(phone, text):
         calls["sends"].append(text)
         return True

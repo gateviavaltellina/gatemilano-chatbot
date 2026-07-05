@@ -6,6 +6,14 @@ class Settings(BaseSettings):
     anthropic_api_key: str
     model: str = "claude-sonnet-4-6"
 
+    # Fallback LLM per il rilevamento venue (WhatsApp, numero condiviso): quando le
+    # keyword non bastano, un mini-classificatore capisce Milano/Sardegna anche dai
+    # luoghi citati (sfrutta la geografia che il modello già conosce; niente Maps).
+    venue_llm_fallback: bool = True
+    # Modello del classificatore (vuoto = usa `model`). Un modello piccolo/veloce
+    # (es. haiku) riduce latenza e costo di questa chiamata breve.
+    venue_classifier_model: str = ""
+
     # WhatsApp
     wa_phone_number_id: str = "1021019861105099"
     wa_access_token: str
