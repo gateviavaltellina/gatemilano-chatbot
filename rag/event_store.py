@@ -193,9 +193,26 @@ _SHORT_ARTIST_ALLOWLIST = {"gue"}
 
 def _name_tokens(s: str) -> set[str]:
     """Token significativi di un nome/lineup: lunghi >=4 lettere, più i nomi artista
-    corti in allowlist (es. 'gue'). Match per token esatto, mai per sottostringa."""
+    corti in allowlist (es. 'gue')."""
     return {t for t in _norm_name(s).split()
             if len(t) >= 4 or t in _SHORT_ARTIST_ALLOWLIST}
+
+
+def _has_name_match(query_tokens: set[str], name_tokens: set[str]) -> bool:
+    """True se il messaggio identifica l'evento. Oltre al match ESATTO, accetta il
+    TRONCAMENTO: un token del messaggio (>=4 lettere) che è il prefisso di un nome
+    artista più lungo — è il soprannome tipico ('rondo' → 'rondodasosa', 'villa' →
+    'villabanks'). Il vincolo (nome più lungo di >=2 lettere) evita falsi match su
+    parole comuni."""
+    if query_tokens & name_tokens:
+        return True
+    for qt in query_tokens:
+        if len(qt) < 4:
+            continue
+        for nt in name_tokens:
+            if len(nt) >= len(qt) + 2 and nt.startswith(qt):
+                return True
+    return False
 
 
 def find_event_dates_by_name(venue: str, text: str, days: int = 80, limit: int = 2) -> list[str]:
@@ -230,7 +247,7 @@ def find_event_dates_by_name(venue: str, text: str, days: int = 80, limit: int =
         if artists:
             searchable += " " + " ".join(artists)
         name_tokens = _name_tokens(searchable)
-        if tokens & name_tokens:
+        if _has_name_match(tokens, name_tokens):
             di = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
             matched.append((ts, di))
     matched.sort(key=lambda x: x[0])
