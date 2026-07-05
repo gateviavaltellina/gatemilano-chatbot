@@ -59,6 +59,16 @@ def test_split_prefers_paragraph_boundary():
     assert chunks[0] == p1  # taglio sul confine di paragrafo, non a metà parola
 
 
+def test_split_keeps_period_with_first_chunk():
+    # sul confine di frase ". " il punto resta col primo blocco, il secondo NON inizia con "."
+    text = "A" * 940 + ". " + "B" * 100
+    chunks = split_for_ig(text)
+    assert len(chunks) == 2
+    assert chunks[0].endswith(".")
+    assert not chunks[1].startswith(".")
+    assert chunks[1] == "B" * 100
+
+
 # --- il fallimento d'invio deve produrre l'allarme, non una notifica normale ---
 
 @pytest.fixture

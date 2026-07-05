@@ -3,7 +3,7 @@ import hmac
 import logging
 import uvicorn
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, BackgroundTasks, HTTPException, Request
+from fastapi import FastAPI, BackgroundTasks, HTTPException, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -64,6 +64,9 @@ async def _init_background():
     # Ripristina lo stato conversazioni salvato (se PERSIST_DIR è configurato),
     # così un riavvio/deploy non azzera storia chat e human takeover.
     persistence.load_state()
+    # Carica i token IG rinnovati dal volume (se presenti), altrimenti usa le env var.
+    from instagram import token_store
+    token_store.load()
     try:
         # Sync ogni 2 ore, H24. Lo staff di un club pubblica gli eventi di SERA/NOTTE:
         # il vecchio schema (08-23 + 04:00) lasciava un buco 22:00→04:00→08:00 in cui
@@ -89,6 +92,14 @@ async def _init_background():
             check_tokens,
             CronTrigger(minute=30),
             id="token_health",
+            replace_existing=True,
+        )
+        # Auto-rinnovo token Instagram (scadono ~60gg): settimanale, margine enorme.
+        from instagram.token_refresh import refresh_all as _refresh_ig_tokens
+        scheduler.add_job(
+            _refresh_ig_tokens,
+            CronTrigger(day_of_week="mon", hour=5, minute=0),
+            id="ig_token_refresh",
             replace_existing=True,
         )
         scheduler.add_job(
@@ -126,6 +137,24 @@ async def lifespan(app: FastAPI):
     persistence.save_state()  # snapshot finale prima dello stop (deploy/riavvio)
     scheduler.shutdown()
     logger.info("Bot fermato.")
+
+
+_warned_no_debug_key = False
+
+
+async def require_debug_key(key: str = "") -> None:
+    """Protegge gli endpoint /debug/*. Se DEBUG_KEY è configurata, richiede ?key=.
+    Se vuota, resta aperto (retro-compatibile) ma logga un warning una volta."""
+    secret = settings.debug_key
+    if not secret:
+        global _warned_no_debug_key
+        if not _warned_no_debug_key:
+            logger.warning("DEBUG_KEY non configurata — endpoint /debug/* NON protetti. "
+                           "Impostala in produzione (i /debug mostrano contenuti dei DM).")
+            _warned_no_debug_key = True
+        return
+    if not hmac.compare_digest(key, secret):
+        raise HTTPException(status_code=403, detail="debug key non valida")
 
 
 app = FastAPI(title="Gate Milano WhatsApp Bot", version="1.0.0", lifespan=lifespan)
@@ -194,7 +223,7 @@ async def sanity_webhook(request: Request, background_tasks: BackgroundTasks, ke
     return {"status": "sync scheduled"}
 
 
-@app.get("/debug/events")
+@app.get("/debug/events", dependencies=[Depends(require_debug_key)])
 async def debug_events():
     from rag.event_store import count
     from sync.sanity_sync import get_last_sync_status
@@ -207,7 +236,7 @@ async def debug_events():
     }
 
 
-@app.get("/debug/last-messages")
+@app.get("/debug/last-messages", dependencies=[Depends(require_debug_key)])
 async def debug_last_messages():
     """Ultimi messaggi in arrivo e loro esito — per capire in 5 secondi se un DM
     di prova ARRIVA al bot e cosa succede dopo (ricezione vs invio vs takeover)."""
@@ -215,7 +244,15 @@ async def debug_last_messages():
     return {"events": recent()}
 
 
-@app.get("/debug/tokens")
+@app.post("/debug/refresh-tokens", dependencies=[Depends(require_debug_key)])
+async def debug_refresh_tokens():
+    """Forza il rinnovo dei token Instagram adesso (oltre al job settimanale).
+    Ritorna {venue: rinnovato?}. Utile per verificare il meccanismo su richiesta."""
+    from instagram.token_refresh import refresh_all
+    return {"refreshed": await refresh_all()}
+
+
+@app.get("/debug/tokens", dependencies=[Depends(require_debug_key)])
 async def debug_tokens():
     """Verifica AL MOMENTO la validità dei token Meta (IG/WA) e riporta l'esito.
     true = valido, false = scaduto/non valido, null = check non concludente."""
@@ -223,7 +260,7 @@ async def debug_tokens():
     return {"tokens": await check_tokens()}
 
 
-@app.get("/debug/context")
+@app.get("/debug/context", dependencies=[Depends(require_debug_key)])
 async def debug_context(venue: str = "gate_sardinia", text: str = "che eventi ci sono sabato?"):
     """Diagnostica: il contesto RAG COMPLETO che il bot vedrebbe per un messaggio.
     Permette di distinguere subito 'l'evento non è nello store' (problema sync/dati)
@@ -234,7 +271,7 @@ async def debug_context(venue: str = "gate_sardinia", text: str = "che eventi ci
     return {"venue": venue, "events_in_store": count(venue), "query_dates": dates, "context": ctx}
 
 
-@app.get("/debug/vip")
+@app.get("/debug/vip", dependencies=[Depends(require_debug_key)])
 async def debug_vip(venue: str = "gate_milano", text: str = "vorrei un tavolo vip"):
     from rag.context_builder import build_rag_context
     ctx, dates = await build_rag_context(venue, text)
@@ -242,7 +279,7 @@ async def debug_vip(venue: str = "gate_milano", text: str = "vorrei un tavolo vi
     return {"query_dates": dates, "vip_lines": lines, "context_preview": ctx[:800]}
 
 
-@app.get("/debug/vip/raw")
+@app.get("/debug/vip/raw", dependencies=[Depends(require_debug_key)])
 async def debug_vip_raw():
     import re, httpx
     from rag.vip_tables import _extract_slug_id, _fetch_uuid_for_numeric_id, _fetch_bottleservice

@@ -17,10 +17,12 @@ _SARDINIA_SEND_ID = "17841452139166980"
 
 
 def _token_for_account(ig_account_id: str) -> str:
+    # Legge dal token_store (token rinnovato più recente), non da settings diretto.
+    from instagram import token_store
     if ig_account_id in _MILANO_IDS:
-        return settings.ig_gatemilano_token
+        return token_store.get("gate_milano")
     if ig_account_id in _SARDINIA_IDS:
-        return settings.ig_gatesardinia_token
+        return token_store.get("gate_sardinia")
     return ""
 
 
@@ -55,13 +57,24 @@ def split_for_ig(text: str, limit: int = _IG_TEXT_LIMIT) -> list[str]:
         return [text]
     parts: list[str] = []
     remaining = text
+    min_cut = limit // 3   # non tagliare troppo corto: sotto questa soglia usa lo spazio
     while len(remaining) > limit:
         window = remaining[:limit]
-        cut = max(window.rfind("\n\n"), window.rfind("\n"), window.rfind(". "))
-        if cut < limit // 3:
-            cut = window.rfind(" ")
-        if cut <= 0:
-            cut = limit
+        para = window.rfind("\n\n")
+        line = window.rfind("\n")
+        sent = window.rfind(". ")
+        # Preferenza: paragrafo > riga > frase. Sul confine di frase il taglio va
+        # DOPO il punto (sent+1), così il punto resta col primo blocco e lo spazio
+        # iniziale del secondo viene rimosso da .strip().
+        if para >= min_cut:
+            cut = para
+        elif line >= min_cut:
+            cut = line
+        elif sent >= min_cut:
+            cut = sent + 1
+        else:
+            sp = window.rfind(" ")
+            cut = sp if sp > 0 else limit
         parts.append(remaining[:cut].strip())
         remaining = remaining[cut:].strip()
     if remaining:
