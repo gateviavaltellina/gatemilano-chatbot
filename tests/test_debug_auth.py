@@ -31,3 +31,14 @@ def test_debug_refresh_tokens_mutation_protected(monkeypatch):
     # l'endpoint che MUTA i token non deve essere azionabile senza chiave
     monkeypatch.setattr("config.settings.debug_key", "s3cret")
     assert _client().post("/debug/refresh-tokens").status_code == 403
+
+
+def test_debug_prompt_returns_system_prompt(monkeypatch):
+    monkeypatch.setattr("config.settings.debug_key", "")
+    r = _client().get("/debug/prompt", params={"venue": "gate_sardinia", "text": "ciao"})
+    assert r.status_code == 200
+    body = r.json()
+    assert "system_prompt" in body and "REGOLE FONDAMENTALI" in body["system_prompt"]
+    assert body["venue"] == "gate_sardinia"
+    # regola lingua (in fondo) presente nel prompt esportato
+    assert "LINGUA DELLA RISPOSTA" in body["system_prompt"]

@@ -271,6 +271,26 @@ async def debug_context(venue: str = "gate_sardinia", text: str = "che eventi ci
     return {"venue": venue, "events_in_store": count(venue), "query_dates": dates, "context": ctx}
 
 
+@app.get("/debug/prompt", dependencies=[Depends(require_debug_key)])
+async def debug_prompt(venue: str = "gate_sardinia", text: str = "ciao"):
+    """Il system prompt COMPLETO che il bot invia a Claude per questo messaggio.
+    Da copiare nella Console Anthropic (campo System) per testare/ritoccare i
+    comportamenti sul prompt VERO. Nessun segreto: solo regole + knowledge + contesto."""
+    from ai.claude_client import build_system_blocks
+    from rag.context_builder import build_rag_context
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    rag_ctx, _ = await build_rag_context(venue, text)
+    dt = datetime.now(ZoneInfo("Europe/Rome")).strftime("%A %-d %B %Y, %H:%M (Europe/Rome)")
+    blocks = build_system_blocks(venue, rag_ctx, dt)
+    return {
+        "venue": venue,
+        "model": settings.model,
+        "user_message_example": text,
+        "system_prompt": "\n\n".join(b["text"] for b in blocks),
+    }
+
+
 @app.get("/debug/vip", dependencies=[Depends(require_debug_key)])
 async def debug_vip(venue: str = "gate_milano", text: str = "vorrei un tavolo vip"):
     from rag.context_builder import build_rag_context
