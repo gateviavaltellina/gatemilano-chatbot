@@ -64,6 +64,9 @@ async def _init_background():
     # Ripristina lo stato conversazioni salvato (se PERSIST_DIR è configurato),
     # così un riavvio/deploy non azzera storia chat e human takeover.
     persistence.load_state()
+    # Carica i token IG rinnovati dal volume (se presenti), altrimenti usa le env var.
+    from instagram import token_store
+    token_store.load()
     try:
         # Sync ogni 2 ore, H24. Lo staff di un club pubblica gli eventi di SERA/NOTTE:
         # il vecchio schema (08-23 + 04:00) lasciava un buco 22:00→04:00→08:00 in cui
@@ -89,6 +92,14 @@ async def _init_background():
             check_tokens,
             CronTrigger(minute=30),
             id="token_health",
+            replace_existing=True,
+        )
+        # Auto-rinnovo token Instagram (scadono ~60gg): settimanale, margine enorme.
+        from instagram.token_refresh import refresh_all as _refresh_ig_tokens
+        scheduler.add_job(
+            _refresh_ig_tokens,
+            CronTrigger(day_of_week="mon", hour=5, minute=0),
+            id="ig_token_refresh",
             replace_existing=True,
         )
         scheduler.add_job(
@@ -213,6 +224,14 @@ async def debug_last_messages():
     di prova ARRIVA al bot e cosa succede dopo (ricezione vs invio vs takeover)."""
     from notifications.debug_trace import recent
     return {"events": recent()}
+
+
+@app.post("/debug/refresh-tokens")
+async def debug_refresh_tokens():
+    """Forza il rinnovo dei token Instagram adesso (oltre al job settimanale).
+    Ritorna {venue: rinnovato?}. Utile per verificare il meccanismo su richiesta."""
+    from instagram.token_refresh import refresh_all
+    return {"refreshed": await refresh_all()}
 
 
 @app.get("/debug/tokens")

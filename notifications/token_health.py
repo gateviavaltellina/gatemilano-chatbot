@@ -20,14 +20,17 @@ _last_status: dict[str, bool | None] = {}
 
 
 def _targets() -> list[tuple[str, str, str]]:
-    """(nome, url, token) per ogni credenziale configurata."""
+    """(nome, url, token) per ogni credenziale configurata. I token IG vengono dal
+    token_store (valore rinnovato più recente), non dall'env: dopo un auto-rinnovo
+    l'env resta col vecchio token, lo store ha quello nuovo."""
+    from instagram import token_store
     out = []
-    if settings.ig_gatemilano_token:
-        out.append(("Instagram @gatemilano",
-                    f"{settings.ig_api_url}/me", settings.ig_gatemilano_token))
-    if settings.ig_gatesardinia_token:
-        out.append(("Instagram @gatesardinia",
-                    f"{settings.ig_api_url}/me", settings.ig_gatesardinia_token))
+    ig_mi = token_store.get("gate_milano")
+    ig_sa = token_store.get("gate_sardinia")
+    if ig_mi:
+        out.append(("Instagram @gatemilano", f"{settings.ig_api_url}/me", ig_mi))
+    if ig_sa:
+        out.append(("Instagram @gatesardinia", f"{settings.ig_api_url}/me", ig_sa))
     if settings.wa_access_token:
         out.append(("WhatsApp Cloud API",
                     f"{settings.wa_api_url}/{settings.wa_phone_number_id}", settings.wa_access_token))

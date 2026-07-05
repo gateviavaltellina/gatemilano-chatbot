@@ -17,10 +17,12 @@ _SARDINIA_SEND_ID = "17841452139166980"
 
 
 def _token_for_account(ig_account_id: str) -> str:
+    # Legge dal token_store (token rinnovato più recente), non da settings diretto.
+    from instagram import token_store
     if ig_account_id in _MILANO_IDS:
-        return settings.ig_gatemilano_token
+        return token_store.get("gate_milano")
     if ig_account_id in _SARDINIA_IDS:
-        return settings.ig_gatesardinia_token
+        return token_store.get("gate_sardinia")
     return ""
 
 
