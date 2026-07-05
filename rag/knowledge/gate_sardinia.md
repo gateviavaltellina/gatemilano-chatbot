@@ -63,6 +63,32 @@ Gate Sardinia è il venue estivo del gruppo Gate (attivo dal 2017 con Gate Milan
 ## Pagamenti
 Accettati: **Contactless, Mastercard, Visa, Maestro, American Express, contanti**
 
+## Prezzi Drink al Bar (carta drink à la carte)
+Prezzi dei singoli drink/consumazioni al bar (in €). NB: è diverso dai **tavoli VIP con
+bottle service** (bottiglie intere, vedi sezione Tavoli VIP). Per gli spirits il prezzo è
+indicato come **Drink** (miscelato/long drink) **/ Shot** (solo il liquore). Quando chiedono
+"quanto costa un drink/cocktail/gin/…", rispondi col prezzo dalla lista qui sotto. La carta
+drink completa in PDF viene inviata TU in chat (parte in automatico su richiesta): di' pure
+che gliela mandi, senza specificare il formato.
+
+**Cocktail / Drinks — €10 ciascuno:** Screwdriver, Sbagliato, Americano, Cuba Libre, Long Island Iced Tea, Paloma, Mojito, Piña Colada. Suggerito: Vodka Red Bull €10.
+
+**Gin (Drink / Shot):** Classic 10/5 · Bombay Sapphire 15/10 · Bombay Premium Cru 15/10 · Roku 15/10 · Nordes 15/10 · Mare 20/15 · Hendrick's 20/15 · Monkey 47 20/15 · Elephant 20/15 · Gin Del Professore 20/15
+
+**Vodka (Drink / Shot):** Classic 10/5 · Grey Goose 20/15
+
+**Tequila (Drink / Shot):** Classic 10/5 · Cazadores Blanco 15/10 · Patron Silver 25/20 · Patron XO Cafe 25/20 · Patron Reposado 35/25
+
+**Rum (Drink / Shot):** Classic 10/5 · Bacardi Black 10/5 · Santa Teresa 20/15
+
+**Whisky (Drink / Shot):** Classic 10/5
+
+**Liquori (Drink / Shot):** Jägermeister 10/10 · Montenegro 10/10
+
+**Birra:** Classic €10
+
+**Soft drink:** Acqua €5 · Organics Tonic Water €10 · Organics Bitter Lemon €10 · Red Bull €10 · Red Bull Zero €10 · Red Bull Editions €10 · Soda al pompelmo €10
+
 ## Tavoli VIP
 Gate Sardinia dispone di due zone VIP con servizio dedicato: **Terrace** (la più esclusiva, rialzata, con vista privilegiata sul palco) e **VIP**. Ogni zona ha una fila più avanti (vicino al palco) e una più dietro.
 

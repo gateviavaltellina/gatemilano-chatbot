@@ -9,17 +9,36 @@ from __future__ import annotations
 DRINKLIST_BASE = "https://gatemilano-chatbot-production.up.railway.app/static"
 
 # venue → (url PDF, filename mostrato all'utente). Venue assente → nessun invio.
+# Questa è la BOTTLE LIST dei tavoli VIP (bottiglie intere, bottle service).
 DRINKLISTS: dict[str, tuple[str, str]] = {
     "gate_milano": (f"{DRINKLIST_BASE}/drinklist_perreo.pdf", "Drinklist VIP Perreo.pdf"),
     "gate_sardinia": (f"{DRINKLIST_BASE}/drinklist_sardegna.pdf", "Drinklist VIP Gate Sardinia.pdf"),
 }
 
-# Trigger IMPLICITI: si parla di tavoli/VIP → invio proattivo, una sola volta.
+# CARTA DRINK à la carte (prezzi dei singoli drink al bar) — cosa DIVERSA dalla bottle
+# list dei tavoli. Per ora solo Sardegna.
+DRINK_MENUS: dict[str, tuple[str, str]] = {
+    "gate_sardinia": (f"{DRINKLIST_BASE}/drink_menu_sardegna.pdf", "Drink List Gate Sardinia.pdf"),
+}
+
+# Trigger IMPLICITI bottle list: si parla di tavoli/VIP → invio proattivo, una sola volta.
 _DRINKLIST_TRIGGERS = ["tavolo", "tavoli", "vip", "bottle", "bottiglia", "minimo", "perreo xl"]
-# Richieste ESPLICITE del listino → invia SEMPRE (anche se già inviato).
+# Richieste ESPLICITE della bottle list dei tavoli → invia SEMPRE. "drinklist"/"drink
+# list" restano qui: nel sistema indicano storicamente la bottle list VIP dei tavoli.
 _DRINKLIST_EXPLICIT = [
-    "drinklist", "drink list", "listino", "bottiglie", "lista bottiglie",
-    "lista drink", "carta bottiglie", "carta drink",
+    "drinklist", "drink list", "bottiglie", "lista bottiglie", "listino bottiglie",
+    "carta bottiglie", "bottle list", "prezzi bottiglie", "quali bottiglie",
+]
+
+# Richieste ESPLICITE della carta drink (prezzi dei SINGOLI drink al bar) → invia il
+# menu drink. Frasi price-centriche, distinte dalla bottle list (nessun "drinklist").
+_DRINK_MENU_TRIGGERS = [
+    "quanto costa un drink", "quanto costano i drink", "quanto viene un drink",
+    "quanto costa bere", "prezzi drink", "prezzo drink", "prezzo dei drink",
+    "menu drink", "menù drink", "drink menu", "carta drink", "carta dei drink",
+    "lista drink", "listino drink",
+    "quanto costa un cocktail", "quanto costano i cocktail", "prezzi cocktail",
+    "quanto costa un mojito", "quanto costa un gin",
 ]
 
 
@@ -48,3 +67,26 @@ def drinklist_link_message(venue: str) -> str | None:
         return None
     url, _ = item
     return f"Ecco la drinklist VIP 🍾 scegli pure da qui:\n{url}"
+
+
+# --- Carta drink à la carte (prezzi singoli drink al bar) ---
+
+def should_send_drink_menu(venue: str, lower_text: str) -> bool:
+    """True se l'utente chiede ESPLICITAMENTE la carta drink / i prezzi dei drink.
+    Solo esplicito (niente invio proattivo): i prezzi sono già nella knowledge base,
+    il PDF si manda solo su richiesta."""
+    if venue not in DRINK_MENUS:
+        return False
+    return any(t in lower_text for t in _DRINK_MENU_TRIGGERS)
+
+
+def get_drink_menu(venue: str) -> tuple[str, str] | None:
+    return DRINK_MENUS.get(venue)
+
+
+def drink_menu_link_message(venue: str) -> str | None:
+    item = DRINK_MENUS.get(venue)
+    if not item:
+        return None
+    url, _ = item
+    return f"Ecco la drink list completa con tutti i prezzi 🍸\n{url}"
