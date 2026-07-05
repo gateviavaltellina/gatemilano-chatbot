@@ -46,6 +46,13 @@ def test_drink_menu_triggers_on_price_questions():
         assert should_send_drink_menu("gate_sardinia", q.lower()), q
 
 
+def test_drink_menu_triggers_on_bot_reply_offering_it():
+    # se è il BOT a offrire la carta drink nella risposta, il link parte comunque
+    assert should_send_drink_menu("gate_sardinia", "avete cocktail?", "sì! ti mando la carta drink")
+    # ma un reply che parla della bottle list NON deve attivare la carta drink
+    assert not should_send_drink_menu("gate_sardinia", "tavoli?", "ti mando la drinklist dei tavoli")
+
+
 def test_drink_menu_only_sardinia():
     # per ora la carta drink è solo Sardegna
     assert not should_send_drink_menu("gate_milano", "quanto costa un drink")

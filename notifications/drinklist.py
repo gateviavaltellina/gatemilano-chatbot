@@ -71,13 +71,23 @@ def drinklist_link_message(venue: str) -> str | None:
 
 # --- Carta drink à la carte (prezzi singoli drink al bar) ---
 
-def should_send_drink_menu(venue: str, lower_text: str) -> bool:
-    """True se l'utente chiede ESPLICITAMENTE la carta drink / i prezzi dei drink.
-    Solo esplicito (niente invio proattivo): i prezzi sono già nella knowledge base,
-    il PDF si manda solo su richiesta."""
+# Marcatori nella RISPOSTA del bot che indicano che sta offrendo la carta drink:
+# così se il bot dice "ti mando la carta drink" il link parte davvero (allineiamo la
+# promessa all'azione). Solo termini drink-specifici, non "drinklist" (= bottle list).
+_DRINK_MENU_REPLY_MARKERS = [
+    "carta drink", "menu drink", "menù drink", "lista drink", "listino drink", "prezzi drink",
+]
+
+
+def should_send_drink_menu(venue: str, lower_text: str, lower_reply: str = "") -> bool:
+    """True se l'utente chiede la carta drink / i prezzi dei drink, o se è il bot a
+    offrirla nella risposta. I prezzi sono già nella KB: il PDF si manda solo su
+    richiesta (niente invio proattivo)."""
     if venue not in DRINK_MENUS:
         return False
-    return any(t in lower_text for t in _DRINK_MENU_TRIGGERS)
+    if any(t in lower_text for t in _DRINK_MENU_TRIGGERS):
+        return True
+    return bool(lower_reply) and any(m in lower_reply for m in _DRINK_MENU_REPLY_MARKERS)
 
 
 def get_drink_menu(venue: str) -> tuple[str, str] | None:

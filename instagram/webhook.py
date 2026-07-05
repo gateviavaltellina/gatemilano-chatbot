@@ -213,22 +213,24 @@ async def _process_ig_message(ig_account_id: str, sender_id: str, text: str) -> 
     )
     _add_to_history(conv, "assistant", reply)
 
-    sent = await send_ig_message(ig_account_id, sender_id, reply)
-    _trace("ig", sender_id, reply, "risposta", inviata=("SI" if sent else "NO"))
+    # IG non allega PDF → i link (drinklist bottiglie / carta drink) vanno come testo.
+    # Li ACCODIAMO alla risposta in un UNICO messaggio: così non capita che il bot dica
+    # "ti mando il link" e poi il messaggio separato non parta. split_for_ig spezza da
+    # sé se supera il limite. Il flag drinklist si alza solo a invio riuscito.
+    low_t, low_r = text.lower(), reply.lower()
+    want_bottle = should_send_drinklist(venue, low_t, low_r, conv.get("drinklist_sent", False))
+    want_menu = should_send_drink_menu(venue, low_t, low_r)
+    links = []
+    if want_bottle and (lm := drinklist_link_message(venue)):
+        links.append(lm)
+    if want_menu and (mm := drink_menu_link_message(venue)):
+        links.append(mm)
+    full_reply = reply if not links else reply.rstrip() + "\n\n" + "\n\n".join(links)
 
-    # Drinklist: IG non può allegare PDF → invia il LINK come testo. Flag per
-    # conversazione (persistito con la conv) per non re-inviarlo a ogni messaggio.
-    # Il flag si alza SOLO se l'invio è riuscito, così al giro dopo si ritenta.
-    if sent and should_send_drinklist(venue, text.lower(), reply.lower(), conv.get("drinklist_sent", False)):
-        link_msg = drinklist_link_message(venue)
-        if link_msg and await send_ig_message(ig_account_id, sender_id, link_msg):
-            conv["drinklist_sent"] = True
-
-    # Carta drink (prezzi singoli drink): su richiesta esplicita, invia il link al menu.
-    if sent and should_send_drink_menu(venue, text.lower()):
-        menu_msg = drink_menu_link_message(venue)
-        if menu_msg:
-            await send_ig_message(ig_account_id, sender_id, menu_msg)
+    sent = await send_ig_message(ig_account_id, sender_id, full_reply)
+    _trace("ig", sender_id, full_reply, "risposta", inviata=("SI" if sent else "NO"))
+    if sent and want_bottle:
+        conv["drinklist_sent"] = True
 
     sensitive = detect_sensitive(text)
     if sensitive:
