@@ -1,7 +1,7 @@
 # Gate Sardinia — Informazioni Ufficiali
 
 ## ⚠️ AVVISO IMPORTANTE — APERTURA POSTICIPATA (temporaneo: rimuovere quando la nuova data è annunciata)
-**L'apertura della stagione slitta di qualche giorno.** Comunicazione ufficiale da usare, con tono caloroso e positivo:
+**L'apertura della stagione slitta di qualche giorno.** Contenuto da comunicare (adattandolo SEMPRE alla lingua dell'utente — se scrive in inglese, rispondi in inglese), con tono caloroso e positivo:
 
 > Stiamo scaldando i motori, ma l'apertura del locale slitta di qualche giorno. Vi comunicheremo la nuova data il prima possibile: la stiamo preparando con ancora più cura, per regalarvi l'apertura che meritate! Restate connessi su Instagram @gatesardinia, le novità sono in arrivo 💛
 
