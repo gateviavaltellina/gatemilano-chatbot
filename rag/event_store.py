@@ -198,20 +198,48 @@ def _name_tokens(s: str) -> set[str]:
             if len(t) >= 4 or t in _SHORT_ARTIST_ALLOWLIST}
 
 
+def _edit_distance(a: str, b: str, max_d: int) -> int:
+    """Distanza di Levenshtein con early-exit: se supera max_d ritorna max_d+1."""
+    if abs(len(a) - len(b)) > max_d:
+        return max_d + 1
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        row_best = i
+        for j, cb in enumerate(b, 1):
+            cost = 0 if ca == cb else 1
+            v = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost)
+            cur.append(v)
+            row_best = min(row_best, v)
+        if row_best > max_d:
+            return max_d + 1
+        prev = cur
+    return prev[-1]
+
+
 def _has_name_match(query_tokens: set[str], name_tokens: set[str]) -> bool:
-    """True se il messaggio identifica l'evento. Oltre al match ESATTO, accetta il
-    TRONCAMENTO: un token del messaggio (>=4 lettere) che è il prefisso di un nome
-    artista più lungo — è il soprannome tipico ('rondo' → 'rondodasosa', 'villa' →
-    'villabanks'). Il vincolo (nome più lungo di >=2 lettere) evita falsi match su
-    parole comuni."""
+    """True se il messaggio identifica l'evento. Tre livelli, dal più sicuro:
+    1) ESATTO (token identico);
+    2) TRONCAMENTO/soprannome: token del messaggio (>=4) prefisso di un nome più lungo
+       ('rondo' → 'rondodasosa', 'villa' → 'villabanks');
+    3) FUZZY (typo): 1-2 lettere sbagliate su token lunghi e di lunghezza simile
+       ('vilabanks' → 'villabanks', 'rondodasola' → 'rondodasosa').
+    Le guardie (lunghezza minima, differenza di lunghezza <=2) evitano falsi match su
+    parole comuni del messaggio."""
     if query_tokens & name_tokens:
         return True
     for qt in query_tokens:
         if len(qt) < 4:
             continue
         for nt in name_tokens:
+            # 2) troncamento: qt è il prefisso di un nome più lungo
             if len(nt) >= len(qt) + 2 and nt.startswith(qt):
                 return True
+            # 3) fuzzy: solo token lunghi (>=5) e di lunghezza simile (±2)
+            if len(qt) >= 5 and len(nt) >= 5 and abs(len(qt) - len(nt)) <= 2:
+                max_d = 1 if min(len(qt), len(nt)) <= 7 else 2
+                if _edit_distance(qt, nt, max_d) <= max_d:
+                    return True
     return False
 
 

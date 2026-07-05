@@ -104,6 +104,23 @@ def test_prefix_match_no_false_positive_on_common_words():
         assert find_event_dates_by_name("gate_sardinia", msg) == [], msg
 
 
+def test_fuzzy_match_tolerates_typos():
+    # typo di 1 lettera dentro il nome (non prefisso) → deve comunque risolvere
+    _seed("gate_sardinia", "Villabanks", 20)
+    _seed("gate_sardinia", "Rondodasosa", 28)
+    assert find_event_dates_by_name("gate_sardinia", "biglietti per vilabanks?")   # L mancante
+    assert find_event_dates_by_name("gate_sardinia", "c'è rondodasola?")           # s→l
+    assert find_event_dates_by_name("gate_sardinia", "quando suona villabanls?")   # k→l
+
+
+def test_fuzzy_no_false_positive_on_unrelated_long_words():
+    # parole lunghe non-artista del messaggio non devono agganciare per fuzzy
+    _seed("gate_sardinia", "Rondodasosa", 28)
+    for msg in ["vorremmo prenotare un tavolino", "informazioni sull'ingresso",
+                "accompagnati da un maggiorenne"]:
+        assert find_event_dates_by_name("gate_sardinia", msg) == [], msg
+
+
 def test_finds_multiword_artist_in_lineup():
     # artista a due parole presente solo in lineup
     _seed("gate_sardinia", "Leon, Yaya", 20, artists=["Leon", "Matthias Tanzmann", "Yaya"])
