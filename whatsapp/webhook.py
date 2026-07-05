@@ -11,6 +11,7 @@ from config import settings
 from webhook_security import verify_meta_signature
 from whatsapp.client import send_message, send_document, mark_as_read
 from venue.detector import VenueDetector
+from venue.classifier import classify_venue
 from rag.context_builder import build_rag_context
 from ai.claude_client import generate_response
 from notifications.discord import notify_conversation, notify_human_message, notify_escalation
@@ -251,7 +252,8 @@ async def _process_message(phone: str, msg_id: str, text: str) -> None:
 
     venue = _venue_detector.detect(text, conv.get("venue"), conv.get("history", []))
     if venue is None:
-        venue = "gate_milano"
+        # keyword ambigue → fallback LLM (capisce i luoghi citati), poi default Milano
+        venue = await classify_venue(text) or "gate_milano"
     conv["venue"] = venue
 
     rag_context, _ = await build_rag_context(venue, text, history=conv.get("history", []))
