@@ -78,7 +78,9 @@ def _add_to_history(conv: dict, role: str, content: str, max_history: int) -> No
 # alleghiamo il PDF; gli alias _DRINKLISTS/_should_send_drinklist restano per compat.
 from notifications.drinklist import (  # noqa: E402
     DRINKLISTS as _DRINKLISTS,
+    DRINK_MENUS as _DRINK_MENUS,
     should_send_drinklist as _should_send_drinklist,
+    should_send_drink_menu as _should_send_drink_menu,
 )
 
 _drinklist_sent: set[str] = set()
@@ -277,5 +279,10 @@ async def _process_message(phone: str, msg_id: str, text: str) -> None:
         url, filename = _DRINKLISTS[venue]
         if await send_document(phone, url, filename):
             _drinklist_sent.add(phone)
+
+    # Carta drink (prezzi singoli): su richiesta esplicita, allega il PDF del menu.
+    if sent and _should_send_drink_menu(venue, lower_text):
+        url, filename = _DRINK_MENUS[venue]
+        await send_document(phone, url, filename)
 
     await notify_conversation(phone, venue, text, reply, delivered=sent)
