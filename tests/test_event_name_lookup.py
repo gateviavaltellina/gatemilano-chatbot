@@ -82,6 +82,28 @@ def test_short_non_allowlisted_token_still_ignored():
     assert find_event_dates_by_name("gate_sardinia", "sun") == []
 
 
+def test_truncated_nickname_resolves_artist():
+    # caso reale: l'utente scrive "rondo" per "Rondodasosa" (troncamento) e la serata
+    # è in programma. Il match per prefisso deve risolverla.
+    _seed("gate_sardinia", "Rondodasosa", 28)
+    ts = _today_start_utc() + 28 * 86400
+    import datetime as _dt
+    expected = _dt.datetime.fromtimestamp(ts, tz=_dt.timezone.utc).strftime("%Y-%m-%d")
+    assert find_event_dates_by_name(
+        "gate_sardinia", "io e un amico vorremmo venire a vedere rondo") == [expected]
+    # anche altri troncamenti tipici
+    _seed("gate_sardinia", "Villabanks", 20)
+    assert find_event_dates_by_name("gate_sardinia", "quando suona villa?")
+
+
+def test_prefix_match_no_false_positive_on_common_words():
+    # parole comuni del messaggio non devono agganciare eventi per prefisso
+    _seed("gate_sardinia", "Rondodasosa", 28)
+    for msg in ["vorrei un tavolo per sabato", "a che ora aprite stasera?",
+                "come arrivo al gate?"]:
+        assert find_event_dates_by_name("gate_sardinia", msg) == [], msg
+
+
 def test_finds_multiword_artist_in_lineup():
     # artista a due parole presente solo in lineup
     _seed("gate_sardinia", "Leon, Yaya", 20, artists=["Leon", "Matthias Tanzmann", "Yaya"])
