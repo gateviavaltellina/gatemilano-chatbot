@@ -36,6 +36,29 @@ def _patch(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_cross_venue_injects_other_venue_policies():
+    # cliente su canale Milano chiede di un evento Sardegna: oltre all'evento devono
+    # arrivare le POLICY di Sardegna (es. minori accompagnati), così il bot risponde
+    # invece di rimandare al sito. Caso reale: 14enni al concerto di Massimo Pericolo.
+    _seed("gate_sardinia", "mp-2026-07-30", "Massimo Pericolo", "2026-07-30")
+    ctx, dates = await cb.build_rag_context(
+        "gate_milano", "al concerto di Massimo Pericolo entrano i 14enni accompagnati?"
+    )
+    assert dates == ["2026-07-30"]
+    assert "INFO E POLICY GATE SARDINIA" in ctx
+    # la policy età di Sardegna (minori accompagnati) è ora nel contesto
+    assert "accompagnati da un maggiorenne" in ctx.lower()
+
+
+@pytest.mark.asyncio
+async def test_no_cross_venue_no_other_policies():
+    # se l'evento è della STESSA venue, non si inietta la KB dell'altra
+    _seed("gate_milano", "ev-mi", "Massimo Pericolo Milano", "2026-06-29")
+    ctx, _ = await cb.build_rag_context("gate_milano", "quando c'è Massimo Pericolo?")
+    assert "INFO E POLICY" not in ctx
+
+
+@pytest.mark.asyncio
 async def test_cross_venue_tables_injected_and_labeled():
     # cliente sul canale Milano, ma l'evento del 5/7 è a Gate Sardinia
     _seed("gate_sardinia", "tba-2026-07-05-x", "Lubi, Melons, Overlapa", "2026-07-05")

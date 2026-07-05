@@ -98,6 +98,7 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
 
     # 2. Full event details for specifically queried dates
     date_parts = []
+    cross_venue = False
     for date_str in query_dates:
         day_events = get_events_for_date(venue, date_str)
         if day_events:
@@ -105,6 +106,7 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
         other_events = get_events_for_date(other_venue, date_str)
         if other_events:
             date_parts.append(f"[EVENTI A {other_venue_name.upper()} — venue diversa]\n{other_events}")
+            cross_venue = True
 
     # 3. Compact upcoming list (title + date + link, 1 line per event, 14 giorni)
     upcoming = get_upcoming_events_compact(venue, days=14)
@@ -113,4 +115,19 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # iniettata nel blocco system cacheato (vedi ai/claude_client.build_system_blocks).
     # Qui resta solo il contesto DINAMICO (cambia per messaggio/giorno).
     parts = [p for p in [vip_context, *date_parts, upcoming] if p]
+
+    # 4. Cross-venue: se c'è un evento dell'ALTRA venue, inietta anche le SUE info e
+    # policy (età, dress code, rimborsi, tavoli…). Senza questo il bot risolve l'evento
+    # ma non può rispondere alle domande di policy su quella location (caso reale:
+    # "minorenni al concerto di Massimo Pericolo a Gate Sardinia?") e rimanda al sito
+    # pur conoscendo la risposta. La KB dell'altra venue non è nel prompt del canale.
+    if cross_venue:
+        from rag.knowledge_cache import get as _get_kb
+        other_kb = _get_kb(other_venue)
+        if other_kb:
+            parts.append(
+                f"[INFO E POLICY {other_venue_name.upper()} — venue diversa: USA QUESTE "
+                f"per rispondere alle domande su quell'evento (età, dress code, rimborsi, "
+                f"tavoli, contatti). NON applicarle a {venue.replace('_', ' ').title()}]\n{other_kb}"
+            )
     return "\n\n---\n\n".join(parts), query_dates
