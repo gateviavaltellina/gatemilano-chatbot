@@ -36,6 +36,11 @@ Gate Sardinia è il venue estivo del gruppo Gate (attivo dal 2017 con Gate Milan
 
 **Parcheggio:** gratuito in loco (non custodito)
 
+**Navette / transfer:** servizio navette gestito da **Navette Orosei** — referente
+**Salvatore, WhatsApp/telefono +39 328 813 4685**. Quando chiedono se ci sono navette,
+transfer o come arrivare senza auto, fornisci questo contatto (orari, tratte e prezzi si
+concordano direttamente con loro).
+
 ## Biglietti
 - Acquisto online sulla biglietteria ufficiale **ticketsms.it**
 - Se l'evento è in programma, il link diretto ticketsms va girato per intero; gatesardinia.it e Instagram @gatesardinia sono il riferimento solo quando non c'è un evento/link specifico
@@ -158,3 +163,4 @@ Gate Sardinia è disponibile per eventi aziendali, privati e corporate.
 | Info generali, oggetti smarriti, accrediti, accessibilità, rimborsi | info@gatesardinia.it |
 | Prenotazione tavoli VIP | Online: gatesardinia.it/tavoli · Assistenza: vip@gatesardinia.it · WhatsApp +39 391 487 6443 |
 | Booking artisti, eventi privati/aziendali | booking@gatesardinia.it · WhatsApp +39 391 487 6443 |
+| Navette / transfer | Navette Orosei — Salvatore, WhatsApp/telefono +39 328 813 4685 |

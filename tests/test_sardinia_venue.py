@@ -30,6 +30,13 @@ def test_sardinia_prompt_has_no_milano_hours():
     assert "22:00 – 04:00" in s
 
 
+def test_sardinia_prompt_has_navette_contact():
+    # contatto navette (Navette Orosei — Salvatore) disponibile per chi chiede transfer
+    s = _static("gate_sardinia")
+    assert "328 813 4685" in s
+    assert "Navette Orosei" in s
+
+
 def test_sardinia_prompt_uses_ticketsms_not_xceed_dice_as_platform():
     s = _static("gate_sardinia")
     assert "ticketsms.it" in s

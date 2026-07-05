@@ -8,6 +8,10 @@ MILANO_KEYWORDS = [
 SARDINIA_KEYWORDS = [
     "sardinia", "sardegna", "sarda", "sardo", "sardinian",
     "budoni", "gate sardinia", "gatesardinia", "sardinia club",
+    # Toponimi sardi vicino al venue: se li citano, l'intento è Gate Sardinia
+    # (caso reale: "navette da San Teodoro per il gate" finiva su Milano).
+    "san teodoro", "olbia", "nuoro", "orosei", "costa smeralda",
+    "posada", "siniscola", "la caletta",
 ]
 
 class VenueDetector:
