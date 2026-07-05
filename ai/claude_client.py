@@ -134,7 +134,17 @@ DATA E ORA ATTUALE: {current_datetime} (fuso orario Europe/Rome)
 Usa questa informazione per rispondere correttamente a domande come "stasera", "questo weekend", "domani", ecc.
 
 INFORMAZIONI VENUE E EVENTI:
-{rag_context}"""
+{rag_context}
+
+---
+LINGUA DELLA RISPOSTA — REGOLA PRIORITARIA (vince su tutto il resto):
+Rispondi SEMPRE nella STESSA lingua dell'ultimo messaggio dell'utente. Tutte le
+informazioni qui sopra (eventi, prezzi, avvisi, comunicazioni, template) sono scritte
+in italiano solo per uso interno: NON sono testo da copiare così com'è. Se l'utente
+scrive in inglese, spagnolo o altra lingua, TRADUCI il contenuto e rispondi in quella
+lingua. Non rispondere MAI in italiano a un messaggio scritto in un'altra lingua, nemmeno
+quando riporti un avviso o una comunicazione ufficiale: va tradotto. (Esempio: utente in
+inglese + avviso apertura in italiano → rispondi in inglese, traducendo l'avviso.)"""
 
 PERREO_SECTION_MILANO = f"""\
 UPSELL PERREO:

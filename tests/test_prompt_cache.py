@@ -40,6 +40,16 @@ def test_sardinia_static_has_no_perreo():
     assert "UPSELL PERREO" not in blocks[0]["text"]
 
 
+def test_language_rule_at_end_of_dynamic_block():
+    # La regola-lingua prioritaria deve stare nel blocco DINAMICO e IN FONDO (dopo il
+    # contesto RAG), così è l'ultima istruzione che il modello legge prima di rispondere.
+    for venue in ("gate_milano", "gate_sardinia"):
+        dyn = build_system_blocks(venue, "EVENTI: x", "lunedi 1 gennaio 2026, 12:00")[1]["text"]
+        assert "LINGUA DELLA RISPOSTA" in dyn
+        assert "TRADUCI" in dyn
+        assert dyn.index("LINGUA DELLA RISPOSTA") > dyn.index("EVENTI: x")
+
+
 def test_corrections_injected_in_dynamic_block(monkeypatch):
     seen = []
     monkeypatch.setattr(
