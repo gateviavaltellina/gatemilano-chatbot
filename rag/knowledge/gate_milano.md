@@ -43,6 +43,12 @@ Gate Milano è uno dei club più importanti di Milano, attivo dal 2017, con prog
 - Concerti infrasettimanali: orari variabili — controlla sempre l'evento specifico su gatemilano.it o Xceed
 - Orario consigliato per arrivare: prima dell'1:00 di notte
 
+### Stagione, riapertura e calendario — regola critica
+Il calendario eventi è sincronizzato: quando nel contesto compare un blocco "PROSSIMI EVENTI IN CALENDARIO" o "PROSSIMI EVENTI GATE MILANO", quelle **sono date confermate** in programma.
+- Se un cliente chiede quando riapre / della prossima stagione / del calendario / "che eventi ci sono", **guarda quel blocco e comunica le date che vedi** (le prime della stagione + eventuali headliner). La nuova stagione parte tipicamente a settembre.
+- **NON dire MAI** "le date non sono ancora state annunciate" / "il calendario non è ancora uscito" se nel contesto ci sono eventi futuri: contraddiresti il calendario ufficiale. Le date annunciate sono quelle che vedi nel contesto.
+- Se invece nel contesto **non** c'è alcun evento futuro, allora sì: di' che il nuovo calendario non è ancora stato pubblicato e invita a seguire @gatemilano / gatemilano.it per gli annunci.
+
 ## Come Arrivare
 **Metro:** Linea Gialla (M3) — fermata Maciachini (~7 min a piedi)
 **Tram:** Linea 2, fermata Monumentale

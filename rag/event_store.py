@@ -105,6 +105,48 @@ def get_upcoming_events(venue: str, days: int = 14) -> str:
     return "\n\n---\n\n".join(e["document"] for e in events)
 
 
+def _compact_event_line(e: dict) -> str:
+    """Rende un evento in una riga compatta '• data: nome · sala · prezzo/stato — link'.
+    Condivisa da get_upcoming_events_compact e get_next_events_compact."""
+    meta = e["metadata"]
+    name = meta.get("event_name", "Evento")
+    doc = e["document"]
+
+    date_line = ""
+    room = ""
+    min_price = ""
+    sold_out = False
+    selling_fast = False
+
+    for line in doc.split("\n"):
+        if line.startswith("Data:"):
+            date_line = line.replace("Data:", "").strip()
+        elif line.startswith("Sala:"):
+            room = line.replace("Sala:", "").strip()
+        elif "ESAURITI" in line:
+            sold_out = True
+        elif "Sold out velocemente" in line:
+            selling_fast = True
+        elif line.strip().startswith("•") and "€" in line:
+            m = re.search(r"€(\d+)", line)
+            if m and not min_price:
+                min_price = m.group(1)
+
+    parts = [name]
+    if room:
+        parts.append(room)
+    if sold_out:
+        parts.append("ESAURITI")
+    elif selling_fast:
+        parts.append("ultimi biglietti")
+    elif min_price:
+        parts.append(f"da €{min_price}")
+
+    ticket = meta.get("ticket_url", "")
+    ticket_str = f" — {ticket}" if ticket else ""
+    return f"• {date_line}: {' · '.join(parts)}{ticket_str}"
+
+
 def get_upcoming_events_compact(venue: str, days: int = 14) -> str:
     """1-line-per-event summary — lighter RAG context for upcoming events.
     Full details are injected separately only for dates the user explicitly asked about."""
@@ -120,48 +162,33 @@ def get_upcoming_events_compact(venue: str, days: int = 14) -> str:
     events.sort(key=lambda e: e["metadata"].get("date_ts", 0))
     venue_label = venue.replace("_", " ").title()
     lines = [f"PROSSIMI EVENTI {venue_label.upper()} (prossimi {days} giorni):"]
-    for e in events:
-        meta = e["metadata"]
-        name = meta.get("event_name", "Evento")
-        doc = e["document"]
+    lines.extend(_compact_event_line(e) for e in events)
+    return "\n".join(lines)
 
-        date_line = ""
-        room = ""
-        min_price = ""
-        sold_out = False
-        selling_fast = False
 
-        for line in doc.split("\n"):
-            if line.startswith("Data:"):
-                date_line = line.replace("Data:", "").strip()
-            elif line.startswith("Sala:"):
-                room = line.replace("Sala:", "").strip()
-            elif "ESAURITI" in line:
-                sold_out = True
-            elif "Sold out velocemente" in line:
-                selling_fast = True
-            elif line.startswith("Prezzi:"):
-                # Extract lowest price from lines like "• Normale: €15"
-                pass
-            elif line.strip().startswith("•") and "€" in line:
-                import re
-                m = re.search(r"€(\d+)", line)
-                if m and not min_price:
-                    min_price = m.group(1)
-
-        parts = [name]
-        if room:
-            parts.append(room)
-        if sold_out:
-            parts.append("ESAURITI")
-        elif selling_fast:
-            parts.append("ultimi biglietti")
-        elif min_price:
-            parts.append(f"da €{min_price}")
-
-        ticket = meta.get("ticket_url", "")
-        ticket_str = f" — {ticket}" if ticket else ""
-        lines.append(f"• {date_line}: {' · '.join(parts)}{ticket_str}")
+def get_next_events_compact(venue: str, limit: int = 8, days: int = 220) -> str:
+    """Lista compatta dei PROSSIMI `limit` eventi in calendario, IGNORANDO la finestra
+    breve dei 14 giorni. Serve alle domande su stagione/riapertura/calendario: Gate
+    Milano programma la stagione con mesi di anticipo, quindi i prossimi eventi possono
+    cadere ben oltre i 14 giorni. Senza questo, a fine giugno/luglio il bot risponde
+    'stagione non ancora annunciata' pur avendo gli eventi (set-dic) già in Sanity."""
+    today_ts = _today_start_utc()
+    end_ts = today_ts + days * 86400
+    events = [
+        e for e in _get(venue)
+        if e["metadata"].get("type") == "event"
+        and today_ts <= e["metadata"].get("date_ts", 0) <= end_ts
+    ]
+    if not events:
+        return ""
+    events.sort(key=lambda e: e["metadata"].get("date_ts", 0))
+    events = events[:limit]
+    venue_label = venue.replace("_", " ").title()
+    lines = [
+        f"PROSSIMI EVENTI IN CALENDARIO {venue_label.upper()} "
+        f"(date confermate, in ordine cronologico):"
+    ]
+    lines.extend(_compact_event_line(e) for e in events)
     return "\n".join(lines)
 
 

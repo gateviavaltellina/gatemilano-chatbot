@@ -4,6 +4,7 @@ import logging
 
 from rag.event_store import (
     get_upcoming_events_compact,
+    get_next_events_compact,
     get_events_for_date,
     get_vip_candidates,
     find_event_dates_by_name,
@@ -13,6 +14,19 @@ from rag.vip_tables import get_vip_tables_context, get_vip_tables_via_site, get_
 
 logger = logging.getLogger(__name__)
 
+# Domande sulla STAGIONE / CALENDARIO / RIAPERTURA: non citano una data né un artista,
+# quindi né la data esplicita né il match per nome scattano, e la finestra breve dei 14
+# giorni può essere vuota (a fine giugno/luglio i primi eventi di set sono >14gg). Senza
+# un segnale dedicato il bot risponde dalla sola KB statica ("stagione set–giu") →
+# "date non ancora annunciate", pur avendo gli eventi già in Sanity. Caso reale Milano:
+# "info sull'apertura della stagione invernale, date e orari?".
+_SEASON_TRIGGERS = {
+    "stagione", "prossima stagione", "riapertura", "riaprite", "riapre", "riapri",
+    "quando aprite", "quando apre", "apertura", "calendario", "programmazione",
+    "prossimi eventi", "eventi in programma", "che eventi", "quali eventi",
+    "date della stagione", "date stagione", "line up", "line-up", "lineup",
+    "in programma", "prossime serate", "prossime date",
+}
 _VIP_TRIGGERS = {
     "tavolo", "tavoli", "vip", "bottle", "bottiglia", "bottiglie", "minimo",
     "table", "tables", "backstage", "disponibil", "prenotare", "prenot",
@@ -108,8 +122,15 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
             date_parts.append(f"[EVENTI A {other_venue_name.upper()} — venue diversa]\n{other_events}")
             cross_venue = True
 
-    # 3. Compact upcoming list (title + date + link, 1 line per event, 14 giorni)
-    upcoming = get_upcoming_events_compact(venue, days=14)
+    # 3. Compact upcoming list (title + date + link, 1 line per event, 14 giorni).
+    # Se il cliente chiede della stagione/calendario/riapertura, mostra i PROSSIMI
+    # eventi in calendario anche oltre i 14 giorni (Milano programma con mesi di
+    # anticipo): così il bot NON dice "stagione non ancora annunciata" avendo gli
+    # eventi in Sanity.
+    if any(t in lower_text for t in _SEASON_TRIGGERS):
+        upcoming = get_next_events_compact(venue) or get_upcoming_events_compact(venue, days=14)
+    else:
+        upcoming = get_upcoming_events_compact(venue, days=14)
 
     # NB: la knowledge base statica NON è più qui — è costante per venue e viene
     # iniettata nel blocco system cacheato (vedi ai/claude_client.build_system_blocks).
