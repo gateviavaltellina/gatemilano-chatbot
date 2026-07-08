@@ -61,7 +61,15 @@ GROQ_EVENTS = """*[_type == "event" && date >= $today] | order(date asc) {
   isSoldOut,
   isSellingFast,
   genres,
-  minAge
+  minAge,
+  endDate,
+  startTime,
+  endTime,
+  openingTime,
+  closingTime,
+  doorsTime,
+  openingHours,
+  hours
 }"""
 
 GROQ_SITE_SETTINGS = """*[_type == "siteSettings"][0] {
@@ -321,6 +329,64 @@ def _format_date(date_str: str) -> str:
         return date_str
 
 
+_TIME_RE = re.compile(r"^\s*(\d{1,2})[:\.](\d{2})")
+
+
+def _hhmm(value) -> str:
+    """Normalizza un orario a 'HH:MM'. Accetta:
+    - stringa 'HH:MM' / 'H.MM' / 'HH:MM:SS' → 'HH:MM'
+    - datetime ISO ('...T18:30:00Z' / con offset) → l'ora in fuso Rome
+    Ritorna '' se non riconosciuto o se è mezzanotte 'vuota' (data senza orario)."""
+    if value in (None, "", 0):
+        return ""
+    s = str(value).strip()
+    # ISO datetime (contiene 'T' e una data): prendi l'ora in fuso Rome.
+    if "T" in s and "-" in s[:8]:
+        try:
+            dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+            dt_rome = dt.astimezone(_ROME)
+            if dt_rome.hour == 0 and dt_rome.minute == 0:
+                return ""  # mezzanotte = data inserita senza orario reale
+            return dt_rome.strftime("%H:%M")
+        except Exception:
+            return ""
+    m = _TIME_RE.match(s)
+    if m:
+        h, mm = int(m.group(1)), m.group(2)
+        if 0 <= h <= 23:
+            return f"{h:02d}:{mm}"
+    return ""
+
+
+def _extract_hours(event: dict) -> str:
+    """Orario della SINGOLA serata letto da Sanity (fonte di verità, editabile in CMS
+    senza deploy). Serve per eventi con orari NON standard, es. un opening party
+    18:30–20:30 diverso dalle serate club 22:00–04:00. Ritorna la riga 'Orari: ...'
+    (senza newline) o '' se Sanity non fornisce orari per l'evento.
+
+    Campi Sanity supportati (tutti opzionali):
+    - openingHours / hours: stringa libera → usata verbatim (es. '18:30 - 20:30').
+    - startTime/openingTime + endTime/closingTime: orari 'HH:MM'.
+    - date (con orario) → inizio; endDate (con orario) → fine.
+    Priorità: stringa libera > campi start/end espliciti > orari dentro date/endDate."""
+    free = (event.get("openingHours") or event.get("hours") or "")
+    if isinstance(free, str) and free.strip():
+        return f"Orari: {free.strip()}"
+
+    start = _hhmm(event.get("startTime") or event.get("openingTime") or event.get("doorsTime"))
+    if not start:
+        start = _hhmm(event.get("date"))
+    end = _hhmm(event.get("endTime") or event.get("closingTime") or event.get("endDate"))
+
+    if start and end:
+        return f"Orari: {start} - {end}"
+    if end:
+        return f"Orari: fino alle {end}"
+    if start:
+        return f"Orari: apertura {start}"
+    return ""
+
+
 def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[str, dict]:
     # Titoli placeholder ("?????", vuoti): l'evento ESISTE in cartellone e va comunque
     # indicizzato — data, sala, prezzi e link biglietti sono informazioni vere. Prima
@@ -349,6 +415,12 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
                if isinstance(a, str) and a.strip()]
 
     date_fmt = _format_date(date_str)
+    # Orari della serata da Sanity (editabili in CMS): riga autorevole per l'evento.
+    # Il system prompt dice al bot di usarla al posto dell'orario di default della venue
+    # (es. Sardegna 22:00–04:00) quando presente — così un opening party 18:30–20:30
+    # viene comunicato correttamente senza toccare il codice.
+    hours_line = _extract_hours(event)
+    hours_str = f"\n{hours_line}" if hours_line else ""
     room_str = f"\nSala: {room}" if room else ""
     genres_str = f"\nGeneri: {', '.join(genres)}" if genres else ""
     lineup_str = f"\nLineup: {', '.join(artists)}" if artists else ""
@@ -388,6 +460,7 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
         f"Venue: {venue_label}"
         f"{room_str}\n"
         f"Data: {date_fmt}"
+        f"{hours_str}"
         f"{lineup_str}"
         f"{genres_str}"
         f"{age_str}"
