@@ -27,7 +27,11 @@ def test_sardinia_prompt_has_no_milano_contacts():
 def test_sardinia_prompt_has_no_milano_hours():
     s = _static("gate_sardinia")
     assert "23:00" not in s and "05:00" not in s
-    assert "22:00 – 04:00" in s
+    # nuovi orari di apertura per giorno della settimana (dom–gio 18:30–02:30, ven–sab 19:00–03:00)
+    assert "18:30 – 02:30" in s
+    assert "19:00 – 03:00" in s
+    # i vecchi orari fissi 22:00–04:00 non devono più comparire
+    assert "22:00 – 04:00" not in s
 
 
 def test_sardinia_prompt_has_navette_contact():
