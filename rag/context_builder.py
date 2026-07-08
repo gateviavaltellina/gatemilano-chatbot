@@ -113,6 +113,7 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # 2. Full event details for specifically queried dates
     date_parts = []
     cross_venue = False
+    empty_dates = []
     for date_str in query_dates:
         day_events = get_events_for_date(venue, date_str)
         if day_events:
@@ -121,6 +122,21 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
         if other_events:
             date_parts.append(f"[EVENTI A {other_venue_name.upper()} — venue diversa]\n{other_events}")
             cross_venue = True
+        if not day_events and not other_events:
+            empty_dates.append(date_str)
+
+    # Data richiesta (es. "oggi"/"stasera") SENZA eventi: dichiaralo esplicitamente,
+    # altrimenti il bot pesca il primo della lista "PROSSIMI EVENTI" e lo spaccia per
+    # stasera (allucinazione reale 8/7: "stasera c'è Flaco G" mentre Flaco G è il 9/7).
+    if empty_dates:
+        dates_str = ", ".join(empty_dates)
+        venue_pretty = venue.replace("_", " ").title()
+        date_parts.append(
+            f"NESSUN EVENTO risulta in programma per la/e data/e richiesta/e ({dates_str}) a {venue_pretty}. "
+            f"NON presentare come 'di oggi/stasera' un evento con una data diversa: se il cliente chiede di "
+            f"oggi/stasera e per quella data non c'è nulla, dillo chiaramente. Puoi indicare qual è il PROSSIMO "
+            f"evento citando la SUA data reale (dalla lista qui sotto), senza mai chiamarlo 'di stasera'."
+        )
 
     # 3. Compact upcoming list (title + date + link, 1 line per event, 14 giorni).
     # Se il cliente chiede della stagione/calendario/riapertura, mostra i PROSSIMI

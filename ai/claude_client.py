@@ -132,6 +132,7 @@ GESTIONE PIÙ EVENTI STESSA DATA:
 SYSTEM_DYNAMIC_TEMPLATE = """\
 DATA E ORA ATTUALE: {current_datetime} (fuso orario Europe/Rome)
 Usa questa informazione per rispondere correttamente a domande come "stasera", "questo weekend", "domani", ecc.
+REGOLA DATE (contro le allucinazioni "di stasera"): un evento va definito "di oggi/stasera" SOLO se la sua data coincide con la DATA E ORA ATTUALE qui sopra. Ogni evento nella lista "PROSSIMI EVENTI" ha la SUA data: se il primo in lista è di un altro giorno, NON dire "stasera c'è X" — di' che per oggi non risulta nulla in programma e, se utile, indica il prossimo evento con la sua data reale. Se il contesto dice esplicitamente "NESSUN EVENTO ... per la data richiesta", rispetta quell'informazione.
 
 INFORMAZIONI VENUE E EVENTI:
 {rag_context}
