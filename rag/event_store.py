@@ -114,6 +114,7 @@ def _compact_event_line(e: dict) -> str:
 
     date_line = ""
     room = ""
+    hours = ""
     min_price = ""
     sold_out = False
     selling_fast = False
@@ -123,6 +124,11 @@ def _compact_event_line(e: dict) -> str:
             date_line = line.replace("Data:", "").strip()
         elif line.startswith("Sala:"):
             room = line.replace("Sala:", "").strip()
+        elif line.startswith("Orari:"):
+            # Orario specifico della serata (da Sanity): va tenuto anche nella lista
+            # compatta, altrimenti una domanda sugli orari senza data esplicita non lo
+            # vedrebbe (il compact è l'unico contesto iniettato) e il bot userebbe il default.
+            hours = line.replace("Orari:", "").strip()
         elif "ESAURITI" in line:
             sold_out = True
         elif "Sold out velocemente" in line:
@@ -135,6 +141,8 @@ def _compact_event_line(e: dict) -> str:
     parts = [name]
     if room:
         parts.append(room)
+    if hours:
+        parts.append(f"orari {hours}")
     if sold_out:
         parts.append("ESAURITI")
     elif selling_fast:

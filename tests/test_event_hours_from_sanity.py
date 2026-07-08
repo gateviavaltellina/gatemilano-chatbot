@@ -42,9 +42,26 @@ def test_start_from_date_end_from_enddate():
     assert _extract_hours(ev) == "Orari: 18:30 - 20:30"
 
 
-def test_only_end_or_only_start():
-    assert _extract_hours({"endTime": "04:00"}) == "Orari: fino alle 04:00"
-    assert _extract_hours({"startTime": "22:00"}) == "Orari: apertura 22:00"
+def test_only_end_or_only_start_no_line():
+    # un solo estremo NON deve generare una riga: sovrascriverebbe il default della
+    # venue (22:00–04:00) perdendo l'altro estremo. Meglio nessuna riga → vale il default.
+    assert _extract_hours({"endTime": "04:00"}) == ""
+    assert _extract_hours({"startTime": "22:00"}) == ""
+
+
+def test_date_start_only_never_emits_line():
+    # BUG (fixed): ogni evento ha un orario d'inizio nel `date` (Milano SEMPRE). Da solo
+    # non deve mai produrre una riga "Orari:" a un estremo — corromperebbe tutti gli
+    # eventi Milano (23:00–05:00 fisso) e le serate club Sardegna.
+    assert _extract_hours({"date": "2026-09-04T23:00:00+02:00"}) == ""   # Milano
+    assert _extract_hours({"date": "2026-07-08T20:00:00Z"}) == ""        # 22:00 Rome, start-only
+
+
+def test_sardinia_sentinel_date_plus_closing_no_one_sided():
+    # BUG (fixed): la data Sardegna standard "T22:00:00Z" = 00:00 Rome → _hhmm scarta
+    # (mezzanotte). Con un closingTime isolato NON deve uscire "fino alle 04:00" (un
+    # solo estremo che cancella l'apertura). Serve una fine ESPLICITA + un inizio.
+    assert _extract_hours({"date": "2026-07-08T22:00:00Z", "closingTime": "04:00"}) == ""
 
 
 def test_no_hours_returns_empty():
@@ -67,3 +84,28 @@ def test_document_without_hours_has_no_orari_line():
     ev = {"_id": "x", "title": "Flaco G", "date": "2026-07-09"}
     doc, _ = _build_document(ev, "Gate Sardinia")
     assert "Orari:" not in doc
+
+
+def test_compact_list_carries_hours_line():
+    # BUG (fixed): una domanda sugli orari senza data esplicita ("fino a che ora siete
+    # aperti?") non risolve query_dates → viene iniettata solo la lista compatta. Se il
+    # compact scarta la riga "Orari:", il bot userebbe il default 22:00–04:00. La lista
+    # compatta DEVE riportare l'orario specifico della serata.
+    import datetime
+    import rag.date_utils as du
+    from rag import event_store as es
+
+    fixed = datetime.datetime(2026, 7, 8, 19, 0, tzinfo=du._ROME)
+    orig = du.business_now
+    du.business_now = lambda now=None: fixed
+    try:
+        es._store.clear()
+        ev = {"_id": "opening-2026-07-08", "title": "Opening Party",
+              "date": "2026-07-08", "startTime": "18:30", "endTime": "20:30"}
+        doc, meta = _build_document(ev, "Gate Sardinia")
+        es.upsert_event("gate_sardinia", meta["sanity_id"], doc, meta)
+        compact = es.get_upcoming_events_compact("gate_sardinia", days=14)
+        assert "18:30 - 20:30" in compact
+    finally:
+        du.business_now = orig
+        es._store.clear()
