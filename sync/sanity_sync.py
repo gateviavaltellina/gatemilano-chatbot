@@ -373,17 +373,19 @@ def _extract_hours(event: dict) -> str:
     if isinstance(free, str) and free.strip():
         return f"Orari: {free.strip()}"
 
-    start = _hhmm(event.get("startTime") or event.get("openingTime") or event.get("doorsTime"))
-    if not start:
-        start = _hhmm(event.get("date"))
-    end = _hhmm(event.get("endTime") or event.get("closingTime") or event.get("endDate"))
+    # `date` come inizio vale SOLO in coppia con una fine esplicita: da solo ogni evento
+    # ne ha uno (Milano ha sempre l'orario nel `date`) e produrrebbe una falsa riga
+    # "apertura HH:MM" a un solo estremo che sovrascrive il default della venue.
+    start = _hhmm(event.get("startTime") or event.get("openingTime") or event.get("doorsTime")) \
+        or _hhmm(event.get("date"))
+    end = _hhmm(event.get("endTime") or event.get("closingTime")) or _hhmm(event.get("endDate"))
 
+    # Solo con ENTRAMBI gli estremi: una riga a un estremo solo cancellerebbe l'altro
+    # (il prompt dice di rispondere con gli estremi della riga "Orari:"). Se manca un
+    # estremo, niente riga → vale il default 22:00–04:00. Per orari particolari a un
+    # solo estremo o non standard, usare il campo libero openingHours (es. "fino alle 02:00").
     if start and end:
         return f"Orari: {start} - {end}"
-    if end:
-        return f"Orari: fino alle {end}"
-    if start:
-        return f"Orari: apertura {start}"
     return ""
 
 
