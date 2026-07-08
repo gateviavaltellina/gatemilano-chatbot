@@ -252,6 +252,22 @@ async def debug_refresh_tokens():
     return {"refreshed": await refresh_all()}
 
 
+@app.post("/debug/sync", dependencies=[Depends(require_debug_key)])
+async def debug_sync():
+    """Forza SUBITO un sync completo da Sanity (oltre al job ogni 2h). Utile dopo aver
+    creato/modificato un evento in Studio per vederlo nel bot senza aspettare. Ritorna
+    il conteggio eventi per venue e l'esito dell'ultimo sync."""
+    from sync.sanity_sync import sync_all_venues, get_last_sync_status
+    from rag.event_store import count
+    await sync_all_venues()
+    return {
+        "synced": True,
+        "gate_milano": count("gate_milano"),
+        "gate_sardinia": count("gate_sardinia"),
+        "last_sync": get_last_sync_status(),
+    }
+
+
 @app.get("/debug/tokens", dependencies=[Depends(require_debug_key)])
 async def debug_tokens():
     """Verifica AL MOMENTO la validità dei token Meta (IG/WA) e riporta l'esito.
