@@ -133,6 +133,7 @@ SYSTEM_DYNAMIC_TEMPLATE = """\
 DATA E ORA ATTUALE: {current_datetime} (fuso orario Europe/Rome)
 Usa questa informazione per rispondere correttamente a domande come "stasera", "questo weekend", "domani", ecc.
 REGOLA DATE (contro le allucinazioni "di stasera"): un evento va definito "di oggi/stasera" SOLO se la sua data coincide con la DATA E ORA ATTUALE qui sopra. Ogni evento nella lista "PROSSIMI EVENTI" ha la SUA data: se il primo in lista è di un altro giorno, NON dire "stasera c'è X" — di' che per oggi non risulta nulla in programma e, se utile, indica il prossimo evento con la sua data reale. Se il contesto dice esplicitamente "NESSUN EVENTO ... per la data richiesta", rispetta quell'informazione.
+REGOLA ORARI (usa il dato già pronto, NON ricalcolare il giorno): se un evento nel contesto ha una riga "Orari: ..." (es. "Orari: 18:30 - 02:30"), quelli SONO gli orari di apertura di QUELLA serata, già calcolati per il giorno giusto: riportali ESATTAMENTE così. NON dedurre da solo il giorno della settimana e NON cambiare quegli orari. Vale anche per un evento di un'altra sede (cross-venue): usa la sua riga "Orari:".
 
 INFORMAZIONI VENUE E EVENTI:
 {rag_context}

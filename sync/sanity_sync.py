@@ -389,6 +389,34 @@ def _extract_hours(event: dict) -> str:
     return ""
 
 
+# Orari di apertura standard di Gate Sardinia, PER GIORNO DELLA SETTIMANA. Calcolati
+# in codice (non lasciati dedurre all'LLM: sbagliava il giorno → "stasera è venerdì"
+# di giovedì, dando 19:00–03:00 invece di 18:30–02:30). weekday(): lun=0 … dom=6.
+_SARDINIA_HOURS_WEEKEND = "19:00 - 03:00"   # venerdì (4) e sabato (5)
+_SARDINIA_HOURS_WEEKDAY = "18:30 - 02:30"   # da domenica a giovedì
+
+
+def _service_date_of(date_str: str):
+    """Data del 'giorno di servizio' su cui l'evento è indicizzato (stessa logica di
+    date_ts): da qui ricaviamo il giorno della settimana per gli orari di apertura."""
+    try:
+        if "T" in date_str:
+            dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+            return _service_day(dt.astimezone(_ROME))
+        return datetime.strptime(date_str[:10], "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+
+def _sardinia_default_hours(date_str: str) -> str:
+    """Finestra oraria di apertura standard di Gate Sardinia per la data dell'evento
+    (venerdì/sabato 19:00–03:00, altrimenti 18:30–02:30). "" se la data non è parsabile."""
+    d = _service_date_of(date_str)
+    if d is None:
+        return ""
+    return _SARDINIA_HOURS_WEEKEND if d.weekday() in (4, 5) else _SARDINIA_HOURS_WEEKDAY
+
+
 def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[str, dict]:
     # Titoli placeholder ("?????", vuoti): l'evento ESISTE in cartellone e va comunque
     # indicizzato — data, sala, prezzi e link biglietti sono informazioni vere. Prima
@@ -417,11 +445,16 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
                if isinstance(a, str) and a.strip()]
 
     date_fmt = _format_date(date_str)
-    # Orari della serata da Sanity (editabili in CMS): riga autorevole per l'evento.
-    # Il system prompt dice al bot di usarla al posto dell'orario di default della venue
-    # (es. Sardegna 22:00–04:00) quando presente — così un opening party 18:30–20:30
-    # viene comunicato correttamente senza toccare il codice.
+    # Orari della serata: prima l'override esplicito da Sanity (editabile in CMS, es. un
+    # opening party 18:30–20:30); in assenza, per Gate Sardinia calcoliamo in codice la
+    # finestra standard del GIORNO dell'evento (ven/sab 19:00–03:00, altrimenti
+    # 18:30–02:30). Così il bot legge l'orario già pronto e NON deve dedurre il giorno
+    # della settimana (bug reale: di giovedì diceva "è venerdì" → 19:00–03:00 sbagliato).
     hours_line = _extract_hours(event)
+    if not hours_line and venue_label == "Gate Sardinia":
+        win = _sardinia_default_hours(date_str)
+        if win:
+            hours_line = f"Orari: {win}"
     hours_str = f"\n{hours_line}" if hours_line else ""
     room_str = f"\nSala: {room}" if room else ""
     genres_str = f"\nGeneri: {', '.join(genres)}" if genres else ""
