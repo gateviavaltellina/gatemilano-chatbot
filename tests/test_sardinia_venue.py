@@ -34,6 +34,15 @@ def test_sardinia_prompt_has_no_milano_hours():
     assert "22:00 – 04:00" not in s
 
 
+def test_sardinia_prompt_has_ticket_access_guardrail():
+    # caso reale: il bot diceva "col Posto Unico puoi stare dove vuoi, palco incluso"
+    # (falso: le zone a bordo palco sono VIP riservate). La KB deve dare la regola.
+    s = _static("gate_sardinia")
+    assert "Posto Unico" in s
+    assert "palco incluso" in s  # citato come errore da NON fare
+    assert "area generale in piedi" in s
+
+
 def test_sardinia_prompt_has_navette_contact():
     # contatto navette (Navette Orosei — Salvatore) disponibile per chi chiede transfer
     s = _static("gate_sardinia")

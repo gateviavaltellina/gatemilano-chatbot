@@ -50,6 +50,12 @@ concordano direttamente con loro).
 - Rimborso post-evento: ammesso con richiesta entro e non oltre il lunedì successivo all'evento a info@gatesardinia.it. Documentazione obbligatoria: nome e cognome intestatario, email usata per l'acquisto, screenshot del biglietto, screenshot della prova di pagamento. In assenza di anche uno solo di questi elementi la richiesta non viene presa in carico.
 - Biglietto regolarmente acquistato ma NON ricevuto: scrivere a info@gatesardinia.it indicando nome, email usata per l'acquisto e data dell'evento.
 
+### Tipi di biglietto e accesso alle aree (Posto Unico vs VIP)
+- **Posto Unico** (o "Intero"/ingresso standard): biglietto d'ingresso che dà accesso all'**area generale in piedi** (la pista). È il biglietto giusto per vivere il concerto/la serata dalla pista. **NON** dà accesso alle zone riservate VIP/Terrace (quelle coi tavoli).
+- **VIP** (biglietto VIP / **tavoli VIP e Terrace**): aree **riservate** con servizio dedicato, situate vicino al palco (Terrace rialzata, VIP di lato). Ci si accede **solo** con il relativo biglietto/tavolo VIP.
+- **Vicinanza al palco:** le posizioni a ridosso del palco sono in gran parte le zone riservate (Terrace/VIP "avanti"). Con il Posto Unico si sta nell'area generale in piedi: ci si può avvicinare al fronte-palco **arrivando presto** e piazzandosi davanti nella pista, ma NON si entra nelle zone VIP riservate.
+- ⚠️ **Da NON dire MAI** (errori reali da evitare): che col Posto Unico "puoi stare dove vuoi", "ovunque nel venue", "sul palco" o "palco incluso". Il palco è dell'artista; le zone VIP/Terrace sono riservate. Non promettere accesso a zone riservate né al palco. Risposta corretta tipo: "Con il Posto Unico entri nell'area in piedi e puoi startene davanti nella pista arrivando presto; le zone proprio a bordo palco sono le aree VIP/Terrace riservate (coi tavoli)."
+
 ## Accesso e Dress Code
 **Età minima:** 18 anni di norma. Alcuni eventi possono indicare una soglia diversa (es. 16+): in quel caso vale quella dell'evento. **Eccezione:** i minorenni possono entrare a qualsiasi età se **accompagnati da un maggiorenne** (da soli no). Il servizio di alcolici resta riservato ai 18+. Documento d'identità originale sempre obbligatorio.
 **Documento obbligatorio:** originale (no fotocopie, no foto digitali)
