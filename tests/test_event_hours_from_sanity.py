@@ -1,7 +1,7 @@
 """Orari della singola serata letti da Sanity (fonte di verità, editabili in CMS).
 Caso reale: opening party 8 luglio 18:30–20:30, orario diverso dalle serate club
 22:00–04:00. Il bot deve poter leggere l'orario dell'evento dal contesto senza deploy."""
-from sync.sanity_sync import _hhmm, _extract_hours, _build_document
+from sync.sanity_sync import _hhmm, _extract_hours, _build_document, _sardinia_default_hours
 
 
 def test_hhmm_from_string_variants():
@@ -80,9 +80,44 @@ def test_document_includes_hours_line():
     assert meta["event_name"] == "Opening Party"
 
 
-def test_document_without_hours_has_no_orari_line():
-    ev = {"_id": "x", "title": "Flaco G", "date": "2026-07-09"}
+def test_sardinia_document_falls_back_to_computed_hours():
+    # senza orari espliciti da Sanity, un evento Sardegna ha comunque la finestra
+    # standard del giorno (calcolata), mai una scheda senza orari.
+    ev = {"_id": "x", "title": "Flaco G", "date": "2026-07-09"}  # giovedì
     doc, _ = _build_document(ev, "Gate Sardinia")
+    assert "Orari: 18:30 - 02:30" in doc
+
+
+def test_sardinia_default_hours_by_weekday():
+    # bug reale: di giovedì il bot diceva "è venerdì" → 19:00-03:00. Ora l'orario è
+    # calcolato in codice dal giorno dell'evento e messo nel documento.
+    assert _sardinia_default_hours("2026-07-09") == "18:30 - 02:30"  # giovedì
+    assert _sardinia_default_hours("2026-07-10") == "19:00 - 03:00"  # venerdì
+    assert _sardinia_default_hours("2026-07-11") == "19:00 - 03:00"  # sabato
+    assert _sardinia_default_hours("2026-07-12") == "18:30 - 02:30"  # domenica
+    assert _sardinia_default_hours("2026-07-13") == "18:30 - 02:30"  # lunedì
+
+
+def test_sardinia_event_gets_computed_hours_line():
+    # Flaco G di giovedì 9/7 → il documento porta "Orari: 18:30 - 02:30" pronto
+    doc, _ = _build_document({"_id": "flaco", "title": "Flaco G", "date": "2026-07-09"}, "Gate Sardinia")
+    assert "Orari: 18:30 - 02:30" in doc
+
+
+def test_explicit_hours_override_beats_computed_default():
+    # se lo staff mette orari espliciti in Sanity, vincono sul default calcolato
+    doc, _ = _build_document(
+        {"_id": "op", "title": "Opening", "date": "2026-07-09", "openingHours": "18:30 - 20:30"},
+        "Gate Sardinia")
+    assert "Orari: 18:30 - 20:30" in doc
+    assert "02:30" not in doc
+
+
+def test_milano_event_no_computed_hours():
+    # Milano NON usa lo schema orari Sardegna: nessuna riga calcolata
+    doc, _ = _build_document(
+        {"_id": "lm", "title": "LILYA", "date": "2026-09-04T23:00:00+02:00", "venue": "Main Room"},
+        "Gate Milano")
     assert "Orari:" not in doc
 
 
