@@ -273,7 +273,11 @@ async def _fetch_events(project_id: str, dataset: str) -> list[dict] | None:
     None = 'non ho potuto chiedere a Sanity' (lo store esistente va PRESERVATO,
     altrimenti un errore di rete al sync delle 04:00 lascia il bot senza eventi
     fino al sync successivo e risponde 'non ho la programmazione')."""
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    # Filtro sul GIORNO DI SERVIZIO (rollover 06:00), non sull'UTC: altrimenti un sync
+    # tra le 00:00 UTC (02:00 Rome) e le 06:00 scarterebbe la serata di stanotte ancora
+    # in corso (es. Perreo del sabato, aperto fino alle 03:00) trattandola come passata.
+    from rag.date_utils import business_now
+    today = business_now().strftime("%Y-%m-%d")
     from config import settings as _settings
     token = _settings.sanity_api_token
     try:
