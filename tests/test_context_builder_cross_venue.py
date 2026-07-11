@@ -110,6 +110,32 @@ async def test_named_event_resolved_even_with_relative_date():
 
 
 @pytest.mark.asyncio
+async def test_followup_resolves_event_from_history():
+    # caso reale: turno prima "stasera Perreo XL a Gate Sardinia", poi "quanto costa
+    # l'ingresso?" (senza nominare l'evento). Il follow-up deve ripescare l'evento dai
+    # messaggi recenti, così i prezzi/KB dell'altra sede sono nel contesto e il bot non
+    # risponde "non ho i dettagli" rimandando al sito sbagliato.
+    _seed("gate_sardinia", "perreo-11", "Perreo XL", "2026-06-30")
+    history = [
+        {"role": "user", "content": "è aperto oggi?"},
+        {"role": "assistant", "content": "Stasera a Gate Sardinia c'è Perreo XL."},
+    ]
+    ctx, dates = await cb.build_rag_context(
+        "gate_milano", "quanto costa l'ingresso?", history=history)
+    assert dates == ["2026-06-30"]
+    assert "Perreo XL" in ctx
+    assert "venue diversa" in ctx.lower()
+
+
+@pytest.mark.asyncio
+async def test_no_history_no_spurious_event():
+    # senza storia e senza nome nel messaggio, nessun evento spurio agganciato
+    _seed("gate_sardinia", "perreo-11", "Perreo XL", "2026-06-30")
+    ctx, dates = await cb.build_rag_context("gate_milano", "quanto costa l'ingresso?")
+    assert dates == []
+
+
+@pytest.mark.asyncio
 async def test_same_venue_tables_not_labeled_other(monkeypatch):
     # se l'evento è della stessa venue del canale, nessuna etichetta cross-venue
     async def _milano_tables(name, date_iso):

@@ -71,6 +71,12 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     other_venue_name = _OTHER_VENUE_NAME.get(venue, "Gate Milano")
     channel = _VENUE_CHANNEL.get(venue, "gate-milano")
 
+    # Testo degli ultimi 6 messaggi (user + bot) — serve sia per il topic VIP sia per
+    # ripescare l'evento di cui si sta parlando quando il follow-up non lo nomina.
+    history_text = " ".join(
+        m.get("content", "") for m in (history or [])[-6:]
+    ).lower()
+
     explicit_dates = extract_query_dates(text)
     # Risolvi SEMPRE anche l'evento citato per nome/artista, non solo come fallback
     # quando manca la data. Caso reale (Perreo XL "questo sabato"): l'utente dà una
@@ -84,16 +90,18 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # cartellone a Gate Sardinia). Così scattano evento e tavoli dell'altra location.
     if not name_dates:
         name_dates = find_event_dates_by_name(other_venue, text)
+    # Follow-up che NON nomina l'evento ma ne eredita il topic dalla chat: recupera
+    # l'evento dai messaggi recenti (caso reale: turno prima "stasera Perreo XL a Gate
+    # Sardinia", poi "quanto costa l'ingresso?" — senza questo il bot perde l'evento e
+    # risponde "non ho i dettagli sui prezzi" pur avendoli in contesto un attimo prima).
+    if not name_dates and history_text:
+        name_dates = (find_event_dates_by_name(venue, history_text)
+                      or find_event_dates_by_name(other_venue, history_text))
     # Le date risolte per nome vengono PRIMA: sono la data esatta in cui l'evento è
     # archiviato, mentre una data relativa ("questo sabato") è solo l'approssimazione
     # dell'utente e può cadere su un giorno adiacente. query_dates[0] guida anche il
     # lookup tavoli VIP, che va fatto sul giorno giusto.
     query_dates = list(dict.fromkeys(name_dates + explicit_dates))
-
-    # Check history for VIP topic — last 6 messages (3 turns)
-    history_text = " ".join(
-        m.get("content", "") for m in (history or [])[-6:]
-    ).lower()
 
     # 1. VIP context — when VIP keywords in current message OR recent history.
     vip_context = ""
@@ -165,6 +173,9 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
             parts.append(
                 f"[INFO E POLICY {other_venue_name.upper()} — venue diversa: USA QUESTE "
                 f"per rispondere alle domande su quell'evento (età, dress code, rimborsi, "
-                f"tavoli, contatti). NON applicarle a {venue.replace('_', ' ').title()}]\n{other_kb}"
+                f"tavoli, contatti, prezzi, SITO e SOCIAL). Per rimandare a sito/social/email "
+                f"usa quelli di {other_venue_name} (NON quelli di "
+                f"{venue.replace('_', ' ').title()}). NON applicare a "
+                f"{venue.replace('_', ' ').title()} le policy di {other_venue_name}]\n{other_kb}"
             )
     return "\n\n---\n\n".join(parts), query_dates
