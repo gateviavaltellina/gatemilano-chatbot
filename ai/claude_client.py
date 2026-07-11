@@ -132,7 +132,7 @@ GESTIONE PIÙ EVENTI STESSA DATA:
 SYSTEM_DYNAMIC_TEMPLATE = """\
 DATA E ORA ATTUALE: {current_datetime} (fuso orario Europe/Rome)
 Usa questa informazione per rispondere correttamente a domande come "stasera", "questo weekend", "domani", ecc.
-REGOLA DATE (contro le allucinazioni "di stasera"): un evento va definito "di oggi/stasera" SOLO se la sua data coincide con la DATA E ORA ATTUALE qui sopra. Ogni evento nella lista "PROSSIMI EVENTI" ha la SUA data: se il primo in lista è di un altro giorno, NON dire "stasera c'è X" — di' che per oggi non risulta nulla in programma e, se utile, indica il prossimo evento con la sua data reale. Se il contesto dice esplicitamente "NESSUN EVENTO ... per la data richiesta", rispetta quell'informazione.
+REGOLA DATE (contro le allucinazioni "di stasera"): un evento va definito "di oggi/stasera/stanotte" SOLO se la sua data coincide con la data odierna OPPURE con la "NOTTE CLUB IN CORSO" indicata sopra (dopo mezzanotte, fino alle 06:00, la serata di ieri sera è ANCORA quella corrente: un evento di quella data è di stanotte, non "già passato"). Ogni evento nella lista "PROSSIMI EVENTI" ha la SUA data: se il primo in lista è di un altro giorno (non oggi né la notte in corso), NON dire "stasera c'è X" — di' che per oggi non risulta nulla in programma e, se utile, indica il prossimo evento con la sua data reale. Se il contesto dice esplicitamente "NESSUN EVENTO ... per la data richiesta", rispetta quell'informazione.
 REGOLA ORARI (usa il dato già pronto, NON ricalcolare il giorno): se un evento nel contesto ha una riga "Orari: ..." (es. "Orari: 18:30 - 02:30"), quelli SONO gli orari di apertura di QUELLA serata, già calcolati per il giorno giusto: riportali ESATTAMENTE così. NON dedurre da solo il giorno della settimana e NON cambiare quegli orari. Vale anche per un evento di un'altra sede (cross-venue): usa la sua riga "Orari:".
 REGOLA CROSS-VENUE (riferimenti giusti): quando parli di un evento/serata di un'ALTRA sede (nel contesto è marcato "venue diversa"), per sito, social, email e biglietti usa i riferimenti di QUELLA sede (es. gatesardinia.it / @gatesardinia per Gate Sardinia; gatemilano.it / @gatemilano per Gate Milano) — MAI quelli della sede di questo canale. E se hai i prezzi/biglietti di quell'evento nel contesto, dalli invece di dire "non ho i dettagli".
 
@@ -343,7 +343,8 @@ async def generate_response(
 ) -> str:
     # temperature: None = default API (produzione). L'eval passa 0 per risposte
     # deterministiche e riproducibili (gate affidabile, niente flakiness).
-    current_datetime = datetime.now(ZoneInfo("Europe/Rome")).strftime("%A %-d %B %Y, %H:%M (Europe/Rome)")
+    from rag.date_utils import format_current_datetime
+    current_datetime = format_current_datetime()
     contact_email = VENUE_CONTACT_EMAIL.get(venue, "info@gatemilano.com")
     system = build_system_blocks(venue, rag_context, current_datetime)
     messages = [*history, {"role": "user", "content": user_message}]

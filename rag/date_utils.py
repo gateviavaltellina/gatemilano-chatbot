@@ -18,6 +18,26 @@ def business_now(now: datetime | None = None) -> datetime:
     return now - timedelta(hours=CLUB_NIGHT_ROLLOVER_HOUR)
 
 
+def format_current_datetime(now: datetime | None = None) -> str:
+    """Stringa "DATA E ORA ATTUALE" per il prompt. Dopo mezzanotte e prima delle 06:00
+    aggiunge la NOTTE CLUB IN CORSO (= la serata di ieri sera, ancora quella corrente):
+    senza questo il bot, vedendo l'orologio già al giorno dopo, tratta l'evento di
+    stanotte come "già passato" (caso reale: alle 00:08 diceva che il Perreo del sabato
+    era finito, mentre si va avanti fino alle 03:00)."""
+    now = now or datetime.now(_ROME)
+    s = now.strftime("%A %-d %B %Y, %H:%M (Europe/Rome)")
+    if now.hour < CLUB_NIGHT_ROLLOVER_HOUR:
+        night = business_now(now)
+        s += (
+            f". NOTTE CLUB IN CORSO: la serata attuale è quella di "
+            f"{night.strftime('%A %-d %B %Y')} — le notti del club ruotano alle 06:00, "
+            f"non a mezzanotte. Un evento datato {night.strftime('%-d %B')} è la serata di "
+            f"STANOTTE (ancora in corso o appena conclusa), NON 'già passato': controlla la "
+            f"sua riga 'Orari:' per dire se è aperto proprio adesso."
+        )
+    return s
+
+
 _TODAY_TERMS = ["stasera", "stanotte", "oggi", "questa sera", "questa notte", "tonight", "hoy", "esta noche"]
 _TOMORROW_TERMS = ["domani", "domani sera", "domani notte", "tomorrow", "mañana", "manana"]
 _WEEKEND_TERMS = ["weekend", "fine settimana", "fin de semana"]
