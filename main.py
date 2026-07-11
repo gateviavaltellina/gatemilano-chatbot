@@ -294,10 +294,9 @@ async def debug_prompt(venue: str = "gate_sardinia", text: str = "ciao"):
     comportamenti sul prompt VERO. Nessun segreto: solo regole + knowledge + contesto."""
     from ai.claude_client import build_system_blocks
     from rag.context_builder import build_rag_context
-    from datetime import datetime
-    from zoneinfo import ZoneInfo
+    from rag.date_utils import format_current_datetime
     rag_ctx, _ = await build_rag_context(venue, text)
-    dt = datetime.now(ZoneInfo("Europe/Rome")).strftime("%A %-d %B %Y, %H:%M (Europe/Rome)")
+    dt = format_current_datetime()  # stessa stringa (con rollover notte) del path reale
     blocks = build_system_blocks(venue, rag_ctx, dt)
     return {
         "venue": venue,
