@@ -6,10 +6,11 @@ from rag.event_store import (
     get_upcoming_events_compact,
     get_next_events_compact,
     get_events_for_date,
+    get_events_for_month_compact,
     get_vip_candidates,
     find_event_dates_by_name,
 )
-from rag.date_utils import extract_query_dates
+from rag.date_utils import extract_query_dates, extract_query_months
 from rag.vip_tables import get_vip_tables_context, get_vip_tables_via_site, get_vip_tables_sardinia
 
 logger = logging.getLogger(__name__)
@@ -132,6 +133,21 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
             cross_venue = True
         if not day_events and not other_events:
             empty_dates.append(date_str)
+
+    # 2-bis. Mese citato per nome senza un giorno preciso ("e ad agosto?"): mostra gli
+    # eventi di quel mese. Senza questo il bot vede solo la finestra breve e nega eventi
+    # che sono in Sanity (caso reale: 30 eventi ad agosto ma rispondeva "non ho eventi
+    # per agosto"). Salta i mesi per cui c'è già un giorno specifico tra query_dates.
+    for (yr, mo) in extract_query_months(text):
+        if any(d[:7] == f"{yr:04d}-{mo:02d}" for d in query_dates):
+            continue
+        mev = get_events_for_month_compact(venue, yr, mo)
+        if mev:
+            date_parts.append(mev)
+        other_mev = get_events_for_month_compact(other_venue, yr, mo)
+        if other_mev:
+            date_parts.append(f"[EVENTI A {other_venue_name.upper()} — venue diversa]\n{other_mev}")
+            cross_venue = True
 
     # Data richiesta (es. "oggi"/"stasera") SENZA eventi: dichiaralo esplicitamente,
     # altrimenti il bot pesca il primo della lista "PROSSIMI EVENTI" e lo spaccia per

@@ -66,6 +66,70 @@ _IT_MONTHS = {
 }
 
 
+_EN_MONTHS = {
+    "january": 1, "february": 2, "march": 3, "april": 4, "june": 6,
+    "july": 7, "august": 8, "september": 9, "october": 10,
+    "november": 11, "december": 12,
+    # "may" escluso di proposito: troppo ambiguo ("you may", ecc.)
+}
+_ES_MONTHS = {
+    "enero": 1, "febrero": 2, "abril": 4, "mayo": 5, "junio": 6, "julio": 7,
+    "septiembre": 9, "octubre": 10, "noviembre": 11, "diciembre": 12,
+    # marzo/agosto già in _IT_MONTHS (uguali in spagnolo)
+}
+_MONTH_NAMES = {**_IT_MONTHS, **_EN_MONTHS, **_ES_MONTHS}
+
+
+def _edit_distance_le(a: str, b: str, max_d: int) -> bool:
+    """True se la distanza di Levenshtein tra a e b è <= max_d (con early-exit)."""
+    if abs(len(a) - len(b)) > max_d:
+        return False
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        row_best = i
+        for j, cb in enumerate(b, 1):
+            cost = 0 if ca == cb else 1
+            v = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost)
+            cur.append(v)
+            row_best = min(row_best, v)
+        if row_best > max_d:
+            return False
+        prev = cur
+    return prev[-1] <= max_d
+
+
+def extract_query_months(text: str, now: datetime | None = None) -> list[tuple[int, int]]:
+    """Mesi citati per NOME nel messaggio (es. "e ad agosto?", "eventi a settembre",
+    "in August"), come lista (anno, mese). Serve a mostrare gli eventi di un intero
+    mese quando l'utente non dà un giorno preciso: senza questo il bot vede solo la
+    finestra breve e dice "non ho eventi per agosto" pur avendo tutto il mese in Sanity.
+    Tollera i typo di 1-2 lettere ("agosti", "settembr"). Anno: quest'anno se il mese
+    non è già passato, altrimenti l'anno prossimo."""
+    now = business_now(now)
+    lower = text.lower()
+
+    def _year(mnum: int) -> int:
+        return now.year if mnum >= now.month else now.year + 1
+
+    found: list[tuple[int, int]] = []
+    for name, mnum in _MONTH_NAMES.items():
+        if re.search(rf"\b{name}\b", lower):
+            found.append((_year(mnum), mnum))
+    # Pass fuzzy: token del messaggio a distanza 1-2 da un nome di mese (>=5 lettere).
+    # Cattura i refusi comuni senza allargare troppo (soglia bassa, guardia di lunghezza).
+    if not found:
+        tokens = {t for t in re.findall(r"[a-zàèéìòù]+", lower) if len(t) >= 5}
+        for name, mnum in _MONTH_NAMES.items():
+            if len(name) < 5:
+                continue
+            max_d = 2 if len(name) >= 6 else 1
+            if any(abs(len(t) - len(name)) <= 2 and _edit_distance_le(t, name, max_d)
+                   for t in tokens):
+                found.append((_year(mnum), mnum))
+    return list(dict.fromkeys(found))
+
+
 def _next_weekday(now: datetime, target_weekday: int, force_next: bool = False) -> datetime:
     days = (target_weekday - now.weekday()) % 7
     if force_next and days == 0:
