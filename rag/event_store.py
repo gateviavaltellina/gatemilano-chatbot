@@ -200,6 +200,31 @@ def get_next_events_compact(venue: str, limit: int = 8, days: int = 220) -> str:
     return "\n".join(lines)
 
 
+def get_events_for_month_compact(venue: str, year: int, month: int, limit: int = 40) -> str:
+    """Lista compatta (1 riga/evento) degli eventi di UN MESE, dai giorni non ancora
+    passati in poi. Per le domande su un intero mese ("e ad agosto?"): mostra ciò che
+    c'è davvero in calendario invece di far dire al bot "non ho eventi per quel mese"."""
+    from calendar import monthrange
+    start = int(datetime(year, month, 1, tzinfo=timezone.utc).timestamp())
+    last_day = monthrange(year, month)[1]
+    end = int(datetime(year, month, last_day, tzinfo=timezone.utc).timestamp()) + 86400
+    lo = max(start, _today_start_utc())  # niente giorni già passati del mese corrente
+    events = [
+        e for e in _get(venue)
+        if e["metadata"].get("type") == "event"
+        and lo <= e["metadata"].get("date_ts", 0) < end
+    ]
+    if not events:
+        return ""
+    events.sort(key=lambda e: e["metadata"].get("date_ts", 0))
+    events = events[:limit]
+    venue_label = venue.replace("_", " ").title()
+    month_label = datetime(year, month, 1).strftime("%B %Y")
+    lines = [f"EVENTI {venue_label.upper()} — {month_label} (date confermate in calendario):"]
+    lines.extend(_compact_event_line(e) for e in events)
+    return "\n".join(lines)
+
+
 def get_events_for_date(venue: str, date_str: str) -> str:
     day_start = int(datetime.strptime(date_str[:10], "%Y-%m-%d")
                     .replace(tzinfo=timezone.utc).timestamp())
