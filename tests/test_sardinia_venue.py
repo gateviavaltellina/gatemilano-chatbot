@@ -45,6 +45,17 @@ def test_sardinia_prompt_has_ticket_access_guardrail():
     assert "area generale in piedi" in s
 
 
+def test_sardinia_age_policy_two_thresholds():
+    # correzione staff: dai 16 con un maggiorenne; sotto i 16 serve un genitore
+    # presente. NON è "qualsiasi età con un maggiorenne".
+    s = _static("gate_sardinia")
+    assert "16" in s
+    assert "genitore" in s.lower()
+    # non deve più dire che basta un maggiorenne a qualsiasi età
+    assert "qualsiasi età se accompagnato da un maggiorenne" not in s
+    assert "a QUALSIASI età SE accompagnato" not in s
+
+
 def test_sardinia_prompt_has_budoni_workers_free_entry():
     # info fornita dallo staff: lavoratori di Budoni free entry solo su alcune serate,
     # contatto WhatsApp +39 329 169 6882.
