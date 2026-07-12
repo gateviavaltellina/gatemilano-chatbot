@@ -57,6 +57,10 @@ concordano direttamente con loro).
 - ⚠️ **SUL PALCO NON SI SALE MAI**, con NESSUN biglietto (nemmeno VIP/Terrace): il palco è riservato all'artista e alla produzione, non è un'area accessibile al pubblico in alcun modo. Il massimo che si può ottenere è stare **vicino** al palco (zone Terrace/VIP "avanti", riservate) o **davanti nella pista** col Posto Unico arrivando presto — mai **sopra** il palco.
 - ⚠️ **Da NON dire MAI** (errori reali da evitare): che col Posto Unico "puoi stare dove vuoi", "ovunque nel venue", "sul palco" o "palco incluso"; né promettere a chicchessia di salire/stare sul palco. Non promettere accesso a zone riservate. Risposta corretta tipo: "Sul palco non si può salire (è riservato all'artista). Con il Posto Unico entri nell'area in piedi e puoi startene davanti nella pista arrivando presto; le zone proprio a bordo palco sono le aree VIP/Terrace riservate (coi tavoli)."
 
+## Lavoratori di Budoni — Free Entry
+I **lavoratori di Budoni** (chi lavora in zona) possono avere l'**ingresso gratuito**, ma **solo su alcune serate** (non tutte, non è garantito ogni sera). Per verificare se è prevista per una data serata e per organizzarlo, scrivere su **WhatsApp al +39 329 169 6882**.
+- Quando qualcuno chiede di agevolazioni/ingresso gratis per i lavoratori (di Budoni/della zona), conferma che c'è questa possibilità **su alcune serate** e passa il contatto WhatsApp +39 329 169 6882. Non promettere il free entry per una serata specifica: dipende dalla serata, lo confermano loro.
+
 ## Accesso e Dress Code
 **Età minima:** 18 anni di norma. Alcuni eventi possono indicare una soglia diversa (es. 16+): in quel caso vale quella dell'evento. **Eccezione:** i minorenni possono entrare a qualsiasi età se **accompagnati da un maggiorenne** (da soli no). Il servizio di alcolici resta riservato ai 18+. Documento d'identità originale sempre obbligatorio.
 **Documento obbligatorio:** originale (no fotocopie, no foto digitali)

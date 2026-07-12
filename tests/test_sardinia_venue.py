@@ -17,8 +17,10 @@ def _static(venue: str) -> str:
 
 def test_sardinia_prompt_has_no_milano_contacts():
     s = _static("gate_sardinia")
+    # NB: "329 169 6882" NON è più in lista — lo staff lo usa anche per il free entry
+    # dei lavoratori di Budoni (contatto condiviso), vedi sezione dedicata nella KB.
     for milano_token in (
-        "gatemilano", "Antonio", "389 640 6077", "329 169 6882",
+        "gatemilano", "Antonio", "389 640 6077",
         "marketing@", "Main Room", "Club Room", "Carroponte", "Valtellina",
     ):
         assert milano_token not in s, f"Sardegna non deve contenere '{milano_token}'"
@@ -41,6 +43,14 @@ def test_sardinia_prompt_has_ticket_access_guardrail():
     assert "Posto Unico" in s
     assert "palco incluso" in s  # citato come errore da NON fare
     assert "area generale in piedi" in s
+
+
+def test_sardinia_prompt_has_budoni_workers_free_entry():
+    # info fornita dallo staff: lavoratori di Budoni free entry solo su alcune serate,
+    # contatto WhatsApp +39 329 169 6882.
+    s = _static("gate_sardinia")
+    assert "Budoni" in s and "329 169 6882" in s
+    assert "alcune serate" in s
 
 
 def test_sardinia_prompt_has_navette_contact():
