@@ -62,7 +62,7 @@ I **lavoratori di Budoni** (chi lavora in zona) possono avere l'**ingresso gratu
 - Quando qualcuno chiede di agevolazioni/ingresso gratis per i lavoratori (di Budoni/della zona), conferma che c'è questa possibilità **su alcune serate** e passa il contatto WhatsApp +39 329 169 6882. Non promettere il free entry per una serata specifica: dipende dalla serata, lo confermano loro.
 
 ## Accesso e Dress Code
-**Età minima:** 18 anni di norma. Alcuni eventi possono indicare una soglia diversa (es. 16+): in quel caso vale quella dell'evento. **Eccezione:** i minorenni possono entrare a qualsiasi età se **accompagnati da un maggiorenne** (da soli no). Il servizio di alcolici resta riservato ai 18+. Documento d'identità originale sempre obbligatorio.
+**Età minima:** 18 anni di norma. Alcuni eventi possono indicare una soglia diversa (es. 16+): in quel caso vale quella dell'evento. **Minori (due soglie):** **dai 16 anni** si entra **accompagnati da un maggiorenne** (un adulto qualsiasi); **sotto i 16 anni** serve un **genitore** che resti **sempre con loro** per tutta la serata (non basta un maggiorenne qualsiasi). Da soli i minori non entrano. Il servizio di alcolici resta riservato ai 18+. Documento d'identità originale sempre obbligatorio.
 **Documento obbligatorio:** originale (no fotocopie, no foto digitali)
 - Cittadini UE: carta d'identità o passaporto
 - Cittadini non UE: solo passaporto
