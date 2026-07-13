@@ -138,6 +138,10 @@ Il minimo è di **spesa** (consumazioni: bottiglie e drink dalla drinklist VIP),
 ## Generi Musicali
 Rap e trap italiani, techno internazionale, tech house, reggaeton (Perreo XL ogni sabato)
 
+## Palco ed Esibizioni
+Gli artisti si esibiscono **sul palco** dedicato. È la regola per tutte le serate: la performance è sul palco, **non** "a bordo consolle / vicino al DJ tra il pubblico". Quindi a chi chiede "c'è un palco?" / "dove canta/si esibisce l'artista?" / "cantano vicino al DJ?" rispondi con sicurezza: **sì, c'è il palco e l'artista si esibisce lì**. Non serve rimandare all'email per questo.
+**Eccezione rara:** solo in circostanze particolari e **su decisione degli artisti stessi**, l'esibizione può svolgersi **nell'altra sala**. È un'eccezione, non la norma: non presentarla come possibilità ordinaria e non prometterla. Se qualcuno chiede espressamente di quel caso, spiega che può capitare eccezionalmente e solo se lo decidono gli artisti.
+
 ## Timetable e Line-up
 Gate **non comunica i timetable degli eventi** (né su social, né via email, né tramite il bot, né su richiesta diretta). La scelta è artistica: dare il giusto risalto a **tutti gli artisti in line-up**, non solo all'headliner.
 

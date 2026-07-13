@@ -64,6 +64,15 @@ def test_sardinia_prompt_has_budoni_workers_free_entry():
     assert "alcune serate" in s
 
 
+def test_sardinia_prompt_has_stage_policy():
+    # caso reale: "c'è un palco o cantano vicino al dj?" — il bot deflettava all'email.
+    # Deve sapere: artisti sul palco; eccezione (altra sala) solo su decisione artisti.
+    s = _static("gate_sardinia")
+    assert "palco" in s.lower()
+    assert "altra sala" in s.lower()
+    assert "decisione degli artisti" in s.lower()
+
+
 def test_sardinia_prompt_has_navette_contact():
     # contatto navette (Navette Orosei — Salvatore) disponibile per chi chiede transfer
     s = _static("gate_sardinia")
