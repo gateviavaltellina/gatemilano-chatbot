@@ -46,8 +46,8 @@ async def test_cross_venue_injects_other_venue_policies():
     )
     assert dates == ["2026-07-30"]
     assert "INFO E POLICY GATE SARDINIA" in ctx
-    # la policy età di Sardegna (minori accompagnati) è ora nel contesto
-    assert "accompagnati da un maggiorenne" in ctx.lower()
+    # la policy età di Sardegna (16+, sotto i 16 con un genitore) è ora nel contesto
+    assert "genitore" in ctx.lower()
 
 
 @pytest.mark.asyncio

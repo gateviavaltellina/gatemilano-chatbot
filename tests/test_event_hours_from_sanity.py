@@ -82,26 +82,21 @@ def test_document_includes_hours_line():
 
 def test_sardinia_document_falls_back_to_computed_hours():
     # senza orari espliciti da Sanity, un evento Sardegna ha comunque la finestra
-    # standard del giorno (calcolata), mai una scheda senza orari.
-    ev = {"_id": "x", "title": "Flaco G", "date": "2026-07-09"}  # giovedì
+    # standard fissa (22:00–03:00), mai una scheda senza orari.
+    ev = {"_id": "x", "title": "Flaco G", "date": "2026-07-09"}
     doc, _ = _build_document(ev, "Gate Sardinia")
-    assert "Orari: 18:30 - 02:30" in doc
+    assert "Orari: 22:00 - 03:00" in doc
 
 
-def test_sardinia_default_hours_by_weekday():
-    # bug reale: di giovedì il bot diceva "è venerdì" → 19:00-03:00. Ora l'orario è
-    # calcolato in codice dal giorno dell'evento e messo nel documento.
-    assert _sardinia_default_hours("2026-07-09") == "18:30 - 02:30"  # giovedì
-    assert _sardinia_default_hours("2026-07-10") == "19:00 - 03:00"  # venerdì
-    assert _sardinia_default_hours("2026-07-11") == "19:00 - 03:00"  # sabato
-    assert _sardinia_default_hours("2026-07-12") == "18:30 - 02:30"  # domenica
-    assert _sardinia_default_hours("2026-07-13") == "18:30 - 02:30"  # lunedì
+def test_sardinia_default_hours_fixed():
+    # orario fisso 22:00–03:00, tutte le sere (nessuna variazione per giorno)
+    for d in ("2026-07-09", "2026-07-10", "2026-07-11", "2026-07-12", "2026-07-13"):
+        assert _sardinia_default_hours(d) == "22:00 - 03:00"
 
 
 def test_sardinia_event_gets_computed_hours_line():
-    # Flaco G di giovedì 9/7 → il documento porta "Orari: 18:30 - 02:30" pronto
     doc, _ = _build_document({"_id": "flaco", "title": "Flaco G", "date": "2026-07-09"}, "Gate Sardinia")
-    assert "Orari: 18:30 - 02:30" in doc
+    assert "Orari: 22:00 - 03:00" in doc
 
 
 def test_explicit_hours_override_beats_computed_default():

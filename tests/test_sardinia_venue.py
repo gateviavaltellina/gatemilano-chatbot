@@ -29,11 +29,11 @@ def test_sardinia_prompt_has_no_milano_contacts():
 def test_sardinia_prompt_has_no_milano_hours():
     s = _static("gate_sardinia")
     assert "23:00" not in s and "05:00" not in s
-    # nuovi orari di apertura per giorno della settimana (dom–gio 18:30–02:30, ven–sab 19:00–03:00)
-    assert "18:30 – 02:30" in s
-    assert "19:00 – 03:00" in s
-    # i vecchi orari fissi 22:00–04:00 non devono più comparire
+    # orario fisso Gate Sardinia: 22:00 – 03:00, tutte le sere
+    assert "22:00" in s and "03:00" in s
+    # i vecchi orari (22:00–04:00 e lo schema per giorno 18:30/19:00) non devono comparire
     assert "22:00 – 04:00" not in s
+    assert "18:30 – 02:30" not in s
 
 
 def test_sardinia_prompt_has_ticket_access_guardrail():
@@ -45,15 +45,15 @@ def test_sardinia_prompt_has_ticket_access_guardrail():
     assert "area generale in piedi" in s
 
 
-def test_sardinia_age_policy_two_thresholds():
-    # correzione staff: dai 16 con un maggiorenne; sotto i 16 serve un genitore
-    # presente. NON è "qualsiasi età con un maggiorenne".
+def test_sardinia_age_policy_16plus_under16_parent():
+    # policy staff: eventi 16+ (dai 16 col documento, senza accompagnatore); sotto i
+    # 16 serve un genitore presente per tutta la serata.
     s = _static("gate_sardinia")
     assert "16" in s
     assert "genitore" in s.lower()
-    # non deve più dire che basta un maggiorenne a qualsiasi età
-    assert "qualsiasi età se accompagnato da un maggiorenne" not in s
+    # niente più "18 di norma" né "qualsiasi età con un maggiorenne"
     assert "a QUALSIASI età SE accompagnato" not in s
+    assert "dai 16 anni un minorenne può entrare SE accompagnato" not in s
 
 
 def test_sardinia_prompt_has_budoni_workers_free_entry():
