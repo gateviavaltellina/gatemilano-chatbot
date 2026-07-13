@@ -61,3 +61,24 @@ async def test_no_events_at_all_still_declares_empty():
     # nessun evento in store: la data richiesta va comunque dichiarata vuota
     ctx, _ = await cb.build_rag_context("gate_sardinia", "che c'è oggi?")
     assert "NESSUN EVENTO" in ctx
+
+
+@pytest.mark.asyncio
+async def test_tonight_closed_status_even_without_stasera_word():
+    # caso reale: "a che ora inizia a cantare?" (niente "stasera") in una sera SENZA
+    # evento → il bot diceva "la serata è in corso 22:00-03:00". Ora lo STATO DI STASERA
+    # è sempre iniettato: locale CHIUSO stasera.
+    _seed("gate_sardinia", "tue", "Emis Killa", "2026-07-14")  # evento domani, non oggi
+    ctx, dates = await cb.build_rag_context("gate_sardinia", "a che ora inizia a cantare?")
+    assert dates == []
+    assert "STATO DI STASERA" in ctx
+    assert "CHIUSO stasera" in ctx
+
+
+@pytest.mark.asyncio
+async def test_tonight_open_status_when_event_today():
+    _seed("gate_sardinia", "today", "Perreo XL", "2026-07-08")  # _FIXED è 8/7
+    ctx, _ = await cb.build_rag_context("gate_sardinia", "a che ora si inizia?")
+    assert "STATO DI STASERA" in ctx
+    assert "locale APERTO" in ctx
+    assert "CHIUSO stasera" not in ctx

@@ -149,6 +149,25 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
             date_parts.append(f"[EVENTI A {other_venue_name.upper()} — venue diversa]\n{other_mev}")
             cross_venue = True
 
+    # STATO DI STASERA sempre nel contesto: il locale è aperto SOLO se c'è un evento in
+    # calendario per il giorno di servizio corrente. Senza questo, a una domanda sugli
+    # orari che non nomina "stasera" (es. "a che ora inizia a cantare?") il bot assumeva
+    # di essere aperto anche in una sera CHIUSA (caso reale: "la serata è in corso
+    # 22:00-03:00" mentre stasera era chiuso). Lo iniettiamo solo se l'utente non ha già
+    # chiesto esplicitamente di oggi (in quel caso c'è già la nota "NESSUN EVENTO").
+    from rag.date_utils import business_now  # import a runtime: rispetta il patch nei test
+    today_str = business_now().strftime("%Y-%m-%d")
+    if today_str not in query_dates:
+        if get_events_for_date(venue, today_str):
+            date_parts.insert(0, f"STATO DI STASERA ({today_str}): c'è un evento in programma → locale APERTO.")
+        else:
+            date_parts.insert(0, (
+                f"STATO DI STASERA ({today_str}): NESSUN evento in programma → il locale è CHIUSO stasera. "
+                f"Se il cliente chiede se siete aperti / cosa c'è stasera / a che ora si inizia o si chiude "
+                f"stasera, di' che stasera il locale è CHIUSO; NON dire che 'la serata è in corso' né dare "
+                f"orari di apertura come se fosse aperto. Indica il PROSSIMO evento in programma con la sua data."
+            ))
+
     # Data richiesta (es. "oggi"/"stasera") SENZA eventi: dichiaralo esplicitamente,
     # altrimenti il bot pesca il primo della lista "PROSSIMI EVENTI" e lo spaccia per
     # stasera (allucinazione reale 8/7: "stasera c'è Flaco G" mentre Flaco G è il 9/7).
