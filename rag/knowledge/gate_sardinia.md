@@ -47,6 +47,7 @@ concordano direttamente con loro).
 - Rimborso pre-evento: non possibile
 - Rimborso post-evento: ammesso con richiesta entro e non oltre il lunedì successivo all'evento a info@gatesardinia.it. Documentazione obbligatoria: nome e cognome intestatario, email usata per l'acquisto, screenshot del biglietto, screenshot della prova di pagamento. In assenza di anche uno solo di questi elementi la richiesta non viene presa in carico.
 - Biglietto regolarmente acquistato ma NON ricevuto: scrivere a info@gatesardinia.it indicando nome, email usata per l'acquisto e data dell'evento.
+- **Biglietti alla cassa / alla porta:** vengono messi a disposizione **previa disponibilità** e a **prezzo maggiorato** rispetto all'online; non sono garantiti. Conviene prendere il biglietto **online** (TicketSMS) per assicurarsi il posto. Non confermare mai che ci saranno biglietti alla porta a meno che non sia indicato esplicitamente per quell'evento. **Eccezione Perreo XL:** per le serate Perreo XL i biglietti alla porta sono SEMPRE disponibili e certi (entro l'1:00 → €10 donna / €15 uomo; dopo l'1:00 → €15 donna / €20 uomo, senza consumazione); comunica i prezzi e spingi comunque verso l'online.
 
 ### Tipi di biglietto e accesso alle aree (Posto Unico vs VIP)
 - **Posto Unico** (o "Intero"/ingresso standard): biglietto d'ingresso che dà accesso all'**area generale in piedi** (la pista). È il biglietto giusto per vivere il concerto/la serata dalla pista. **NON** dà accesso alle zone riservate VIP/Terrace (quelle coi tavoli).
