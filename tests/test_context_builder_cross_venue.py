@@ -51,6 +51,19 @@ async def test_cross_venue_injects_other_venue_policies():
 
 
 @pytest.mark.asyncio
+async def test_cross_venue_includes_box_office_policy():
+    # caso reale: sul canale Milano chiedono se si comprano i biglietti alla porta per
+    # un evento Sardegna (Guè). La policy cassa (previa disponibilità) sta nel KB
+    # Sardegna, così arriva cross-venue e il bot non dice "non ho info certe".
+    _seed("gate_sardinia", "gue-2026-07-16", "Guè", "2026-07-16")
+    ctx, _ = await cb.build_rag_context(
+        "gate_milano", "posso comprare i biglietti alla porta per Guè?"
+    )
+    assert "INFO E POLICY GATE SARDINIA" in ctx
+    assert "previa disponibilità" in ctx.lower()
+
+
+@pytest.mark.asyncio
 async def test_no_cross_venue_no_other_policies():
     # se l'evento è della STESSA venue, non si inietta la KB dell'altra
     _seed("gate_milano", "ev-mi", "Massimo Pericolo Milano", "2026-06-29")
