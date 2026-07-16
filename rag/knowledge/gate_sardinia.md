@@ -125,7 +125,7 @@ Gate Sardinia ha un'**area food (Food Court)** in venue. Menu e prezzi (in €):
 - **Toast:** €5
 - **Hot dog:** €6
 
-Quando chiedono *"c'è da mangiare?"* / *"e il cibo?"* / *"quanto costa una pizza / un toast / …"* → rispondi con **questi prezzi**, con sicurezza. **NON** rimandare all'email per il menu food: le info sono qui. (Cibo e bevande dall'esterno non ammessi — vedi Policy.)
+Quando chiedono *"c'è da mangiare?"* / *"e il cibo?"* / *"quanto costa una pizza / un toast / …"* → rispondi con **questi prezzi**, con sicurezza. **NON** rimandare all'email per il menu food: le info sono qui. Il **menu completo in PDF** parte in automatico su richiesta (ci pensa il sistema: su WhatsApp arriva il PDF, su Instagram il link) — di' pure che glielo mandi, senza specificare il formato e senza inventare un link nel testo. (Cibo e bevande dall'esterno non ammessi — vedi Policy.)
 
 ## Tavoli VIP
 Gate Sardinia dispone di due zone VIP con servizio dedicato: **Terrace** (la più esclusiva, rialzata, con vista privilegiata sul palco) e **VIP**. Ogni zona ha una fila più avanti (vicino al palco) e una più dietro.

@@ -21,6 +21,12 @@ DRINK_MENUS: dict[str, tuple[str, str]] = {
     "gate_sardinia": (f"{DRINKLIST_BASE}/drink_menu_sardegna.pdf", "Drink List Gate Sardinia.pdf"),
 }
 
+# MENU FOOD COURT (pizze, tramezzini, focacce, toast, hot dog) — ancora diverso da
+# drink e bottle list. Per ora solo Sardegna.
+FOOD_MENUS: dict[str, tuple[str, str]] = {
+    "gate_sardinia": (f"{DRINKLIST_BASE}/food_list_sardegna.pdf", "Food List Gate Sardinia.pdf"),
+}
+
 # Trigger IMPLICITI bottle list: si parla di tavoli/VIP → invio proattivo, una sola volta.
 _DRINKLIST_TRIGGERS = ["tavolo", "tavoli", "vip", "bottle", "bottiglia", "minimo", "perreo xl"]
 # Richieste ESPLICITE della bottle list dei tavoli → invia SEMPRE. "drinklist"/"drink
@@ -100,3 +106,41 @@ def drink_menu_link_message(venue: str) -> str | None:
         return None
     url, _ = item
     return f"Ecco la drink list completa con tutti i prezzi 🍸\n{url}"
+
+
+# --- Menu Food Court (pizze, panini, ecc.) ---
+
+# Richieste ESPLICITE del cibo → invia il menu food. Termini food-specifici (niente
+# sovrapposizioni con drink/bottle list).
+_FOOD_MENU_TRIGGERS = [
+    "cibo", "mangiare", "da mangiare", "si mangia", "food", "food court",
+    "menu food", "menù food", "paninoteca", "panino", "panini", "pizza", "pizze",
+    "toast", "hot dog", "hotdog", "tramezzino", "tramezzini", "focaccia", "focacce",
+    "wurstel", "fame",
+]
+
+# Marcatori nella RISPOSTA del bot che indicano che sta offrendo il menu food: così
+# se il bot dice "food court" il PDF/link parte davvero.
+_FOOD_MENU_REPLY_MARKERS = ["food court", "menu food", "menù food", "menu del cibo"]
+
+
+def should_send_food_menu(venue: str, lower_text: str, lower_reply: str = "") -> bool:
+    """True se l'utente chiede del cibo / dei prezzi food, o se è il bot a offrirlo
+    nella risposta. I prezzi sono già nella KB: il PDF si manda solo su richiesta."""
+    if venue not in FOOD_MENUS:
+        return False
+    if any(t in lower_text for t in _FOOD_MENU_TRIGGERS):
+        return True
+    return bool(lower_reply) and any(m in lower_reply for m in _FOOD_MENU_REPLY_MARKERS)
+
+
+def get_food_menu(venue: str) -> tuple[str, str] | None:
+    return FOOD_MENUS.get(venue)
+
+
+def food_menu_link_message(venue: str) -> str | None:
+    item = FOOD_MENUS.get(venue)
+    if not item:
+        return None
+    url, _ = item
+    return f"Ecco il menu del Food Court con tutti i prezzi 🍕\n{url}"

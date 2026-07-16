@@ -3,6 +3,7 @@ allegare documenti) invia il LINK come testo."""
 from notifications.drinklist import (
     should_send_drinklist, drinklist_link_message, DRINKLISTS,
     should_send_drink_menu, drink_menu_link_message, DRINK_MENUS,
+    should_send_food_menu, food_menu_link_message, FOOD_MENUS,
 )
 
 
@@ -73,3 +74,38 @@ def test_bottle_request_does_not_trigger_drink_menu():
     # richiesta bottiglie → bottle list, NON la carta drink
     assert should_send_drinklist("gate_sardinia", "mi giri il listino bottiglie?", "", already_sent=True)
     assert not should_send_drink_menu("gate_sardinia", "mi giri il listino bottiglie?")
+
+
+# --- Menu Food Court (pizze, panini, ecc.) ---
+
+def test_food_menu_link_contains_url():
+    msg = food_menu_link_message("gate_sardinia")
+    assert msg and FOOD_MENUS["gate_sardinia"][0] in msg
+
+
+def test_food_menu_triggers_on_food_questions():
+    for q in ["e il cibo?", "c'è da mangiare?", "quanto costa una pizza?",
+              "avete panini?", "quanto viene un toast", "fate hot dog?"]:
+        assert should_send_food_menu("gate_sardinia", q.lower()), q
+
+
+def test_food_menu_triggers_on_bot_reply_offering_it():
+    assert should_send_food_menu("gate_sardinia", "avete stuzzichini?", "sì, c'è il food court")
+
+
+def test_food_menu_only_sardinia():
+    assert not should_send_food_menu("gate_milano", "quanto costa una pizza")
+    assert not should_send_food_menu("gate_unknown", "cibo")
+
+
+def test_food_menu_not_triggered_by_unrelated():
+    assert not should_send_food_menu("gate_sardinia", "a che ora aprite?", "alle 22")
+
+
+def test_food_and_drink_menus_are_independent():
+    # domanda sul cibo → SOLO food menu, non la carta drink né la bottle list
+    assert should_send_food_menu("gate_sardinia", "quanto costa una pizza?")
+    assert not should_send_drink_menu("gate_sardinia", "quanto costa una pizza?")
+    assert not should_send_drinklist("gate_sardinia", "quanto costa una pizza?", "", already_sent=False)
+    # domanda sui drink → NON il food menu
+    assert not should_send_food_menu("gate_sardinia", "quanto costa un drink?")
