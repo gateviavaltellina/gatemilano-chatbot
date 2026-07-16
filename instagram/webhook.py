@@ -236,7 +236,10 @@ async def _process_ig_message(ig_account_id: str, sender_id: str, text: str) -> 
     if sensitive:
         await notify_escalation(phone, venue, text, sensitive, context)
 
-    await notify_conversation(phone, venue, text, reply, context, delivered=sent)
+    # Relay Discord: mostra ciò che il cliente ha DAVVERO ricevuto (link drinklist/carta
+    # drink accodati inclusi), non la sola risposta LLM — altrimenti lo staff crede che il
+    # link non sia partito quando invece è nel messaggio inviato.
+    await notify_conversation(phone, venue, text, full_reply, context, delivered=sent)
 
 
 async def process_ig_non_text(ig_account_id: str, sender_id: str) -> None:
