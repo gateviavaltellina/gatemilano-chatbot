@@ -277,15 +277,21 @@ async def _process_message(phone: str, msg_id: str, text: str) -> None:
 
     lower_text = text.lower()
     lower_reply = reply.lower()
+    # Note per il relay Discord: così lo staff vede che è stato allegato un PDF (il
+    # documento parte a parte, non è nel testo della risposta).
+    relay_notes: list[str] = []
     if sent and _should_send_drinklist(venue, lower_text, lower_reply, phone in _drinklist_sent):
         url, filename = _DRINKLISTS[venue]
         if await send_document(phone, url, filename):
             _drinklist_sent.add(phone)
+            relay_notes.append("[📎 Drinklist VIP allegata (PDF)]")
 
     # Carta drink (prezzi singoli): su richiesta esplicita (o se il bot la offre),
     # allega il PDF del menu.
     if sent and _should_send_drink_menu(venue, lower_text, lower_reply):
         url, filename = _DRINK_MENUS[venue]
-        await send_document(phone, url, filename)
+        if await send_document(phone, url, filename):
+            relay_notes.append("[📎 Carta drink allegata (PDF)]")
 
-    await notify_conversation(phone, venue, text, reply, delivered=sent)
+    relay_reply = reply if not relay_notes else reply.rstrip() + "\n\n" + "\n".join(relay_notes)
+    await notify_conversation(phone, venue, text, relay_reply, delivered=sent)
