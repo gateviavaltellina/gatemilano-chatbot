@@ -80,8 +80,10 @@ def _add_to_history(conv: dict, role: str, content: str, max_history: int) -> No
 from notifications.drinklist import (  # noqa: E402
     DRINKLISTS as _DRINKLISTS,
     DRINK_MENUS as _DRINK_MENUS,
+    FOOD_MENUS as _FOOD_MENUS,
     should_send_drinklist as _should_send_drinklist,
     should_send_drink_menu as _should_send_drink_menu,
+    should_send_food_menu as _should_send_food_menu,
 )
 
 _drinklist_sent: set[str] = set()
@@ -292,6 +294,12 @@ async def _process_message(phone: str, msg_id: str, text: str) -> None:
         url, filename = _DRINK_MENUS[venue]
         if await send_document(phone, url, filename):
             relay_notes.append("[📎 Carta drink allegata (PDF)]")
+
+    # Menu Food Court: su richiesta esplicita (o se il bot lo offre), allega il PDF.
+    if sent and _should_send_food_menu(venue, lower_text, lower_reply):
+        url, filename = _FOOD_MENUS[venue]
+        if await send_document(phone, url, filename):
+            relay_notes.append("[📎 Food menu allegato (PDF)]")
 
     relay_reply = reply if not relay_notes else reply.rstrip() + "\n\n" + "\n".join(relay_notes)
     await notify_conversation(phone, venue, text, relay_reply, delivered=sent)

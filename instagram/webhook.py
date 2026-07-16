@@ -16,6 +16,7 @@ from notifications.escalation import detect_sensitive
 from notifications.drinklist import (
     should_send_drinklist, drinklist_link_message,
     should_send_drink_menu, drink_menu_link_message,
+    should_send_food_menu, food_menu_link_message,
 )
 from notifications.debug_trace import record as _trace
 from instagram.client import send_ig_message, react_to_message
@@ -220,11 +221,14 @@ async def _process_ig_message(ig_account_id: str, sender_id: str, text: str) -> 
     low_t, low_r = text.lower(), reply.lower()
     want_bottle = should_send_drinklist(venue, low_t, low_r, conv.get("drinklist_sent", False))
     want_menu = should_send_drink_menu(venue, low_t, low_r)
+    want_food = should_send_food_menu(venue, low_t, low_r)
     links = []
     if want_bottle and (lm := drinklist_link_message(venue)):
         links.append(lm)
     if want_menu and (mm := drink_menu_link_message(venue)):
         links.append(mm)
+    if want_food and (fm := food_menu_link_message(venue)):
+        links.append(fm)
     full_reply = reply if not links else reply.rstrip() + "\n\n" + "\n\n".join(links)
 
     sent = await send_ig_message(ig_account_id, sender_id, full_reply)
