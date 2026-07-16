@@ -116,6 +116,17 @@ che gliela mandi, senza specificare il formato.
 
 **Soft drink:** Acqua €5 · Organics Tonic Water €10 · Organics Bitter Lemon €10 · Red Bull €10 · Red Bull Zero €10 · Red Bull Editions €10 · Soda al pompelmo €10
 
+## Cibo — Food Court 🍕
+Gate Sardinia ha un'**area food (Food Court)** in venue. Menu e prezzi (in €):
+
+- **Pizze:** Margherita €5 · Salame €6 · Wurstel €6
+- **Tramezzini — €5:** Tonno e pomodoro · Prosciutto e formaggio
+- **Focacce — €6:** Salame e provolone · Crudo e mozzarella
+- **Toast:** €5
+- **Hot dog:** €6
+
+Quando chiedono *"c'è da mangiare?"* / *"e il cibo?"* / *"quanto costa una pizza / un toast / …"* → rispondi con **questi prezzi**, con sicurezza. **NON** rimandare all'email per il menu food: le info sono qui. (Cibo e bevande dall'esterno non ammessi — vedi Policy.)
+
 ## Tavoli VIP
 Gate Sardinia dispone di due zone VIP con servizio dedicato: **Terrace** (la più esclusiva, rialzata, con vista privilegiata sul palco) e **VIP**. Ogni zona ha una fila più avanti (vicino al palco) e una più dietro.
 
