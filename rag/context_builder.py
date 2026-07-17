@@ -36,6 +36,15 @@ _VIP_TRIGGERS = {
 }
 _OTHER_VENUE = {"gate_milano": "gate_sardinia", "gate_sardinia": "gate_milano"}
 _OTHER_VENUE_NAME = {"gate_milano": "Gate Sardinia", "gate_sardinia": "Gate Milano"}
+# Alias con cui l'utente nomina l'ALTRA sede. Servono a iniettare la KB dell'altra
+# sede anche per domande GENERALI (senza evento/data), es. "info su gate sardinia,
+# età minima e prezzo" sul canale Milano. Per Milano NON includiamo "milano" da solo
+# (troppo ambiguo: "vengo da Milano"): serve il brand esplicito.
+_OTHER_VENUE_ALIASES = {
+    "gate_sardinia": ("gate sardinia", "gate sardegna", "gate sardina", "gatesardinia",
+                      "sardinia", "sardegna", "sardina"),
+    "gate_milano": ("gate milano", "gatemilano", "gate valtellina", "valtellina"),
+}
 # Slug canale Xceed per i link di checkout dei tavoli VIP (per venue).
 _VENUE_CHANNEL = {"gate_milano": "gate-milano", "gate_sardinia": "gate-sardinia"}
 
@@ -85,6 +94,14 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     history_text_wide = " ".join(
         m.get("content", "") for m in (history or [])[-12:]
     ).lower()
+    # L'utente nomina esplicitamente l'ALTRA sede (nel messaggio o nella chat recente)?
+    # Se sì, iniettiamo la sua KB anche senza un evento specifico, così il bot può
+    # rispondere a domande generali su quella sede (età, prezzi, dress code, contatti)
+    # invece di rimandare al sito. Caso reale: "info su gate sardinia, età minima e
+    # prezzo" arrivato sul canale Milano.
+    _other_aliases = _OTHER_VENUE_ALIASES.get(other_venue, ())
+    other_venue_mentioned = any(a in lower_text for a in _other_aliases) or \
+        any(a in history_text for a in _other_aliases)
 
     explicit_dates = extract_query_dates(text)
     # Risolvi SEMPRE anche l'evento citato per nome/artista, non solo come fallback
@@ -209,16 +226,16 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # ma non può rispondere alle domande di policy su quella location (caso reale:
     # "minorenni al concerto di Massimo Pericolo a Gate Sardinia?") e rimanda al sito
     # pur conoscendo la risposta. La KB dell'altra venue non è nel prompt del canale.
-    if cross_venue:
+    if cross_venue or other_venue_mentioned:
         from rag.knowledge_cache import get as _get_kb
         other_kb = _get_kb(other_venue)
         if other_kb:
             parts.append(
                 f"[INFO E POLICY {other_venue_name.upper()} — venue diversa: USA QUESTE "
-                f"per rispondere alle domande su quell'evento (età, dress code, rimborsi, "
-                f"tavoli, contatti, prezzi, SITO e SOCIAL). Per rimandare a sito/social/email "
-                f"usa quelli di {other_venue_name} (NON quelli di "
-                f"{venue.replace('_', ' ').title()}). NON applicare a "
+                f"per rispondere alle domande su {other_venue_name} (anche senza un evento "
+                f"specifico: età, dress code, rimborsi, tavoli, contatti, prezzi, SITO e "
+                f"SOCIAL). Per rimandare a sito/social/email usa quelli di {other_venue_name} "
+                f"(NON quelli di {venue.replace('_', ' ').title()}). NON applicare a "
                 f"{venue.replace('_', ' ').title()} le policy di {other_venue_name}]\n{other_kb}"
             )
     return "\n\n---\n\n".join(parts), query_dates

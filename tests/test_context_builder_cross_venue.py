@@ -169,6 +169,26 @@ async def test_crossvenue_policy_followup_far_in_history():
 
 
 @pytest.mark.asyncio
+async def test_general_other_venue_question_injects_kb():
+    # Canale Milano, domanda GENERALE su Gate Sardinia (età minima e prezzo), SENZA
+    # evento/data: la KB Sardegna va iniettata lo stesso, così il bot risponde (16+)
+    # invece di rimandare al sito. Caso reale del 16:45.
+    ctx, dates = await cb.build_rag_context(
+        "gate_milano", "volevo info su gate sardinia, età minima e prezzo")
+    assert dates == []  # nessun evento risolto...
+    assert "INFO E POLICY GATE SARDINIA" in ctx  # ...ma la KB dell'altra sede c'è
+    assert "16" in ctx  # età minima 16+
+
+
+@pytest.mark.asyncio
+async def test_bare_city_name_does_not_trigger_other_venue_kb():
+    # "vengo da Milano" sul canale Sardegna NON deve iniettare la KB Milano: è la
+    # provenienza, non una domanda su Gate Milano. Serve il brand esplicito.
+    ctx, _ = await cb.build_rag_context("gate_sardinia", "ciao vengo da milano, siete aperti stasera?")
+    assert "INFO E POLICY GATE MILANO" not in ctx
+
+
+@pytest.mark.asyncio
 async def test_no_history_no_spurious_event():
     # senza storia e senza nome nel messaggio, nessun evento spurio agganciato
     _seed("gate_sardinia", "perreo-11", "Perreo XL", "2026-06-30")
