@@ -141,6 +141,34 @@ async def test_followup_resolves_event_from_history():
 
 
 @pytest.mark.asyncio
+async def test_crossvenue_policy_followup_far_in_history():
+    # Caso reale (canale Milano): l'evento Gate Sardinia è stato nominato vari turni
+    # PRIMA (oltre gli ultimi 6 messaggi), poi arriva "e c'è dress code?". La KB/policy
+    # di Sardegna deve restare agganciata, così il bot dà il dress code di Sardegna e
+    # NON quello di Milano con un fuorviante "ma tu parli dell'altra sede".
+    _seed("gate_sardinia", "artie-2026-07-25", "Artie 5ive", "2026-07-25")
+    history = [
+        {"role": "user", "content": "c'è una serata con Artie 5ive?"},
+        {"role": "assistant", "content": "Sì, Artie 5ive è a Gate Sardinia."},
+        {"role": "user", "content": "bello"},
+        {"role": "assistant", "content": "Un evento da non perdere!"},
+        {"role": "user", "content": "che biglietti ci sono?"},
+        {"role": "assistant", "content": "Posto Unico da 10 euro."},
+        {"role": "user", "content": "ok grazie"},
+        {"role": "assistant", "content": "Di nulla!"},
+        {"role": "user", "content": "e l'età minima?"},
+        {"role": "assistant", "content": "16 anni con documento originale."},
+        {"role": "user", "content": "perfetto"},
+        {"role": "assistant", "content": "Se hai altre domande sono qui."},
+    ]
+    ctx, dates = await cb.build_rag_context(
+        "gate_milano", "e c'è dress code?", history=history)
+    assert dates == ["2026-07-25"]
+    assert "INFO E POLICY GATE SARDINIA" in ctx
+    assert "smart casual" in ctx.lower()  # dress code di Sardegna, non di Milano
+
+
+@pytest.mark.asyncio
 async def test_no_history_no_spurious_event():
     # senza storia e senza nome nel messaggio, nessun evento spurio agganciato
     _seed("gate_sardinia", "perreo-11", "Perreo XL", "2026-06-30")
