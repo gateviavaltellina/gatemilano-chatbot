@@ -60,7 +60,7 @@ async def test_month_question_surfaces_month_events():
     _seed("gate_sardinia", "a2", "Rocco Hunt", "2026-08-11")
     _seed("gate_sardinia", "a3", "Closing Party", "2026-08-29")
     ctx, dates = await cb.build_rag_context("gate_sardinia", "e ad agosto?")
-    assert "August 2026" in ctx
+    assert "agosto 2026" in ctx
     assert "Rocco Hunt" in ctx
     assert "Closing Party" in ctx
 

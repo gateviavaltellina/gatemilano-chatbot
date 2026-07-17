@@ -65,6 +65,29 @@ _IT_MONTHS = {
     "settembre": 9, "ottobre": 10, "novembre": 11, "dicembre": 12,
 }
 
+# Output italiano dei nomi di giorno/mese, INDIPENDENTE dal locale del server:
+# strftime("%A"/"%B") darebbe l'inglese ("Sunday"/"July") sui container senza locale
+# it_IT, con l'effetto che il bot indovinava il giorno della settimana e sbagliava.
+_IT_WEEKDAYS = ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato", "domenica"]
+_IT_MONTHS_BY_NUM = {num: name for name, num in _IT_MONTHS.items()}
+
+
+def italian_weekday(d) -> str:
+    """Nome italiano del giorno della settimana per una date/datetime."""
+    return _IT_WEEKDAYS[d.weekday()]
+
+
+def format_italian_date(d, with_year: bool = True) -> str:
+    """Data in italiano col giorno della settimana, es. 'domenica 19 luglio 2026'.
+    Il giorno è calcolato da Python (corretto), così il modello non deve dedurlo."""
+    s = f"{italian_weekday(d)} {d.day} {_IT_MONTHS_BY_NUM[d.month]}"
+    return f"{s} {d.year}" if with_year else s
+
+
+def italian_month_year(year: int, month: int) -> str:
+    """Es. 'luglio 2026' — per le intestazioni di mese, sempre in italiano."""
+    return f"{_IT_MONTHS_BY_NUM[month]} {year}"
+
 
 _EN_MONTHS = {
     "january": 1, "february": 2, "march": 3, "april": 4, "june": 6,

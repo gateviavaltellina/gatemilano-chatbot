@@ -219,7 +219,8 @@ def get_events_for_month_compact(venue: str, year: int, month: int, limit: int =
     events.sort(key=lambda e: e["metadata"].get("date_ts", 0))
     events = events[:limit]
     venue_label = venue.replace("_", " ").title()
-    month_label = datetime(year, month, 1).strftime("%B %Y")
+    from rag.date_utils import italian_month_year
+    month_label = italian_month_year(year, month)
     lines = [f"EVENTI {venue_label.upper()} — {month_label} (date confermate in calendario):"]
     lines.extend(_compact_event_line(e) for e in events)
     return "\n".join(lines)

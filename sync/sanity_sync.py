@@ -5,7 +5,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 from rag.event_store import upsert_event, delete_stale_events
-from rag.date_utils import CLUB_NIGHT_ROLLOVER_HOUR
+from rag.date_utils import CLUB_NIGHT_ROLLOVER_HOUR, format_italian_date
 
 _ROME = ZoneInfo("Europe/Rome")
 
@@ -324,11 +324,11 @@ def _format_date(date_str: str) -> str:
             # Ora reale d'inizio; se è mezzanotte (data inserita senza orario) mostra
             # solo il giorno per non scrivere un fuorviante "ore 00:00".
             if dt_rome.hour == 0 and dt_rome.minute == 0:
-                return svc.strftime("%-d %B %Y")
-            return f"{svc.strftime('%-d %B %Y')}, ore {dt_rome.strftime('%H:%M')}"
+                return format_italian_date(svc)
+            return f"{format_italian_date(svc)}, ore {dt_rome.strftime('%H:%M')}"
         else:
             dt = datetime.strptime(date_str, "%Y-%m-%d")
-            return dt.strftime("%-d %B %Y")
+            return format_italian_date(dt)
     except Exception:
         return date_str
 

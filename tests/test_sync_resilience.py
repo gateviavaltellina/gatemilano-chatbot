@@ -172,7 +172,7 @@ async def test_placeholder_title_event_is_indexed(monkeypatch):
     doc = events[0]["document"]
     assert "?????" not in doc
     assert "line-up da annunciare" in doc
-    assert "4 July 2026" in doc  # giorno di servizio, non il 5
+    assert "sabato 4 luglio 2026" in doc  # giorno di servizio, non il 5
     assert "ticketsms.it" in doc
     # le serate top secret devono creare ATTESA (annuncio in arrivo),
     # non un "non ho informazioni"
