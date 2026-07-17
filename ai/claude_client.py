@@ -28,6 +28,20 @@ VENUE_CONTACT_EMAIL = {
     "gate_sardinia": "info@gatesardinia.it",
 }
 
+# Prefisso del messaggio di fallback quando la chiamata al modello fallisce. I webhook
+# lo usano per riconoscere una risposta "di errore" e allegare allo staff (Discord) il
+# motivo reale (_last_api_error), senza mostrarlo al cliente.
+API_ERROR_FALLBACK_PREFIX = "Mi dispiace, al momento non riesco a rispondere"
+
+# Ultimo errore dell'API modello (per la diagnostica staff). Racy tra richieste
+# concorrenti, ma su un guasto SISTEMATICO l'errore è lo stesso per tutti: utile a
+# distinguere "credito esaurito" / "modello inesistente" / "401" dal generico fallback.
+_last_api_error: str | None = None
+
+
+def last_api_error() -> str | None:
+    return _last_api_error
+
 # Parte STATICA del system prompt: costante per venue → cacheata (prompt caching).
 # La parte dinamica (data/ora + contesto RAG) va in coda, vedi SYSTEM_DYNAMIC_TEMPLATE.
 #
@@ -366,6 +380,7 @@ async def generate_response(
 ) -> str:
     # temperature: None = default API (produzione). L'eval passa 0 per risposte
     # deterministiche e riproducibili (gate affidabile, niente flakiness).
+    global _last_api_error
     from rag.date_utils import format_current_datetime
     current_datetime = format_current_datetime()
     contact_email = VENUE_CONTACT_EMAIL.get(venue, "info@gatemilano.com")
@@ -406,9 +421,11 @@ async def generate_response(
             u.input_tokens, cache_read, cache_write, u.output_tokens,
             100 * cache_read / max(1, u.input_tokens + cache_read),
         )
+        _last_api_error = None  # successo → azzera l'ultimo errore
         return _strip_markdown(response.content[0].text)
     except Exception as e:
         logger.error("Errore Claude API: %s", e)
+        _last_api_error = f"{type(e).__name__}: {str(e)[:300]}"
         return (
             f"Mi dispiace, al momento non riesco a rispondere. "
             f"Per assistenza contatta {contact_email}."

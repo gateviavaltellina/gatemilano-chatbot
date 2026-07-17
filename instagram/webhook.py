@@ -9,7 +9,17 @@ from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
 from config import settings
 from webhook_security import verify_meta_signature
 from rag.context_builder import build_rag_context
-from ai.claude_client import generate_response
+from ai.claude_client import generate_response, last_api_error, API_ERROR_FALLBACK_PREFIX
+
+
+def _relay_with_api_error(reply: str, full_reply: str) -> str:
+    """Se la risposta è il fallback d'errore del modello, allega allo STAFF (relay
+    Discord) il motivo reale dell'errore API — così un guasto sistematico (credito
+    esaurito / modello inesistente / 401) è diagnosticabile, senza mostrarlo al cliente."""
+    if reply.startswith(API_ERROR_FALLBACK_PREFIX):
+        err = last_api_error() or "sconosciuto"
+        return f"{full_reply}\n\n[⚠️ ERRORE API modello (non mostrato al cliente): {err}]"
+    return full_reply
 from notifications.discord import notify_conversation, notify_human_message, notify_escalation
 from notifications.discord_bot import is_human_takeover
 from notifications.escalation import detect_sensitive
@@ -243,7 +253,8 @@ async def _process_ig_message(ig_account_id: str, sender_id: str, text: str) -> 
     # Relay Discord: mostra ciò che il cliente ha DAVVERO ricevuto (link drinklist/carta
     # drink accodati inclusi), non la sola risposta LLM — altrimenti lo staff crede che il
     # link non sia partito quando invece è nel messaggio inviato.
-    await notify_conversation(phone, venue, text, full_reply, context, delivered=sent)
+    relay_reply = _relay_with_api_error(reply, full_reply)
+    await notify_conversation(phone, venue, text, relay_reply, context, delivered=sent)
 
 
 async def process_ig_non_text(ig_account_id: str, sender_id: str) -> None:

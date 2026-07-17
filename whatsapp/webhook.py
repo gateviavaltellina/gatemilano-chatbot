@@ -13,7 +13,7 @@ from whatsapp.client import send_message, send_document, mark_as_read
 from venue.detector import VenueDetector
 from venue.classifier import classify_venue
 from rag.context_builder import build_rag_context
-from ai.claude_client import generate_response
+from ai.claude_client import generate_response, last_api_error, API_ERROR_FALLBACK_PREFIX
 from notifications.discord import notify_conversation, notify_human_message, notify_escalation
 from notifications.discord_bot import is_human_takeover
 from notifications.escalation import detect_sensitive
@@ -302,4 +302,8 @@ async def _process_message(phone: str, msg_id: str, text: str) -> None:
             relay_notes.append("[📎 Food menu allegato (PDF)]")
 
     relay_reply = reply if not relay_notes else reply.rstrip() + "\n\n" + "\n".join(relay_notes)
+    # Se è il fallback d'errore del modello, allega allo staff il motivo reale (diagnostica
+    # di un guasto sistematico: credito esaurito / modello inesistente / 401), non al cliente.
+    if reply.startswith(API_ERROR_FALLBACK_PREFIX):
+        relay_reply += f"\n\n[⚠️ ERRORE API modello (non mostrato al cliente): {last_api_error() or 'sconosciuto'}]"
     await notify_conversation(phone, venue, text, relay_reply, delivered=sent)
