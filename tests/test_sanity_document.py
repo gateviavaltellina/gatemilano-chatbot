@@ -17,9 +17,10 @@ def test_late_night_event_indexed_on_service_day():
     event = {"_id": "ev", "title": "Perreo XL", "date": "2026-07-04T22:00:00Z"}
     doc, meta = _build_document(event, "Gate Sardinia")
     assert meta["date_ts"] == _ts(2026, 7, 4)
-    # e la data mostrata al bot è il 4 luglio, non il 5 (né un fuorviante "ore 00:00")
-    assert "4 July 2026" in doc
-    assert "5 July" not in doc
+    # e la data mostrata al bot è il 4 luglio (col giorno della settimana in italiano),
+    # non il 5 (né un fuorviante "ore 00:00")
+    assert "sabato 4 luglio 2026" in doc
+    assert "5 luglio" not in doc
     assert "ore 00:00" not in doc
 
 
@@ -28,7 +29,7 @@ def test_real_evening_start_keeps_its_day_and_time():
     event = {"_id": "ev", "title": "Show", "date": "2026-07-04T20:00:00Z"}  # 22:00 Rome
     doc, meta = _build_document(event, "Gate Sardinia")
     assert meta["date_ts"] == _ts(2026, 7, 4)
-    assert "4 July 2026, ore 22:00" in doc
+    assert "sabato 4 luglio 2026, ore 22:00" in doc
 
 
 def test_artists_go_into_metadata():

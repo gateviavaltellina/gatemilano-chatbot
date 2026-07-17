@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from config import settings
 from rag.event_store import upsert_event, delete_stale_events, has_matching_event
 from rag.vip_tables import invalidate_vip_cache
+from rag.date_utils import format_italian_date
 
 _ROME = ZoneInfo("Europe/Rome")
 
@@ -109,8 +110,8 @@ def _build_event_document(event: dict, venue_label: str, offers: dict) -> tuple[
     date_ts = 0
     try:
         dt = datetime.fromtimestamp(int(date_raw), tz=timezone.utc)
-        date_str = dt.strftime("%-d %B %Y, ore %H:%M")
         dt_rome = dt.astimezone(_ROME)
+        date_str = f"{format_italian_date(dt_rome)}, ore {dt_rome.strftime('%H:%M')}"
         date_ts = int(datetime(dt_rome.year, dt_rome.month, dt_rome.day, tzinfo=timezone.utc).timestamp())
     except Exception:
         date_str = "Data da definire"
