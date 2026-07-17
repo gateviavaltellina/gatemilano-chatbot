@@ -19,6 +19,11 @@ def test_sardinia_prompt_has_no_milano_contacts():
     s = _static("gate_sardinia")
     # NB: "329 169 6882" NON è più in lista — lo staff lo usa anche per il free entry
     # dei lavoratori di Budoni (contatto condiviso), vedi sezione dedicata nella KB.
+    # ECCEZIONE VOLUTA: il ritiro delle vincite dei giveaway è gestito dal marketing
+    # di GRUPPO (marketing@gatemilano.com), centralizzato per entrambe le sedi. È
+    # l'unico contatto Milano ammesso in Sardegna: lo togliamo prima del check, così
+    # ogni ALTRO riferimento gatemilano/marketing continua a essere vietato.
+    s = s.replace("marketing@gatemilano.com", "")
     for milano_token in (
         "gatemilano", "Antonio", "389 640 6077",
         "marketing@", "Main Room", "Club Room", "Carroponte", "Valtellina",

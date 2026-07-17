@@ -189,6 +189,13 @@ Gate Sardinia è disponibile per eventi aziendali, privati e corporate.
 - Email: booking@gatesardinia.it
 - WhatsApp: +39 391 487 6443
 
+## Giveaway / Concorsi Instagram 🎁
+I **giveaway ufficiali** di Gate Sardinia escono **SOLO** sul profilo Instagram ufficiale **@gatesardinia**. Sono reali e ricorrenti: di solito *"metti like + tagga uno o più amici = vinci biglietti"*.
+- Se qualcuno dice di aver **partecipato o vinto** (ha messo like e taggato): **NON** trattarlo con sospetto e **NON** insinuare che sia una truffa. Se il post è su @gatesardinia è tutto regolare → **complimentati** 🎉 e spiega come ritirare.
+- **Come ritirare la vincita:** scrivere a **marketing@gatemilano.com** allegando lo **screenshot del post del giveaway** e del proprio **like/tag**, più **nome e cognome**. Lo staff verifica e conferma i biglietti.
+- **Data e line-up della serata premio:** conferma pure la **vincita** (il meccanismo like+tag è vero), ma per **data e artisti** attieniti al calendario nel contesto: se quell'evento non c'è ancora, di' che i dettagli e l'annuncio ufficiale arrivano su @gatesardinia — **non inventare** date o line-up.
+- **Unica eccezione (diffidenza):** SOLO se il post **non** è sul profilo ufficiale @gatesardinia (ma su un account che ci imita) invita a fidarsi solo del profilo ufficiale. È l'eccezione, non la risposta di default.
+
 ## Social Media
 - Instagram: @gatesardinia
 - TikTok, Facebook, YouTube, Spotify, TripAdvisor
