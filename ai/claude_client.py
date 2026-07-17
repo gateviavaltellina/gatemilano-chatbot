@@ -333,6 +333,30 @@ def build_system_blocks(venue: str, rag_context: str, current_datetime: str) -> 
     ]
 
 
+def _sanitize_history(history: list[dict]) -> list[dict]:
+    """Ripulisce la history prima della chiamata API. Una history malformata
+    (messaggi con contenuto vuoto o due turni consecutivi dello stesso ruolo) fa
+    tornare all'API un 400 NON ritentabile → il cliente riceve "non riesco a
+    rispondere". Qui scartiamo i vuoti, fondiamo i ruoli consecutivi e togliamo un
+    eventuale 'user' finale (aggiungiamo noi il nuovo user dopo: due user di fila = 400)."""
+    clean: list[dict] = []
+    for m in history or []:
+        role = m.get("role")
+        content = m.get("content")
+        if role not in ("user", "assistant") or not isinstance(content, str):
+            continue
+        content = content.strip()
+        if not content:
+            continue
+        if clean and clean[-1]["role"] == role:
+            clean[-1] = {"role": role, "content": clean[-1]["content"] + "\n" + content}
+        else:
+            clean.append({"role": role, "content": content})
+    while clean and clean[-1]["role"] == "user":
+        clean.pop()
+    return clean
+
+
 async def generate_response(
     venue: str,
     user_message: str,
@@ -346,6 +370,7 @@ async def generate_response(
     current_datetime = format_current_datetime()
     contact_email = VENUE_CONTACT_EMAIL.get(venue, "info@gatemilano.com")
     system = build_system_blocks(venue, rag_context, current_datetime)
+    history = _sanitize_history(history)
     messages = [*history, {"role": "user", "content": user_message}]
     # FIX #3: cache anche il prefisso della conversazione. Mettendo un breakpoint
     # sull'ultimo messaggio della history, i turni successivi della stessa
