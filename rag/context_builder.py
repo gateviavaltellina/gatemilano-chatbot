@@ -77,6 +77,14 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     history_text = " ".join(
         m.get("content", "") for m in (history or [])[-6:]
     ).lower()
+    # Finestra più ampia solo per RIAGGANCIARE l'evento (anche dell'altra sede) nei
+    # follow-up: un "e c'è dress code?" può arrivare vari turni dopo che l'evento è
+    # stato nominato. Senza questa, il bot perde il contesto cross-venue e mescola le
+    # policy delle due sedi (caso reale: dress code chiesto sul canale Milano per una
+    # serata di Gate Sardinia).
+    history_text_wide = " ".join(
+        m.get("content", "") for m in (history or [])[-12:]
+    ).lower()
 
     explicit_dates = extract_query_dates(text)
     # Risolvi SEMPRE anche l'evento citato per nome/artista, non solo come fallback
@@ -95,9 +103,9 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # l'evento dai messaggi recenti (caso reale: turno prima "stasera Perreo XL a Gate
     # Sardinia", poi "quanto costa l'ingresso?" — senza questo il bot perde l'evento e
     # risponde "non ho i dettagli sui prezzi" pur avendoli in contesto un attimo prima).
-    if not name_dates and history_text:
-        name_dates = (find_event_dates_by_name(venue, history_text)
-                      or find_event_dates_by_name(other_venue, history_text))
+    if not name_dates and history_text_wide:
+        name_dates = (find_event_dates_by_name(venue, history_text_wide)
+                      or find_event_dates_by_name(other_venue, history_text_wide))
     # Le date risolte per nome vengono PRIMA: sono la data esatta in cui l'evento è
     # archiviato, mentre una data relativa ("questo sabato") è solo l'approssimazione
     # dell'utente e può cadere su un giorno adiacente. query_dates[0] guida anche il
