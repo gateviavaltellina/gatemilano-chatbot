@@ -108,6 +108,57 @@ async def test_exception_returns_empty(monkeypatch):
     assert await vip_tables.get_vip_tables_sardinia("evBoom") == ""
 
 
+class _SeqFakeClient:
+    """Client fake che restituisce risposte diverse a ogni chiamata (per il retry)."""
+    responses = []
+    calls = 0
+
+    def __init__(self, *a, **k):
+        pass
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *a):
+        return False
+
+    async def get(self, url, params=None):
+        r = _SeqFakeClient.responses[_SeqFakeClient.calls]
+        _SeqFakeClient.calls += 1
+        return r
+
+
+@pytest.mark.asyncio
+async def test_retry_recovers_after_transient_5xx(monkeypatch):
+    # 1° tentativo 503 (blip), 2° tentativo 200 con tavoli → il bot li vede lo stesso,
+    # niente più falso "tavoli non disponibili" per un errore momentaneo dell'endpoint.
+    vip_tables._sardinia_cache.clear()
+    monkeypatch.setattr(vip_tables.settings, "sardinia_site_base_url", "https://www.gatesardinia.it")
+    _SeqFakeClient.calls = 0
+    _SeqFakeClient.responses = [
+        _FakeResponse(503, {}),
+        _FakeResponse(200, {"tables": [
+            {"code": "T3", "zona": "Terrace", "coperti": 10, "price": 600, "stato": "libero"},
+        ]}),
+    ]
+    monkeypatch.setattr(vip_tables.httpx, "AsyncClient", _SeqFakeClient)
+    out = await vip_tables.get_vip_tables_sardinia("evRetry")
+    assert "TAVOLI VIP DISPONIBILI" in out
+    assert _SeqFakeClient.calls == 2
+
+
+@pytest.mark.asyncio
+async def test_4xx_does_not_retry(monkeypatch):
+    # un 404 (id inesistente) NON va ritentato: una sola chiamata, poi "".
+    vip_tables._sardinia_cache.clear()
+    monkeypatch.setattr(vip_tables.settings, "sardinia_site_base_url", "https://www.gatesardinia.it")
+    _SeqFakeClient.calls = 0
+    _SeqFakeClient.responses = [_FakeResponse(404, {}), _FakeResponse(200, {"tables": [{"code": "X"}]})]
+    monkeypatch.setattr(vip_tables.httpx, "AsyncClient", _SeqFakeClient)
+    assert await vip_tables.get_vip_tables_sardinia("evNotFound") == ""
+    assert _SeqFakeClient.calls == 1
+
+
 @pytest.mark.asyncio
 async def test_base_url_trailing_slash_stripped(monkeypatch):
     payload = {"tables": [

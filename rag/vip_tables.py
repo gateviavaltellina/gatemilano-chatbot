@@ -231,15 +231,26 @@ async def get_vip_tables_sardinia(sanity_id: str) -> str:
 
     base = settings.sardinia_site_base_url.rstrip("/")
     url = f"{base}/api/vip/availability"
-    try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            r = await client.get(url, params={"event": sanity_id})
-            if r.status_code != 200:
-                logger.debug("VIP Sardegna: HTTP %s per event=%s", r.status_code, sanity_id)
+    # Un retry sui blip transitori (timeout/5xx). Prima un errore momentaneo
+    # dell'endpoint tornava "" = "nessun tavolo" e il bot diceva "tavoli non
+    # disponibili" pur essendoci: un falso negativo su una serata con tavoli aperti.
+    data = None
+    for attempt in (1, 2):
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                r = await client.get(url, params={"event": sanity_id})
+                if r.status_code == 200:
+                    data = r.json()
+                    break
+                # 4xx (o secondo tentativo) → inutile insistere; 5xx al 1° → ritenta
+                if r.status_code < 500 or attempt == 2:
+                    logger.debug("VIP Sardegna: HTTP %s per event=%s", r.status_code, sanity_id)
+                    return ""
+        except Exception as e:
+            if attempt == 2:
+                logger.debug("VIP Sardegna: errore per event=%s: %s", sanity_id, e)
                 return ""
-            data = r.json()
-    except Exception as e:
-        logger.debug("VIP Sardegna: errore per event=%s: %s", sanity_id, e)
+    if data is None:
         return ""
 
     tables = data.get("tables", []) if isinstance(data, dict) else []
