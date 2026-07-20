@@ -88,3 +88,36 @@ def test_handle_approva(monkeypatch, tmp_path):
     assert cm.get_approved_cases()[0]["id"] == f"corr-{cid}"
     assert handle_correction_command("approva", "nope", None, "George").startswith("❌")
     assert handle_correction_command("approva", "", None, "George").startswith("❌")
+
+
+async def test_handle_sync_ok(monkeypatch):
+    # !sync forza il re-sync: verifichiamo che chiami i due sync e riporti i conteggi.
+    import notifications.discord_bot as db
+    import sync.sanity_sync as ss
+    import sync.xceed_sync as xs
+    calls = []
+
+    async def _fake_sanity():
+        calls.append("sanity")
+
+    async def _fake_xceed():
+        calls.append("xceed")
+
+    monkeypatch.setattr(ss, "sync_all_venues", _fake_sanity)
+    monkeypatch.setattr(xs, "sync_all_venues", _fake_xceed)
+    out = await db.handle_sync()
+    assert calls == ["sanity", "xceed"]
+    assert "Sync completato" in out
+    assert "Milano" in out and "Sardegna" in out
+
+
+async def test_handle_sync_sanity_failure(monkeypatch):
+    import notifications.discord_bot as db
+    import sync.sanity_sync as ss
+
+    async def _boom():
+        raise RuntimeError("sanity down")
+
+    monkeypatch.setattr(ss, "sync_all_venues", _boom)
+    out = await db.handle_sync()
+    assert "❌" in out and "Sanity" in out

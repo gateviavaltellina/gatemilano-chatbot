@@ -78,6 +78,28 @@ def handle_eventi(venues: list[str]) -> str:
     return out if len(out) <= 1900 else out[:1900] + "\n…(troncato)"
 
 
+async def handle_sync() -> str:
+    """Forza un re-sync immediato da Sanity (+ Xceed). Serve a riflettere SUBITO le
+    modifiche fatte nel CMS — un evento annullato/tolto, aggiunto o corretto — senza
+    aspettare il cron da 2h. Caso reale: serate annullate in giornata mentre il bot
+    continuava a proporle."""
+    from rag.event_store import count
+    try:
+        from sync.sanity_sync import sync_all_venues as _sanity
+        await _sanity()
+    except Exception as e:
+        return f"❌ Sync Sanity fallito: {e}"
+    try:
+        from sync.xceed_sync import sync_all_venues as _xceed
+        await _xceed()
+    except Exception as e:
+        # Xceed è secondario: il sync Sanity (eventi Sardegna/Milano) è già andato.
+        return (f"🔄 Sync Sanity ok (Xceed fallito: {e}). Eventi in memoria: "
+                f"Milano {count('gate_milano')}, Sardegna {count('gate_sardinia')}.")
+    return (f"🔄 Sync completato. Eventi in memoria: "
+            f"Milano {count('gate_milano')}, Sardegna {count('gate_sardinia')}.")
+
+
 def parse_correction_command(text: str):
     """Riconosce i comandi correzione. Ritorna (cmd, payload) o (None, '').
 
@@ -169,6 +191,14 @@ async def on_message(message: discord.Message):
     eventi_venues = parse_eventi_command(content)
     if eventi_venues is not None:
         await message.reply(handle_eventi(eventi_venues), mention_author=False)
+        return
+
+    # !sync: forza il re-sync immediato da Sanity (azione admin read/write), in
+    # QUALUNQUE canale come !eventi. Utile dopo aver annullato/modificato un evento
+    # nel CMS, per non aspettare il cron da 2h.
+    if content == "!sync":
+        await message.add_reaction("🔄")
+        await message.reply(await handle_sync(), mention_author=False)
         return
 
     # Le notifiche WhatsApp e Instagram vivono su canali Discord DIVERSI. Una reply
