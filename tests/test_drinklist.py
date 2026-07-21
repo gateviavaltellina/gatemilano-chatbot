@@ -109,3 +109,38 @@ def test_food_and_drink_menus_are_independent():
     assert not should_send_drinklist("gate_sardinia", "quanto costa una pizza?", "", already_sent=False)
     # domanda sui drink → NON il food menu
     assert not should_send_food_menu("gate_sardinia", "quanto costa un drink?")
+
+
+# --- Falso positivo: nome evento nella risposta NON deve inviare la drinklist ---
+
+def test_event_name_perreo_in_reply_does_not_send_drinklist():
+    # caso reale 01:54: domanda sugli ARTISTI del 27/28/29 → la risposta nomina
+    # "Perreo XL presents Bichota" → la drinklist NON deve partire.
+    assert not should_send_drinklist(
+        "gate_sardinia",
+        "potevate mettere qualche artista anche il 27 28 29 luglio",
+        "il 27 c'è joe vanditti, il 28 perreo xl presents bichota e il 29 akeem",
+        already_sent=False,
+    )
+
+
+def test_vip_ticket_mention_in_reply_does_not_send_drinklist():
+    # una risposta che nomina "ticket VIP" (biglietti, non tavoli) non manda la bottle list
+    assert not should_send_drinklist(
+        "gate_sardinia", "che biglietti ci sono?",
+        "ci sono Posto Unico e ticket VIP per le aree Terrace e VIP", already_sent=False,
+    )
+
+
+def test_reply_about_tables_still_sends_drinklist():
+    # ma se la risposta parla DAVVERO di tavoli/bottiglie, la drinklist parte
+    assert should_send_drinklist(
+        "gate_sardinia", "avete posti a sedere?",
+        "sì, abbiamo tavoli con bottiglia inclusa nel minimo di spesa", already_sent=False,
+    )
+
+
+def test_user_text_tavolo_still_sends_drinklist():
+    # invariato: l'utente che nomina "tavolo" riceve la drinklist (una volta)
+    assert should_send_drinklist("gate_sardinia", "vorrei un tavolo", "", already_sent=False)
+    assert not should_send_drinklist("gate_sardinia", "vorrei un tavolo", "", already_sent=True)
