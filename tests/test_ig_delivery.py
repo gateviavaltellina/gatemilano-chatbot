@@ -177,3 +177,40 @@ async def test_wa_pipeline_error_sends_fallback_and_alerts(monkeypatch):
     assert "intoppo tecnico" in calls["sends"][0]
     assert calls["notify"]["delivered"] is False
     assert "ERRORE TECNICO" in calls["notify"]["reply"]
+
+
+async def test_story_reply_injects_context_hint(monkeypatch):
+    # Risposta a una storia → nel rag_context passato al modello c'è l'hint che spiega
+    # di NON assumere che una domanda generica sia sull'ingresso (18+ per lavoro, ecc.).
+    igw._ig_conversations.clear()
+    captured = {}
+
+    async def _ctx(*a, **k):
+        return "BASE_CONTEXT", []
+    monkeypatch.setattr(igw, "build_rag_context", _ctx)
+
+    async def _gen(**k):
+        captured["rag"] = k.get("rag_context")
+        return "ok"
+    monkeypatch.setattr(igw, "generate_response", _gen)
+
+    async def _notify(*a, **k):
+        return None
+    monkeypatch.setattr(igw, "notify_conversation", _notify)
+
+    async def _no_escalation(*a, **k):
+        return None
+    monkeypatch.setattr(igw, "notify_escalation", _no_escalation)
+
+    async def _send_ok(*a, **k):
+        return True
+    monkeypatch.setattr(igw, "send_ig_message", _send_ok)
+
+    await igw.process_ig_message("24588954374135134", "u_story", "da che età?", True)
+    assert "STORIA Instagram" in captured["rag"]
+    assert "18+" in captured["rag"]
+    assert "BASE_CONTEXT" in captured["rag"]  # il contesto normale resta
+
+    captured.clear()
+    await igw.process_ig_message("24588954374135134", "u_normal", "da che età?", False)
+    assert captured["rag"] == "BASE_CONTEXT"  # nessun hint sui messaggi normali
