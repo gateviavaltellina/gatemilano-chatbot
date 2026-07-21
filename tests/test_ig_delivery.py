@@ -214,3 +214,78 @@ async def test_story_reply_injects_context_hint(monkeypatch):
     captured.clear()
     await igw.process_ig_message("24588954374135134", "u_normal", "da che età?", False)
     assert captured["rag"] == "BASE_CONTEXT"  # nessun hint sui messaggi normali
+
+
+async def test_story_reply_with_image_passes_block_no_text_hint(monkeypatch):
+    # Risposta a una storia con immagine scaricabile → il blocco immagine arriva a
+    # generate_response e NON si aggiunge l'hint testuale (il modello vede la storia).
+    igw._ig_conversations.clear()
+    captured = {}
+
+    async def _ctx(*a, **k):
+        return "BASE_CONTEXT", []
+    monkeypatch.setattr(igw, "build_rag_context", _ctx)
+
+    async def _fetch(url):
+        return {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": "AAA"}}
+    monkeypatch.setattr(igw, "fetch_image_block", _fetch)
+
+    async def _gen(**k):
+        captured["img"] = k.get("image_block")
+        captured["rag"] = k.get("rag_context")
+        return "ok"
+    monkeypatch.setattr(igw, "generate_response", _gen)
+
+    async def _notify(*a, **k):
+        return None
+    monkeypatch.setattr(igw, "notify_conversation", _notify)
+
+    async def _no_escalation(*a, **k):
+        return None
+    monkeypatch.setattr(igw, "notify_escalation", _no_escalation)
+
+    async def _send_ok(*a, **k):
+        return True
+    monkeypatch.setattr(igw, "send_ig_message", _send_ok)
+
+    await igw.process_ig_message(
+        "24588954374135134", "u_story_img", "da che età?", True, "https://cdn/story.jpg")
+    assert captured["img"]["type"] == "image"
+    assert captured["rag"] == "BASE_CONTEXT"  # niente hint testuale quando c'è l'immagine
+
+
+async def test_story_reply_video_falls_back_to_text_hint(monkeypatch):
+    # Storia video → fetch ritorna None → si usa l'hint testuale come ripiego.
+    igw._ig_conversations.clear()
+    captured = {}
+
+    async def _ctx(*a, **k):
+        return "BASE_CONTEXT", []
+    monkeypatch.setattr(igw, "build_rag_context", _ctx)
+
+    async def _fetch_none(url):
+        return None
+    monkeypatch.setattr(igw, "fetch_image_block", _fetch_none)
+
+    async def _gen(**k):
+        captured["img"] = k.get("image_block")
+        captured["rag"] = k.get("rag_context")
+        return "ok"
+    monkeypatch.setattr(igw, "generate_response", _gen)
+
+    async def _notify(*a, **k):
+        return None
+    monkeypatch.setattr(igw, "notify_conversation", _notify)
+
+    async def _no_escalation(*a, **k):
+        return None
+    monkeypatch.setattr(igw, "notify_escalation", _no_escalation)
+
+    async def _send_ok(*a, **k):
+        return True
+    monkeypatch.setattr(igw, "send_ig_message", _send_ok)
+
+    await igw.process_ig_message(
+        "24588954374135134", "u_story_vid", "da che età?", True, "https://cdn/story.mp4")
+    assert captured["img"] is None
+    assert "STORIA Instagram" in captured["rag"]  # hint testuale di ripiego

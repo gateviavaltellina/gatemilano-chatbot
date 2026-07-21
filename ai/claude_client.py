@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import re
+import base64
 import logging
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
+import httpx
 from anthropic import AsyncAnthropic
 from rag.prices import build_prices_text
 from rag.knowledge_cache import get as get_static_knowledge
@@ -347,6 +349,42 @@ def build_system_blocks(venue: str, rag_context: str, current_datetime: str) -> 
     ]
 
 
+_STORY_IMAGE_NOTE = (
+    "L'utente sta rispondendo a QUESTA nostra storia Instagram (immagine qui sopra). "
+    "GUARDA il contenuto della storia e rispondi in base a quello: se è un annuncio di "
+    "LAVORO/assunzioni l'età richiesta è 18+ (NON l'ingresso 16+), se è un evento usa i "
+    "suoi dati, se è una promo/giveaway rispondi su quella. Hai la storia davanti: NON "
+    "chiedere 'a quale storia ti riferisci'."
+)
+
+_IMG_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+
+
+async def fetch_image_block(url: str) -> dict | None:
+    """Scarica un'immagine (es. una nostra storia IG dal reply_to.story.url) e la rende
+    un blocco immagine per l'API Anthropic. Ritorna None se non è un'immagine (storia
+    video/gif non supportata come frame), se è troppo grande, o su errore/timeout: il
+    chiamante ricade sul solo hint testuale. Non solleva mai."""
+    if not url:
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            r = await client.get(url)
+        if r.status_code != 200:
+            logger.debug("Fetch storia: HTTP %s per %s", r.status_code, url[:80])
+            return None
+        ctype = r.headers.get("content-type", "").split(";")[0].strip().lower()
+        if ctype not in _IMG_TYPES:
+            return None  # es. video/mp4: la vision non legge i video
+        if len(r.content) > 4_500_000:  # margine sotto il limite ~5MB dell'API
+            return None
+        data = base64.standard_b64encode(r.content).decode("ascii")
+        return {"type": "image", "source": {"type": "base64", "media_type": ctype, "data": data}}
+    except Exception as e:
+        logger.debug("Fetch immagine storia fallito (%s): %s", str(url)[:80], e)
+        return None
+
+
 def _sanitize_history(history: list[dict]) -> list[dict]:
     """Ripulisce la history prima della chiamata API. Una history malformata
     (messaggi con contenuto vuoto o due turni consecutivi dello stesso ruolo) fa
@@ -377,6 +415,7 @@ async def generate_response(
     rag_context: str,
     history: list[dict],
     temperature: float | None = None,
+    image_block: dict | None = None,
 ) -> str:
     # temperature: None = default API (produzione). L'eval passa 0 per risposte
     # deterministiche e riproducibili (gate affidabile, niente flakiness).
@@ -386,7 +425,13 @@ async def generate_response(
     contact_email = VENUE_CONTACT_EMAIL.get(venue, "info@gatemilano.com")
     system = build_system_blocks(venue, rag_context, current_datetime)
     history = _sanitize_history(history)
-    messages = [*history, {"role": "user", "content": user_message}]
+    # Se c'è l'immagine della storia a cui l'utente risponde, la alleghiamo all'ultimo
+    # messaggio utente: così il modello VEDE la storia e capisce la domanda da solo.
+    if image_block is not None:
+        user_content = [image_block, {"type": "text", "text": f"{_STORY_IMAGE_NOTE}\n\n{user_message}"}]
+    else:
+        user_content = user_message
+    messages = [*history, {"role": "user", "content": user_content}]
     # FIX #3: cache anche il prefisso della conversazione. Mettendo un breakpoint
     # sull'ultimo messaggio della history, i turni successivi della stessa
     # conversazione (entro 1h) rileggono dalla cache invece di riprocessare la
