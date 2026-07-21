@@ -156,3 +156,10 @@ def test_drinklist_mapping_is_venue_aware():
 def test_sardinia_drinklist_pdf_exists_in_static():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     assert os.path.exists(os.path.join(root, "static", "drinklist_sardegna.pdf"))
+
+
+def test_sardinia_has_jobs_info():
+    # Assunzioni: età LAVORO 18+ e mail candidature, distinte dall'età d'ingresso (16+).
+    s = _static("gate_sardinia")
+    assert "jobs@gatesardinia.it" in s
+    assert "18" in s and "LAVORARE" in s

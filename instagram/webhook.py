@@ -160,9 +160,14 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
 
                 attachments = msg.get("attachments") or []
                 att_type = (attachments[0] or {}).get("type", "") if attachments else ""
+                # Risposta a una nostra STORIA: IG manda reply_to.story. Il testo da solo
+                # ("da che età?", "stasera?") è ambiguo senza sapere DI QUALE storia si
+                # parla (evento? assunzioni? promo?) — passiamo il flag così il bot non
+                # assume che sia sull'ingresso e, se serve, chiede a cosa si riferisce.
+                is_story_reply = bool((msg.get("reply_to") or {}).get("story"))
                 if text:
                     _trace("ig", sender_id, text, "webhook in ingresso", account=ig_account_id)
-                    background_tasks.add_task(process_ig_message, ig_account_id, sender_id, text)
+                    background_tasks.add_task(process_ig_message, ig_account_id, sender_id, text, is_story_reply)
                 elif att_type in ("story_mention", "share"):
                     # menzione/post nella storia → mettiamo un like ❤️ invece di un testo
                     background_tasks.add_task(process_ig_story_mention, ig_account_id, sender_id, msg_id)
@@ -184,9 +189,9 @@ _ERROR_FALLBACK_REPLY = (
 )
 
 
-async def process_ig_message(ig_account_id: str, sender_id: str, text: str) -> None:
+async def process_ig_message(ig_account_id: str, sender_id: str, text: str, is_story_reply: bool = False) -> None:
     try:
-        await _process_ig_message(ig_account_id, sender_id, text)
+        await _process_ig_message(ig_account_id, sender_id, text, is_story_reply)
     except Exception:
         logger.exception("IG: errore processando il messaggio di %s — fallback + alert staff", sender_id)
         venue = _venue_for_account(ig_account_id)
@@ -201,7 +206,19 @@ async def process_ig_message(ig_account_id: str, sender_id: str, text: str) -> N
         )
 
 
-async def _process_ig_message(ig_account_id: str, sender_id: str, text: str) -> None:
+_STORY_REPLY_HINT = (
+    "NOTA CONTESTO: l'utente sta rispondendo a una NOSTRA STORIA Instagram, ma tu NON "
+    "vedi il contenuto della storia. Quindi una domanda generica (es. 'da che età?', "
+    "'stasera?', 'quanto costa?', 'a che ora?', 'come funziona?') NON è per forza "
+    "sull'ingresso al locale: potrebbe riferirsi a ciò che c'è nella storia — un evento, "
+    "un annuncio di LAVORO/assunzioni, una promo, un giveaway. NON assumere che sia "
+    "sull'ingresso: se il riferimento è ambiguo, CHIEDI gentilmente a cosa si riferisce / "
+    "cosa diceva la storia, così rispondi giusto. In particolare 'da che età' su una "
+    "storia di assunzioni riguarda l'età per LAVORARE (18+), non l'ingresso (16+)."
+)
+
+
+async def _process_ig_message(ig_account_id: str, sender_id: str, text: str, is_story_reply: bool = False) -> None:
     venue = _venue_for_account(ig_account_id)
     conv = _get_conversation(ig_account_id, sender_id)
     phone = f"ig:{sender_id[:12]}"
@@ -214,6 +231,8 @@ async def _process_ig_message(ig_account_id: str, sender_id: str, text: str) -> 
         return
 
     rag_context, _ = await build_rag_context(venue, text, history=conv.get("history", []))
+    if is_story_reply:
+        rag_context = f"{_STORY_REPLY_HINT}\n\n---\n\n{rag_context}"
 
     _add_to_history(conv, "user", text)
     reply = await generate_response(
