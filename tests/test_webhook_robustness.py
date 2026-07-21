@@ -15,7 +15,7 @@ def _client():
 def _spy_ig(monkeypatch):
     calls = []
 
-    async def _spy(ig_account_id, sender_id, text, is_story_reply=False):
+    async def _spy(ig_account_id, sender_id, text, is_story_reply=False, story_image_url=None):
         calls.append((sender_id, text))
     monkeypatch.setattr(igw, "process_ig_message", _spy)
     return calls

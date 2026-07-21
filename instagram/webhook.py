@@ -9,7 +9,7 @@ from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
 from config import settings
 from webhook_security import verify_meta_signature
 from rag.context_builder import build_rag_context
-from ai.claude_client import generate_response, last_api_error, API_ERROR_FALLBACK_PREFIX
+from ai.claude_client import generate_response, last_api_error, API_ERROR_FALLBACK_PREFIX, fetch_image_block
 
 
 def _relay_with_api_error(reply: str, full_reply: str) -> str:
@@ -160,14 +160,19 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
 
                 attachments = msg.get("attachments") or []
                 att_type = (attachments[0] or {}).get("type", "") if attachments else ""
-                # Risposta a una nostra STORIA: IG manda reply_to.story. Il testo da solo
-                # ("da che età?", "stasera?") è ambiguo senza sapere DI QUALE storia si
-                # parla (evento? assunzioni? promo?) — passiamo il flag così il bot non
-                # assume che sia sull'ingresso e, se serve, chiede a cosa si riferisce.
-                is_story_reply = bool((msg.get("reply_to") or {}).get("story"))
+                # Risposta a una nostra STORIA: IG manda reply_to.story con l'URL del
+                # media. Passiamo l'URL così il bot può VEDERE la storia (evento?
+                # assunzioni? promo?) e capire la domanda; se l'immagine non si può
+                # scaricare (storia video, errore), resta il flag per l'hint testuale.
+                story = (msg.get("reply_to") or {}).get("story") or {}
+                is_story_reply = bool(story)
+                story_image_url = story.get("url") or None
                 if text:
                     _trace("ig", sender_id, text, "webhook in ingresso", account=ig_account_id)
-                    background_tasks.add_task(process_ig_message, ig_account_id, sender_id, text, is_story_reply)
+                    background_tasks.add_task(
+                        process_ig_message, ig_account_id, sender_id, text,
+                        is_story_reply, story_image_url,
+                    )
                 elif att_type in ("story_mention", "share"):
                     # menzione/post nella storia → mettiamo un like ❤️ invece di un testo
                     background_tasks.add_task(process_ig_story_mention, ig_account_id, sender_id, msg_id)
@@ -189,9 +194,10 @@ _ERROR_FALLBACK_REPLY = (
 )
 
 
-async def process_ig_message(ig_account_id: str, sender_id: str, text: str, is_story_reply: bool = False) -> None:
+async def process_ig_message(ig_account_id: str, sender_id: str, text: str,
+                             is_story_reply: bool = False, story_image_url: str | None = None) -> None:
     try:
-        await _process_ig_message(ig_account_id, sender_id, text, is_story_reply)
+        await _process_ig_message(ig_account_id, sender_id, text, is_story_reply, story_image_url)
     except Exception:
         logger.exception("IG: errore processando il messaggio di %s — fallback + alert staff", sender_id)
         venue = _venue_for_account(ig_account_id)
@@ -218,7 +224,8 @@ _STORY_REPLY_HINT = (
 )
 
 
-async def _process_ig_message(ig_account_id: str, sender_id: str, text: str, is_story_reply: bool = False) -> None:
+async def _process_ig_message(ig_account_id: str, sender_id: str, text: str,
+                              is_story_reply: bool = False, story_image_url: str | None = None) -> None:
     venue = _venue_for_account(ig_account_id)
     conv = _get_conversation(ig_account_id, sender_id)
     phone = f"ig:{sender_id[:12]}"
@@ -231,7 +238,11 @@ async def _process_ig_message(ig_account_id: str, sender_id: str, text: str, is_
         return
 
     rag_context, _ = await build_rag_context(venue, text, history=conv.get("history", []))
-    if is_story_reply:
+    # Risposta a una storia: prova a scaricare l'immagine così il modello la VEDE. Se
+    # riesce, niente hint testuale (ce l'ha davanti); se no (storia video/errore) e
+    # comunque è una story reply, aggiungi l'hint testuale come ripiego.
+    image_block = await fetch_image_block(story_image_url) if story_image_url else None
+    if is_story_reply and image_block is None:
         rag_context = f"{_STORY_REPLY_HINT}\n\n---\n\n{rag_context}"
 
     _add_to_history(conv, "user", text)
@@ -240,6 +251,7 @@ async def _process_ig_message(ig_account_id: str, sender_id: str, text: str, is_
         user_message=text,
         rag_context=rag_context,
         history=conv["history"][:-1],
+        image_block=image_block,
     )
     _add_to_history(conv, "assistant", reply)
 
