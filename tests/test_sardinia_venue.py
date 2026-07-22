@@ -163,3 +163,15 @@ def test_sardinia_has_jobs_info():
     s = _static("gate_sardinia")
     assert "jobs@gatesardinia.it" in s
     assert "18" in s and "LAVORARE" in s
+
+
+def test_sardinia_ticket_availability_and_tone_rule():
+    # caso reale: "quanti posti restano?" → il bot diceva "onestamente non so".
+    from ai.claude_client import build_system_blocks
+    blocks = build_system_blocks("gate_sardinia", "RAG", "DT")
+    # KB: come funziona la disponibilità su TicketSMS (disponibile/esaurito, non il conteggio)
+    assert "Disponibilità posti su TicketSMS" in blocks[0]["text"]
+    # tono: "onestamente non so" citato come VIETATO nel blocco dinamico
+    assert "onestamente non so" in blocks[1]["text"].lower()
+    # e il .format del template dinamico non lascia placeholder rotti
+    assert "{contact_email}" not in blocks[1]["text"]
