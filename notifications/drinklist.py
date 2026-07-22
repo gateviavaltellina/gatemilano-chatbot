@@ -31,12 +31,16 @@ FOOD_MENUS: dict[str, tuple[str, str]] = {
 # invio proattivo, una sola volta. NB: "perreo xl" NON è qui — è un NOME DI EVENTO,
 # non un segnale di tavoli.
 _DRINKLIST_TRIGGERS = ["tavolo", "tavoli", "vip", "bottle", "bottiglia", "minimo"]
-# Trigger nella RISPOSTA del bot: solo segnali FORTI di bottle service. NIENTE "vip"
-# (parola comunissima nelle risposte, es. "ticket VIP") né nomi di evento come
-# "Perreo XL": comparivano di continuo nelle risposte su lineup/eventi e facevano
-# partire la drinklist a sproposito (caso reale: domanda sugli artisti del 27/28/29 →
-# la risposta nominava "Perreo XL presents Bichota" → drinklist inviata senza motivo).
-_DRINKLIST_REPLY_TRIGGERS = ["tavolo", "tavoli", "bottiglia", "bottle", "minimo"]
+# Trigger nella RISPOSTA del bot: SOLO quando il bot offre/promette la drinklist
+# stessa (allinea la promessa all'azione). NON parole generiche come "tavoli" o
+# "vip": la chiusura-tipo "Vuoi info su biglietti, tavoli o altro?" le contiene e
+# faceva partire la drinklist su quasi ogni risposta (spam reale, 2 volte in uno
+# stesso screenshot). L'interesse dell'utente per i tavoli è già coperto dai
+# trigger sul SUO testo.
+_DRINKLIST_REPLY_TRIGGERS = [
+    "drinklist", "drink list", "lista bottiglie", "listino bottiglie",
+    "carta bottiglie", "bottle list",
+]
 # Richieste ESPLICITE della bottle list dei tavoli → invia SEMPRE. "drinklist"/"drink
 # list" restano qui: nel sistema indicano storicamente la bottle list VIP dei tavoli.
 _DRINKLIST_EXPLICIT = [
