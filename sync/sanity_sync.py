@@ -164,12 +164,16 @@ def _quill_to_text(raw: str) -> str:
 
 
 def _parse_ticketsms_event(data: dict) -> dict:
-    """Estrae {about, prices_str} dalla risposta v3 di TicketSMS. Non solleva.
+    """Estrae {about, prices_str, canceled} dalla risposta v3 di TicketSMS. Non solleva.
 
     prices_str: la stringa 'a partire da €X' di TicketSMS + il prezzo minimo per
     settore (sempre un 'a partire da', quindi onesto anche se gli scaglioni cambiano).
+    canceled: TicketSMS è la biglietteria dove lo staff ANNULLA davvero gli eventi
+    (Sanity resta spesso indietro): eventDetails.canceled è la fonte di verità.
+    Caso reale Fervo Fluxo 22/7: annullato su TicketSMS, ancora presente su Sanity →
+    il bot lo proponeva e smentiva i clienti che segnalavano l'annullamento.
     """
-    result = {"about": "", "prices_str": ""}
+    result = {"about": "", "prices_str": "", "canceled": False}
     body = (data or {}).get("body") or []
     about = ""
     price_min_str = ""
@@ -183,8 +187,11 @@ def _parse_ticketsms_event(data: dict) -> dict:
             if not isinstance(it, dict):
                 continue
             ct = it.get("componentType")
-            if ct == "eventDetails" and not about:
-                about = _quill_to_text(it.get("description") or "")
+            if ct == "eventDetails":
+                if it.get("canceled") is True:
+                    result["canceled"] = True
+                if not about:
+                    about = _quill_to_text(it.get("description") or "")
             elif ct == "ticket":
                 price = it.get("price") or {}
                 try:
@@ -206,8 +213,8 @@ def _parse_ticketsms_event(data: dict) -> dict:
 
 
 async def _fetch_ticketsms_enrichment(ticket_url: str) -> dict:
-    """Returns {about, prices_str} per un evento TicketSMS. Non solleva mai."""
-    result = {"about": "", "prices_str": ""}
+    """Returns {about, prices_str, canceled} per un evento TicketSMS. Non solleva mai."""
+    result = {"about": "", "prices_str": "", "canceled": False}
     slug = _extract_ticketsms_slug(ticket_url)
     if not slug:
         return result
@@ -467,6 +474,25 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
     about = xceed.get("about", "")
     about_str = f"\nDescrizione: {about[:600]}" if about else ""
 
+    # EVENTO ANNULLATO (rilevato dalla biglietteria, fonte di verità degli annullamenti):
+    # il documento diventa un avviso esplicito e niente link/prezzi d'acquisto — né nel
+    # doc né nei metadata (così nemmeno la lista compatta o il lookup tavoli li usano).
+    is_canceled = bool(xceed.get("canceled"))
+    canceled_str = ""
+    if is_canceled:
+        contact = "info@gatesardinia.it" if "Sardinia" in venue_label else "info@gatemilano.com"
+        canceled_str = (
+            "\n⚠️ EVENTO ANNULLATO: questa serata è stata ANNULLATA. Se chiedono di questo "
+            "evento, comunica SUBITO e con chiarezza che è annullato, scusandoti per il "
+            "disagio — NON confermarlo mai come in programma, NON proporre biglietti né "
+            "link d'acquisto. Per i biglietti già acquistati e i rimborsi: scrivere a "
+            f"{contact}. Quella sera il locale è chiuso, salvo ALTRI eventi in calendario "
+            "per la stessa data."
+        )
+        ticket_str = ""
+        ticket_url = ""
+        prices_str = ""
+
     draft_str = "\nNB: dettagli in via di conferma (evento non ancora pubblicato sul sito)" if is_draft else ""
     # Le serate col titolo "?????" sono TOP SECRET di proposito (headliner a
     # sorpresa): il bot deve confermare la data e creare attesa per l'annuncio,
@@ -482,6 +508,7 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
         f"Venue: {venue_label}"
         f"{room_str}\n"
         f"Data: {date_fmt}"
+        f"{canceled_str}"
         f"{hours_str}"
         f"{lineup_str}"
         f"{genres_str}"
@@ -522,6 +549,7 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
         # link /tavoli?event=<id> e per il dedup col documento post-publish.
         "sanity_id": (event.get("_id") or "").removeprefix("drafts."),
         "ticket_url": ticket_url,
+        "canceled": is_canceled,
     }
     return document, metadata
 

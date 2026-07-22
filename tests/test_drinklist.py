@@ -132,11 +132,21 @@ def test_vip_ticket_mention_in_reply_does_not_send_drinklist():
     )
 
 
-def test_reply_about_tables_still_sends_drinklist():
-    # ma se la risposta parla DAVVERO di tavoli/bottiglie, la drinklist parte
+def test_reply_promising_drinklist_sends_it():
+    # se il bot OFFRE/promette la drinklist nella risposta, il link parte davvero
     assert should_send_drinklist(
         "gate_sardinia", "avete posti a sedere?",
-        "sì, abbiamo tavoli con bottiglia inclusa nel minimo di spesa", already_sent=False,
+        "sì! ti mando la drinklist così scegli le bottiglie", already_sent=False,
+    )
+
+
+def test_boilerplate_closing_does_not_send_drinklist():
+    # la chiusura-tipo "Vuoi info su biglietti, tavoli o altro?" NON deve far partire
+    # la drinklist (caso reale: allegata a "stasera c'è Fervo Fluxo?" e simili).
+    assert not should_send_drinklist(
+        "gate_sardinia", "stasera c'è l'evento fervo fluxo?",
+        "sì, stasera c'è fervo fluxo dalle 22 alle 03! vuoi info su biglietti, tavoli o altro?",
+        already_sent=False,
     )
 
 

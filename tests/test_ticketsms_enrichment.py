@@ -55,6 +55,6 @@ def test_parse_about_and_prices():
 
 def test_parse_empty_is_safe():
     out = _parse_ticketsms_event({})
-    assert out == {"about": "", "prices_str": ""}
+    assert out == {"about": "", "prices_str": "", "canceled": False}
     out2 = _parse_ticketsms_event({"body": [{"list": [{"componentType": "ticket", "price": {"amount": "x"}}]}]})
     assert out2["prices_str"] == ""  # amount non numerico → ignorato

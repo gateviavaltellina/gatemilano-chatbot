@@ -9,6 +9,7 @@ from rag.event_store import (
     get_events_for_month_compact,
     get_vip_candidates,
     find_event_dates_by_name,
+    has_active_event,
 )
 from rag.date_utils import extract_query_dates, extract_query_months
 from rag.vip_tables import get_vip_tables_context, get_vip_tables_via_site, get_vip_tables_sardinia
@@ -183,7 +184,9 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     from rag.date_utils import business_now  # import a runtime: rispetta il patch nei test
     today_str = business_now().strftime("%Y-%m-%d")
     if today_str not in query_dates:
-        if get_events_for_date(venue, today_str):
+        # NB: has_active_event ignora gli eventi ANNULLATI — una serata annullata non
+        # tiene aperto il locale (il suo documento resta però leggibile per dirlo).
+        if has_active_event(venue, today_str):
             date_parts.insert(0, f"STATO DI STASERA ({today_str}): c'è un evento in programma → locale APERTO.")
         else:
             date_parts.insert(0, (

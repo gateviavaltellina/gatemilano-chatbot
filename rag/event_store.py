@@ -138,6 +138,11 @@ def _compact_event_line(e: dict) -> str:
             if m and not min_price:
                 min_price = m.group(1)
 
+    # Evento annullato: la riga compatta lo dice esplicitamente, senza link né prezzi
+    # (altrimenti il bot, vedendo solo il compact, lo proporrebbe come attivo).
+    if meta.get("canceled"):
+        return f"• {date_line}: {name} · ⚠️ ANNULLATO (non proporre biglietti)"
+
     parts = [name]
     if room:
         parts.append(room)
@@ -224,6 +229,21 @@ def get_events_for_month_compact(venue: str, year: int, month: int, limit: int =
     lines = [f"EVENTI {venue_label.upper()} — {month_label} (date confermate in calendario):"]
     lines.extend(_compact_event_line(e) for e in events)
     return "\n".join(lines)
+
+
+def has_active_event(venue: str, date_str: str) -> bool:
+    """True se per quel giorno c'è almeno un evento NON annullato. È il criterio per
+    lo stato aperto/chiuso: un evento annullato non tiene aperto il locale (il suo
+    documento resta comunque nel contesto, così il bot può dire che è annullato)."""
+    day_start = int(datetime.strptime(date_str[:10], "%Y-%m-%d")
+                    .replace(tzinfo=timezone.utc).timestamp())
+    day_end = day_start + 86400
+    return any(
+        e for e in _get(venue)
+        if e["metadata"].get("type") == "event"
+        and day_start <= e["metadata"].get("date_ts", 0) < day_end
+        and not e["metadata"].get("canceled")
+    )
 
 
 def get_events_for_date(venue: str, date_str: str) -> str:
@@ -399,7 +419,8 @@ def get_vip_candidates(venue: str, date_str: str | None = None, days: int = 14) 
         day_end = day_start + 86400
         cand = [e for e in _get(venue)
                 if e["metadata"].get("type") == "event"
-                and day_start <= e["metadata"].get("date_ts", 0) < day_end]
+                and day_start <= e["metadata"].get("date_ts", 0) < day_end
+                and not e["metadata"].get("canceled")]  # niente tavoli per serate annullate
         cand.sort(key=lambda e: e["metadata"].get("date_ts", 0))
         for e in cand:
             m = e["metadata"]
@@ -409,7 +430,8 @@ def get_vip_candidates(venue: str, date_str: str | None = None, days: int = 14) 
         end_ts = today_ts + days * 86400
         cand = [e for e in _get(venue)
                 if e["metadata"].get("type") == "event"
-                and today_ts <= e["metadata"].get("date_ts", 0) <= end_ts]
+                and today_ts <= e["metadata"].get("date_ts", 0) <= end_ts
+                and not e["metadata"].get("canceled")]  # niente tavoli per serate annullate
         cand.sort(key=lambda e: e["metadata"].get("date_ts", 0))
         for e in cand:
             m = e["metadata"]

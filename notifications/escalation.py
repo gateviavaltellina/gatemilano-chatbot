@@ -38,6 +38,12 @@ _CATEGORIES = {
         "reclamo", "complaint", "lament", "denuncia", "avvocat", "truffa",
         "rubato", "furto", "aggred", "rissa", "molest", "vergogn",
     ],
+    # Un cliente che parla di un evento annullato/rinviato è un segnale prezioso:
+    # spesso la biglietteria è aggiornata e Sanity no (caso reale Fervo Fluxo) — lo
+    # staff deve vederlo SUBITO per correggere il calendario (!sync dopo la modifica).
+    "🚫 Annullamento segnalato": [
+        "annullat", "cancellat", "cancelled", "canceled", "rinviat", "postpon",
+    ],
 }
 
 
