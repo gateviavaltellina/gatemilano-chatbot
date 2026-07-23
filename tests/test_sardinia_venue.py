@@ -175,3 +175,12 @@ def test_sardinia_ticket_availability_and_tone_rule():
     assert "onestamente non so" in blocks[1]["text"].lower()
     # e il .format del template dinamico non lascia placeholder rotti
     assert "{contact_email}" not in blocks[1]["text"]
+
+
+def test_sardinia_patente_now_accepted():
+    # decisione staff 23/7 ("famo che anche patente va bene"): la patente è ACCETTATA
+    # come documento d'ingresso; la tessera sanitaria resta non valida.
+    s = _static("gate_sardinia")
+    assert "Patente di guida: ACCETTATA" in s
+    assert "non accettata in nessun caso" not in s
+    assert "Tessera sanitaria" in s

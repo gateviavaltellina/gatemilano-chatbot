@@ -76,10 +76,11 @@ Il nostro staff gira per Budoni (e in giro) distribuendo dei **braccialetti**: *
 
 ## Accesso e Dress Code
 **Età minima:** **16 anni (16+) per tutti gli eventi** — dai 16 in su si entra col documento (senza accompagnatore). Se un evento indica esplicitamente una soglia diversa (es. 18+), per quell'evento vale quella. **Sotto i 16 anni:** ammessi **solo con un genitore** che resti **sempre con loro** per tutta la serata (non basta un maggiorenne qualsiasi; da soli non entrano). Il servizio di alcolici resta riservato ai 18+. Documento d'identità originale sempre obbligatorio.
-**Documento obbligatorio:** originale (no fotocopie, no foto digitali)
-- Cittadini UE: carta d'identità o passaporto
+**Documento obbligatorio:** originale (no fotocopie, no foto digitali — la foto del documento sul telefono NON vale)
+- Cittadini UE: carta d'identità, passaporto **o patente di guida**
 - Cittadini non UE: solo passaporto
-- Patente di guida: non accettata in nessun caso
+- **Patente di guida: ACCETTATA** come documento d'ingresso (sempre in originale). Se in passato hai letto/detto il contrario, la regola aggiornata è questa.
+- Tessera sanitaria: **NON** è un documento d'identità valido per l'ingresso.
 
 **Dress code:** smart casual estivo
 **Vietato:** costumi, ciabatte, canottiere, t-shirt con stampe offensive, cappellini
