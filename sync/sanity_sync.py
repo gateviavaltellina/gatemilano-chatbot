@@ -405,10 +405,36 @@ def _extract_hours(event: dict) -> str:
 # così il bot legge l'orario già pronto e non lo deduce.
 _SARDINIA_HOURS = "22:00 - 03:00"
 
+# Finestre speciali decise dallo staff: (dal, al) COMPRESI, per GIORNO DI SERVIZIO →
+# orario di quella serata. A termine: passata la finestra torna da solo l'orario
+# standard, nessun revert da fare. Attuale: settimana 22–26 luglio 2026, chiusura
+# posticipata alle 03:30.
+_SARDINIA_SPECIAL_HOURS = {
+    ("2026-07-22", "2026-07-26"): "22:00 - 03:30",
+}
+
+
+def _service_date_of(date_str: str) -> str:
+    """'YYYY-MM-DD' del giorno di servizio per una data Sanity (gestisce il rollover:
+    '...T22:00Z' = 00:00 Rome del giorno dopo → conta la sera prima). Su input strano
+    ritorna i primi 10 caratteri così com'è."""
+    try:
+        if "T" in date_str:
+            dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+            svc = _service_day(dt.astimezone(_ROME))
+            return svc.strftime("%Y-%m-%d")
+    except Exception:
+        pass
+    return (date_str or "")[:10]
+
 
 def _sardinia_default_hours(date_str: str = "") -> str:
-    """Finestra oraria di apertura standard di Gate Sardinia (22:00–03:00, tutte le sere).
-    date_str è tenuto per compatibilità (in passato l'orario variava per giorno)."""
+    """Finestra oraria di apertura di Gate Sardinia per la serata data: l'orario
+    standard (22:00–03:00) oppure quello di un'eventuale finestra speciale."""
+    day = _service_date_of(date_str)
+    for (lo, hi), hours in _SARDINIA_SPECIAL_HOURS.items():
+        if lo <= day <= hi:
+            return hours
     return _SARDINIA_HOURS
 
 

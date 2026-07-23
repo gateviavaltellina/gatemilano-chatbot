@@ -139,3 +139,25 @@ def test_compact_list_carries_hours_line():
     finally:
         du.business_now = orig
         es._store.clear()
+
+
+# --- Finestra oraria speciale 22-26 luglio 2026 (chiusura 03:30) ---
+
+def test_special_week_hours_2230_0330():
+    from sync.sanity_sync import _sardinia_default_hours
+    # dentro la finestra: data secca e ISO con rollover (domenica sera = servizio 26)
+    assert _sardinia_default_hours("2026-07-22") == "22:00 - 03:30"
+    assert _sardinia_default_hours("2026-07-26T22:00:00Z") == "22:00 - 03:30"
+    # fuori dalla finestra: torna da solo l'orario standard
+    assert _sardinia_default_hours("2026-07-21") == "22:00 - 03:00"
+    assert _sardinia_default_hours("2026-07-27") == "22:00 - 03:00"
+
+
+def test_special_week_in_document_and_explicit_override_wins():
+    doc, _ = _build_document({"_id": "sw", "title": "X", "date": "2026-07-24"}, "Gate Sardinia")
+    assert "Orari: 22:00 - 03:30" in doc
+    # un orario esplicito da Sanity vince comunque sulla finestra speciale
+    doc2, _ = _build_document(
+        {"_id": "sw2", "title": "Op", "date": "2026-07-24", "openingHours": "18:30 - 20:30"},
+        "Gate Sardinia")
+    assert "Orari: 18:30 - 20:30" in doc2
