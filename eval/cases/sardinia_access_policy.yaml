@@ -4,12 +4,11 @@
   user_message: ciao raga, ma accettate la patente come documento per entrare?
   rubric:
     must:
-    - Dichiara chiaramente che la patente di guida NON e accettata come documento d'identita per l'ingresso
-    - 'Indica i documenti validi: per cittadini UE carta d''identita o passaporto, per extra-UE solo passaporto'
-    - Specifica che il documento deve essere originale
+    - Conferma che la patente di guida E accettata come documento d'ingresso (policy aggiornata luglio 2026)
+    - Specifica che il documento deve essere originale (niente foto o fotocopie)
     - Mantiene il tono di Charlie dello staff di Gate Sardinia
     must_not:
-    - Afferma o lascia intendere che la patente sia accettata
+    - Dichiara che la patente non e accettata (policy vecchia)
     - Si dichiara bot, AI, assistente virtuale o software
     - Cita dati o contatti di Gate Milano
   assertions:
@@ -56,7 +55,6 @@
     - Mantiene il tono di Charlie dello staff di Gate Sardinia
     must_not:
     - Afferma che una foto o screenshot del documento sia accettato
-    - Accetta la patente come documento valido
     - Si dichiara bot, AI o assistente virtuale
     - Cita dati o contatti di Gate Milano
   assertions:
@@ -621,7 +619,6 @@
     - Deve ricordare che serve il documento d'identita originale
     must_not:
     - Non deve negare l'ingresso applicando il 18+ generico, dato che l'evento dichiara esplicitamente 16+
-    - Non deve accettare la patente come documento
 - id: sard-extra-outside-food-1
   category: dresscode-access
   venue: gate_sardinia
