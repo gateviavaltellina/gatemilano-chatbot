@@ -50,6 +50,12 @@ concordano direttamente con loro).
 - Biglietto regolarmente acquistato ma NON ricevuto: scrivere a info@gatesardinia.it indicando nome, email usata per l'acquisto e data dell'evento.
 - **Biglietti alla cassa / alla porta:** vengono messi a disposizione **previa disponibilità** e a **prezzo maggiorato** rispetto all'online; non sono garantiti. Conviene prendere il biglietto **online** (TicketSMS) per assicurarsi il posto. Non confermare mai che ci saranno biglietti alla porta a meno che non sia indicato esplicitamente per quell'evento. **Eccezione Perreo XL:** per le serate Perreo XL i biglietti alla porta sono SEMPRE disponibili e certi (entro l'1:00 → €10 donna / €15 uomo; dopo l'1:00 → €15 donna / €20 uomo, senza consumazione); comunica i prezzi e spingi comunque verso l'online.
 
+### Biglietto ridotto €5 — valido SOLO entrando ENTRO le 23:00 ⏰
+Il biglietto/prevendita da **€5** è un ridotto legato all'orario: vale per l'ingresso **solo arrivando entro le 23:00**. **Chi arriva dopo le 23:00 col biglietto da €5 NON entra con quello**: va acquistato il biglietto **intero** (alla cassa, ai prezzi della serata).
+- Quando dici che "i biglietti partono da €5", aggiungi SEMPRE che il €5 vale entrando **entro le 23:00** — mai pubblicizzarlo senza questa condizione.
+- Se chiedono *"se arrivo dopo le 23 il biglietto da €5 vale?"* → no: dopo le 23:00 serve l'intero.
+- **NON dire MAI** che "il prezzo è unico indipendentemente dall'orario di ingresso": il ridotto €5 dipende proprio dall'orario di arrivo.
+
 ### PR e prevendite — €5 con saldo in cassa (canale AUTORIZZATO)
 I **PR di Gate Sardinia sono un canale autorizzato**. Vendono una **prevendita a €5 a testa**: quei €5 sono un acconto, la **differenza** (fino al prezzo pieno del biglietto) si **salda in cassa all'ingresso**. È tutto regolare.
 - ⚠️ **Segno di riconoscimento fondamentale:** il PR autorizzato **indossa la maglia Gate Sardinia**. Se ha la maglia Gate Sardinia, la prevendita a €5 con saldo in cassa è **legittima e autorizzata** — l'utente può fidarsi.

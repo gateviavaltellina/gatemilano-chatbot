@@ -33,7 +33,10 @@ def test_sardinia_prompt_has_no_milano_contacts():
 
 def test_sardinia_prompt_has_no_milano_hours():
     s = _static("gate_sardinia")
-    assert "23:00" not in s and "05:00" not in s
+    # NB: il singolo "23:00" ora è legittimo (cutoff del biglietto ridotto €5, valido
+    # entrando entro le 23:00) — la guardia blocca la FINESTRA ORARIA di Milano.
+    assert "23:00 – 05:00" not in s and "23:00 - 05:00" not in s
+    assert "05:00" not in s
     # orario fisso Gate Sardinia: 22:00 – 03:00, tutte le sere
     assert "22:00" in s and "03:00" in s
     # i vecchi orari (22:00–04:00 e lo schema per giorno 18:30/19:00) non devono comparire
@@ -184,3 +187,11 @@ def test_sardinia_patente_now_accepted():
     assert "Patente di guida: ACCETTATA" in s
     assert "non accettata in nessun caso" not in s
     assert "Tessera sanitaria" in s
+
+
+def test_sardinia_5euro_ticket_valid_until_23():
+    # regola staff 25/7: il biglietto da €5 vale solo entrando entro le 23:00;
+    # dopo, va comprato l'intero. E mai dire "prezzo unico indipendente dall'orario".
+    s = _static("gate_sardinia")
+    assert "ENTRO le 23:00" in s
+    assert "dopo le 23:00" in s.lower()
