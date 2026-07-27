@@ -33,3 +33,28 @@ def test_stasera_in_daytime_maps_to_same_day():
     now = datetime(2026, 5, 23, 14, 0, tzinfo=_ROME)
     dates = extract_query_dates("che c'e stasera?", now=now)
     assert "2026-05-23" in dates
+
+
+# --- Date NUMERICHE (caso reale 31/07/26: non parsata → cross-venue mai scattato) ---
+
+def test_numeric_dates_parsed(monkeypatch):
+    import datetime
+    import rag.date_utils as du
+    monkeypatch.setattr(du, "business_now",
+                        lambda now=None: datetime.datetime(2026, 7, 25, 15, 0, tzinfo=du._ROME))
+    assert du.extract_query_dates("per la serata del 31/07/26 posso entrare?") == ["2026-07-31"]
+    assert du.extract_query_dates("il 31/07 siete aperti?") == ["2026-07-31"]
+    assert du.extract_query_dates("serata del 31-07-2026") == ["2026-07-31"]
+    assert du.extract_query_dates("che c'è il 31.07.26?") == ["2026-07-31"]
+    # senza anno e già passata → anno prossimo
+    assert du.extract_query_dates("il 3/5 che serata c'era?") == ["2027-05-03"]
+
+
+def test_numeric_dates_no_false_positives(monkeypatch):
+    import datetime
+    import rag.date_utils as du
+    monkeypatch.setattr(du, "business_now",
+                        lambda now=None: datetime.datetime(2026, 7, 25, 15, 0, tzinfo=du._ROME))
+    assert du.extract_query_dates("un drink costa 5.10 giusto?") == []      # prezzo col punto
+    assert du.extract_query_dates("chiudete alle 22:00?") == []              # orario coi due punti
+    assert du.extract_query_dates("ho 16/17 anni") == []                     # mese 17 invalido
