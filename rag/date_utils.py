@@ -38,6 +38,11 @@ def format_current_datetime(now: datetime | None = None) -> str:
     return s
 
 
+# dd/mm[/aa[aa]] con separatore uniforme (/ - .). Il backreference \2 impone lo
+# stesso separatore anche per l'anno ("31/07-26" non aggancia l'anno). L'orario
+# ("22:00") non matcha: i due punti non sono tra i separatori.
+_NUMERIC_DATE_RE = re.compile(r"\b(\d{1,2})([/\-.])(\d{1,2})(?:\2(\d{2,4}))?\b")
+
 _TODAY_TERMS = ["stasera", "stanotte", "oggi", "questa sera", "questa notte", "tonight", "hoy", "esta noche"]
 _TOMORROW_TERMS = ["domani", "domani sera", "domani notte", "tomorrow", "mañana", "manana"]
 _WEEKEND_TERMS = ["weekend", "fine settimana", "fin de semana"]
@@ -197,5 +202,25 @@ def extract_query_dates(text: str, now: datetime | None = None) -> list[str]:
                 dates.append(d.strftime("%Y-%m-%d"))
             except ValueError:
                 pass
+
+    # Date NUMERICHE (dd/mm, dd/mm/aa, dd/mm/aaaa, anche con - o .): è il formato più
+    # comune in Italia ("la serata del 31/07/26"). Caso reale: la data numerica non
+    # veniva parsata → niente lookup eventi né cross-venue, e il bot rispondeva
+    # "locale chiuso" ignorando la serata dell'altra sede quel giorno.
+    for m in _NUMERIC_DATE_RE.finditer(lower):
+        day, sep, month = int(m.group(1)), m.group(2), int(m.group(3))
+        year_raw = m.group(4)
+        if sep == "." and not year_raw:
+            continue  # "5.10" senza anno è quasi sempre un prezzo/orario, non una data
+        if not 1 <= month <= 12:
+            continue
+        year = (2000 + int(year_raw) if len(year_raw) == 2 else int(year_raw)) if year_raw else now.year
+        try:
+            d = _date(year, month, day)
+        except ValueError:
+            continue
+        if d < now.date() and not year_raw:
+            d = _date(year + 1, month, day)
+        dates.append(d.strftime("%Y-%m-%d"))
 
     return list(dict.fromkeys(dates))

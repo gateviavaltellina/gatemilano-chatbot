@@ -206,3 +206,18 @@ async def test_same_venue_tables_not_labeled_other(monkeypatch):
     ctx, _ = await cb.build_rag_context("gate_milano", "tavoli per il 28 giugno?")
     assert "TAVOLI VIP DISPONIBILI" in ctx
     assert "venue diversa" not in ctx.lower()
+
+
+@pytest.mark.asyncio
+async def test_numeric_date_triggers_cross_venue_lookup():
+    # Caso reale "malissimo" (canale Milano): "per la serata del 31/07/26 posso
+    # entrare?" — la data numerica non veniva parsata, quindi né lookup né
+    # cross-venue: il bot diceva "locale chiuso" ignorando Wade a Gate Sardinia
+    # quella sera. Ora la data numerica risolve e inietta l'evento dell'altra sede.
+    _seed("gate_sardinia", "wade-2026-07-31", "Wade", "2026-07-31")
+    ctx, dates = await cb.build_rag_context(
+        "gate_milano", "per la serata del 31/07/26 posso entrare anche se compio 16 anni a settembre?")
+    assert dates == ["2026-07-31"]
+    assert "Wade" in ctx
+    assert "venue diversa" in ctx.lower()
+    assert "INFO E POLICY GATE SARDINIA" in ctx  # policy età di Sardegna disponibile
