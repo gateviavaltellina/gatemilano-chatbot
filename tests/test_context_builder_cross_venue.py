@@ -221,3 +221,33 @@ async def test_numeric_date_triggers_cross_venue_lookup():
     assert "Wade" in ctx
     assert "venue diversa" in ctx.lower()
     assert "INFO E POLICY GATE SARDINIA" in ctx  # policy età di Sardegna disponibile
+
+
+@pytest.mark.asyncio
+async def test_followup_inherits_explicit_date_from_history():
+    # Caso reale (canale Milano, 00:41): "la serata del 31/07/26" turni prima, poi
+    # "Quindi è +16?" — nessun nome evento in storia, solo la data numerica. La data
+    # va ripescata dalla storia così l'evento Sardegna di quel giorno (e la KB) sono
+    # nel contesto e il bot risponde sull'età invece di dire "non ho il dettaglio".
+    _seed("gate_sardinia", "wade-2026-07-31", "Wade", "2026-07-31")
+    history = [
+        {"role": "user", "content": "per la serata del 31/07/26 posso entrare anche se compio 16 anni a settembre?"},
+        {"role": "assistant", "content": "Quella serata è a Budoni, ti dico subito."},
+    ]
+    ctx, dates = await cb.build_rag_context("gate_milano", "Quindi è +16?", history=history)
+    assert dates == ["2026-07-31"]
+    assert "Wade" in ctx
+    assert "venue diversa" in ctx.lower()
+
+
+@pytest.mark.asyncio
+async def test_history_relative_terms_do_not_create_dates():
+    # "stasera" detto IERI in chat non deve diventare la data di oggi: dalla storia
+    # si ripescano solo date esplicite.
+    _seed("gate_sardinia", "ev-x", "Evento X", "2026-06-28")
+    history = [
+        {"role": "user", "content": "che c'è stasera?"},
+        {"role": "assistant", "content": "Stasera una bella serata!"},
+    ]
+    ctx, dates = await cb.build_rag_context("gate_milano", "ok grazie mille", history=history)
+    assert dates == []
