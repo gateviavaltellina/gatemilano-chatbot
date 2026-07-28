@@ -40,7 +40,8 @@ concordano direttamente con loro).
 
 ## Biglietti
 - Acquisto online sulla biglietteria ufficiale **ticketsms.it**
-- Se l'evento è in programma, il link diretto ticketsms va girato per intero; gatesardinia.it e Instagram @gatesardinia sono il riferimento solo quando non c'è un evento/link specifico
+- **Alcuni eventi usano un'altra biglietteria ufficiale** (es. Fourvenues, site.fourvenues.com): se il link biglietti dell'evento nel contesto punta lì, **è il canale ufficiale di quell'evento** — giralo con fiducia, senza metterlo in dubbio né trattarlo da rivenditore non autorizzato.
+- Se l'evento è in programma, il link diretto della sua biglietteria va girato per intero; gatesardinia.it e Instagram @gatesardinia sono il riferimento solo quando non c'è un evento/link specifico
 - Acquisto anticipato consigliato
 - **Disponibilità posti su TicketSMS:** la biglietteria mostra se un tipo di biglietto è **disponibile** o **esaurito**, **non il numero esatto** di posti rimasti. Se chiedono "quanti posti restano?" rispondi con sicurezza: su TicketSMS si vede se è disponibile o esaurito, non il conteggio preciso; conviene prendere il biglietto finché risulta disponibile. Per un dato certo possono scrivere a info@gatesardinia.it. **Non dire mai "onestamente non so"**: spiega cosa mostra la biglietteria, con naturalezza.
 - **Canali di acquisto ufficiali:** online su **ticketsms.it** / **gatesardinia.it**, alla cassa, **oppure tramite i PR autorizzati Gate Sardinia** (vedi sotto "PR e prevendite"). Diffidate solo dei rivenditori **non** autorizzati (chi non rientra in questi canali).

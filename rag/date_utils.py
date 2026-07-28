@@ -165,29 +165,33 @@ def _next_weekday(now: datetime, target_weekday: int, force_next: bool = False) 
     return now + timedelta(days=days)
 
 
-def extract_query_dates(text: str, now: datetime | None = None) -> list[str]:
+def extract_query_dates(text: str, now: datetime | None = None, explicit_only: bool = False) -> list[str]:
+    """explicit_only=True: solo date ESPLICITE (numeriche o "31 luglio"), niente
+    termini relativi (stasera/domani/weekend/giorni della settimana). Serve quando il
+    testo è la STORIA della chat: uno "stasera" detto ieri non è la data di oggi."""
     now = business_now(now)
     lower = text.lower()
     dates = []
 
-    if any(t in lower for t in _TODAY_TERMS):
-        dates.append(now.strftime("%Y-%m-%d"))
-    if any(t in lower for t in _TOMORROW_TERMS):
-        dates.append((now + timedelta(days=1)).strftime("%Y-%m-%d"))
+    if not explicit_only:
+        if any(t in lower for t in _TODAY_TERMS):
+            dates.append(now.strftime("%Y-%m-%d"))
+        if any(t in lower for t in _TOMORROW_TERMS):
+            dates.append((now + timedelta(days=1)).strftime("%Y-%m-%d"))
 
-    # "prossimo X" / "next X" → salta alla settimana successiva se oggi è già quel giorno
-    force_next = bool(re.search(r'\b(prossim\w*|next)\b', lower))
+        # "prossimo X" / "next X" → salta alla settimana successiva se oggi è già quel giorno
+        force_next = bool(re.search(r'\b(prossim\w*|next)\b', lower))
 
-    # Weekend → sabato + domenica
-    if any(t in lower for t in _WEEKEND_TERMS):
-        sat = _next_weekday(now, 5, force_next)
-        dates.append(sat.strftime("%Y-%m-%d"))
-        dates.append((sat + timedelta(days=1)).strftime("%Y-%m-%d"))
+        # Weekend → sabato + domenica
+        if any(t in lower for t in _WEEKEND_TERMS):
+            sat = _next_weekday(now, 5, force_next)
+            dates.append(sat.strftime("%Y-%m-%d"))
+            dates.append((sat + timedelta(days=1)).strftime("%Y-%m-%d"))
 
-    # Giorni della settimana specifici
-    for term, weekday in _WEEKDAY_TERMS.items():
-        if term in lower:
-            dates.append(_next_weekday(now, weekday, force_next).strftime("%Y-%m-%d"))
+        # Giorni della settimana specifici
+        for term, weekday in _WEEKDAY_TERMS.items():
+            if term in lower:
+                dates.append(_next_weekday(now, weekday, force_next).strftime("%Y-%m-%d"))
 
     # Date esplicite italiane: "15 maggio", "il 15 maggio 2026"
     for month_name, month_num in _IT_MONTHS.items():

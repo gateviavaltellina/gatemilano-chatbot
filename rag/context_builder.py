@@ -129,6 +129,14 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # dell'utente e può cadere su un giorno adiacente. query_dates[0] guida anche il
     # lookup tavoli VIP, che va fatto sul giorno giusto.
     query_dates = list(dict.fromkeys(name_dates + explicit_dates))
+    # Follow-up che eredita dalla chat solo la DATA (nessun nome evento): es. "la
+    # serata del 31/07/26" turni prima, poi "quindi è +16?". Caso reale: senza questo
+    # l'evento di quella data non entrava nel contesto e il bot rispondeva "non ho il
+    # dettaglio certo" pur avendo la policy. Dalla storia si ripescano SOLO date
+    # esplicite (numeriche o "31 luglio"): mai i termini relativi, uno "stasera"
+    # detto ieri non è oggi.
+    if not query_dates and history_text_wide:
+        query_dates = extract_query_dates(history_text_wide, explicit_only=True)
 
     # 1. VIP context — when VIP keywords in current message OR recent history.
     vip_context = ""

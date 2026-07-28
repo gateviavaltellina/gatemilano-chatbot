@@ -58,3 +58,14 @@ def test_numeric_dates_no_false_positives(monkeypatch):
     assert du.extract_query_dates("un drink costa 5.10 giusto?") == []      # prezzo col punto
     assert du.extract_query_dates("chiudete alle 22:00?") == []              # orario coi due punti
     assert du.extract_query_dates("ho 16/17 anni") == []                     # mese 17 invalido
+
+
+def test_explicit_only_skips_relative_terms(monkeypatch):
+    import datetime
+    import rag.date_utils as du
+    monkeypatch.setattr(du, "business_now",
+                        lambda now=None: datetime.datetime(2026, 7, 25, 15, 0, tzinfo=du._ROME))
+    # relativi ignorati in explicit_only, esplicite mantenute (numeriche e a parole)
+    assert du.extract_query_dates("stasera o sabato?", explicit_only=True) == []
+    assert du.extract_query_dates("la serata del 31/07/26", explicit_only=True) == ["2026-07-31"]
+    assert du.extract_query_dates("il 15 agosto che c'è?", explicit_only=True) == ["2026-08-15"]
