@@ -34,6 +34,9 @@ class Settings(BaseSettings):
 
     # Xceed
     xceed_api_key: str = ""
+    # API Fourvenues (liste/promo Gate Sardinia: Boarding Pass, prevendita €5).
+    # Vuota = enrichment Fourvenues disattivato.
+    fourvenues_api_key: str = ""
 
     # Sito Gate Milano: endpoint pubblico disponibilità tavoli VIP (single source of
     # truth, lo stesso usato dalla mappa di prenotazione). Per Milano si usa questo
