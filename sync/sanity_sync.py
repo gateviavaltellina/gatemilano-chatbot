@@ -231,6 +231,86 @@ async def _fetch_ticketsms_enrichment(ticket_url: str) -> dict:
         return result
 
 
+# --- Fourvenues: liste/promo di Gate Sardinia (Boarding Pass €0, prevendita €5) ---
+# Le liste si prendono sulla pagina Fourvenues della serata, NON su TicketSMS: il bot
+# deve avere il link giusto. Solo le liste rivolte al pubblico vengono mostrate; le
+# altre (guest pass, guestlist, contest winner) sono gestite dallo staff.
+_FOURVENUES_API = "https://api.fourvenues.com/integrations"
+_FV_PUBLIC_LIST_SLUGS = {"boarding-pass", "pagamento-5-euro"}
+
+
+def _fv_norm(s: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", (s or "").lower()).strip()
+
+
+async def _fetch_fourvenues_index(api_key: str, days: int = 45) -> dict:
+    """Indice delle liste pubbliche Fourvenues per le prossime serate.
+    Chiavi: (data_iso, nome_normalizzato) → {url, lists}; più ("date-only", data_iso)
+    → [info, ...] come fallback quando il titolo Sanity non combacia. {} senza
+    chiave API o su errore (l'enrichment è opzionale, non deve mai rompere il sync)."""
+    if not api_key:
+        return {}
+    from rag.date_utils import business_now
+    now = business_now()
+    start = now.strftime("%Y-%m-%d")
+    end = (now + timedelta(days=days)).strftime("%Y-%m-%d")
+    out: dict = {}
+    try:
+        async with httpx.AsyncClient(timeout=15, headers={"x-api-key": api_key}) as client:
+            r = await client.get(f"{_FOURVENUES_API}/events/", params={"start": start, "end": end})
+            if r.status_code != 200:
+                logger.debug("Fourvenues events: HTTP %s", r.status_code)
+                return {}
+            for ev in (r.json() or {}).get("data") or []:
+                try:
+                    rr = await client.get(f"{_FOURVENUES_API}/lists-rates/",
+                                          params={"event_id": ev.get("_id")})
+                    rates = (rr.json() or {}).get("data") or [] if rr.status_code == 200 else []
+                    if not isinstance(rates, list):
+                        rates = []
+                except Exception:
+                    rates = []
+                lists = [{"slug": rate.get("slug"), "name": rate.get("name")}
+                         for rate in rates
+                         if isinstance(rate, dict) and rate.get("slug") in _FV_PUBLIC_LIST_SLUGS]
+                try:
+                    dt_rome = datetime.fromtimestamp(
+                        int(ev.get("start") or ev.get("date")), tz=timezone.utc).astimezone(_ROME)
+                    date_iso = _service_day(dt_rome).strftime("%Y-%m-%d")
+                except Exception:
+                    continue
+                info = {"url": ev.get("url") or "", "lists": lists, "name": ev.get("name") or ""}
+                out[(date_iso, _fv_norm(ev.get("name")))] = info
+                out.setdefault(("date-only", date_iso), []).append(info)
+    except Exception as e:
+        logger.debug("Fourvenues index fetch fallito: %s", e)
+    return out
+
+
+def _fv_lists_str(fv_index: dict, date_iso: str, title: str) -> str:
+    """Blocco 'LISTE/PROMO' per il documento evento: Boarding Pass e prevendita €5
+    con il link Fourvenues di iscrizione. '' se nessuna lista pubblica per la serata."""
+    if not fv_index:
+        return ""
+    info = fv_index.get((date_iso, _fv_norm(title)))
+    if not info:
+        by_date = fv_index.get(("date-only", date_iso)) or []
+        if len(by_date) == 1:  # una sola serata quel giorno: match sicuro anche senza nome
+            info = by_date[0]
+    if not info or not info.get("lists"):
+        return ""
+    head = "\nLISTE/PROMO attive per questa serata"
+    if info.get("url"):
+        head += f" — iscrizione online: {info['url']}"
+    lines = [head]
+    for l in info["lists"]:
+        if l["slug"] == "boarding-pass":
+            lines.append("- BOARDING PASS: €0, ingresso gratuito promozionale, quantità limitata — vale finché risulta disponibile sulla pagina di iscrizione")
+        elif l["slug"] == "pagamento-5-euro":
+            lines.append("- Prevendita €5 (Pagamento 5 Euro): €5 anticipati online, saldo in cassa — valida entrando entro le 23:00")
+    return "\n".join(lines)
+
+
 async def _fetch_xceed_enrichment(xceed_id: str, xceed_api_key: str) -> dict:
     """Returns {about, prices_str} for an Xceed event numeric ID. Never raises."""
     result = {"about": "", "prices_str": ""}
@@ -499,6 +579,7 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
     prices_str = f"\nPrezzi:\n{xceed['prices_str']}" if xceed.get("prices_str") else ""
     about = xceed.get("about", "")
     about_str = f"\nDescrizione: {about[:600]}" if about else ""
+    fv_str = xceed.get("fv_lists") or ""
 
     # EVENTO ANNULLATO (rilevato dalla biglietteria, fonte di verità degli annullamenti):
     # il documento diventa un avviso esplicito e niente link/prezzi d'acquisto — né nel
@@ -518,6 +599,7 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
         ticket_str = ""
         ticket_url = ""
         prices_str = ""
+        fv_str = ""
 
     draft_str = "\nNB: dettagli in via di conferma (evento non ancora pubblicato sul sito)" if is_draft else ""
     # Le serate col titolo "?????" sono TOP SECRET di proposito (headliner a
@@ -541,6 +623,7 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
         f"{age_str}"
         f"{about_str}"
         f"{prices_str}"
+        f"{fv_str}"
         f"{ticket_str}"
         f"{tba_str}"
         f"{draft_str}"
@@ -686,6 +769,10 @@ async def sync_all_venues():
         current_ids = []
         if events is not None:
             status["fetched"] = len(events)
+            # Liste/promo Fourvenues (Boarding Pass €0, prevendita €5): indice unico
+            # per sync, solo Sardegna. {} se la chiave API non è configurata.
+            fv_index = (await _fetch_fourvenues_index(_settings.fourvenues_api_key)
+                        if venue_key == "gate_sardinia" else {})
             for event in events:
                 # Ogni evento è isolato: una SINGOLA scheda malformata (es. ticketUrl
                 # null — bug reale che azzerava Gate Sardinia: "dice.fm" in None →
@@ -710,6 +797,10 @@ async def sync_all_venues():
                         xceed_data = await _fetch_ticketsms_enrichment(ticket_url)
                     else:
                         xceed_data = {"about": "", "prices_str": ""}
+                    if fv_index:
+                        xceed_data["fv_lists"] = _fv_lists_str(
+                            fv_index, _service_date_of(event.get("date") or ""),
+                            event.get("title") or "")
                     doc, meta = _build_document(event, label, xceed_data)
                     upsert_event(venue_key, sanity_id, doc, meta)
                     current_ids.append(sanity_id)
