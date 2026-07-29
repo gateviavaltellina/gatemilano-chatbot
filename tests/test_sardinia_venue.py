@@ -203,3 +203,12 @@ def test_sardinia_16plus_beats_ticketing_page_labels():
     s = _static("gate_sardinia")
     assert "TUTTI gli eventi" in s
     assert "etichetta imprecisa" in s
+
+
+def test_sardinia_boarding_pass_promo():
+    # promo staff: Boarding Pass a €0 = ingresso gratuito, quantità limitata;
+    # finiti quelli si entra solo a pagamento. Tema anti-allucinazione.
+    s = _static("gate_sardinia")
+    assert "Boarding Pass" in s
+    assert "SOLO a pagamento" in s
+    assert "ANTI-ALLUCINAZIONE" in s
