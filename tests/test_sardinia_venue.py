@@ -195,3 +195,11 @@ def test_sardinia_5euro_ticket_valid_until_23():
     s = _static("gate_sardinia")
     assert "ENTRO le 23:00" in s
     assert "dopo le 23:00" in s.lower()
+
+
+def test_sardinia_16plus_beats_ticketing_page_labels():
+    # conferma staff: tutti gli eventi 16+. Se una pagina di biglietteria mostra
+    # "18+" e l'evento nel contesto non lo indica, fa fede il 16+ del locale.
+    s = _static("gate_sardinia")
+    assert "TUTTI gli eventi" in s
+    assert "etichetta imprecisa" in s
