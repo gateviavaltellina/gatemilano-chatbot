@@ -161,3 +161,15 @@ def test_special_week_in_document_and_explicit_override_wins():
         {"_id": "sw2", "title": "Op", "date": "2026-07-24", "openingHours": "18:30 - 20:30"},
         "Gate Sardinia")
     assert "Orari: 18:30 - 20:30" in doc2
+
+
+def test_weekend_hours_2200_0400_july30_aug2():
+    from sync.sanity_sync import _sardinia_default_hours
+    # weekend esteso gio 30/7 - dom 2/8: 22:00 - 04:00 (decisione staff)
+    for d in ("2026-07-30", "2026-07-31", "2026-08-01", "2026-08-02"):
+        assert _sardinia_default_hours(d) == "22:00 - 04:00", d
+    # domenica sera in ISO col rollover (= servizio del 2/8) → esteso
+    assert _sardinia_default_hours("2026-08-02T22:00:00Z") == "22:00 - 04:00"
+    # confini: 29/7 e 3/8 → orario standard
+    assert _sardinia_default_hours("2026-07-29") == "22:00 - 03:00"
+    assert _sardinia_default_hours("2026-08-03") == "22:00 - 03:00"

@@ -487,10 +487,10 @@ _SARDINIA_HOURS = "22:00 - 03:00"
 
 # Finestre speciali decise dallo staff: (dal, al) COMPRESI, per GIORNO DI SERVIZIO →
 # orario di quella serata. A termine: passata la finestra torna da solo l'orario
-# standard, nessun revert da fare. Attuale: settimana 22–26 luglio 2026, chiusura
-# posticipata alle 03:30.
+# standard, nessun revert da fare.
 _SARDINIA_SPECIAL_HOURS = {
-    ("2026-07-22", "2026-07-26"): "22:00 - 03:30",
+    ("2026-07-22", "2026-07-26"): "22:00 - 03:30",  # settimana 22-26/7 (conclusa)
+    ("2026-07-30", "2026-08-02"): "22:00 - 04:00",  # weekend gio 30/7 - dom 2/8
 }
 
 
