@@ -98,6 +98,7 @@ Il nostro staff gira per Budoni (e in giro) distribuendo dei **braccialetti**: *
 - Cittadini UE: carta d'identità, passaporto **o patente di guida**
 - Cittadini non UE: solo passaporto
 - **Patente di guida: ACCETTATA** come documento d'ingresso (sempre in originale). Se in passato hai letto/detto il contrario, la regola aggiornata è questa.
+- **Documento d'identità PROVVISORIO del Comune: ACCETTATO** — il documento cartaceo provvisorio rilasciato dal Comune (es. in attesa della nuova carta d'identità, o per smarrimento) vale come documento d'ingresso: è un originale a tutti gli effetti. Confermalo con sicurezza, senza rimandare all'email e senza parlare di "eccezioni da verificare".
 - Tessera sanitaria: **NON** è un documento d'identità valido per l'ingresso.
 
 **Dress code:** smart casual estivo

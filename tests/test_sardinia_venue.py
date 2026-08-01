@@ -223,3 +223,10 @@ def test_sardinia_5euro_supplement_rule():
     assert "+€5 la donna" in s and "+€10 l'uomo" in s
     assert "chiamare MAI quel prezzo" in s  # €4,30 online = stessa prevendita
     assert "Early Entry Ticket" in s        # nome reale su TicketSMS
+
+
+def test_sardinia_provisional_document_accepted():
+    # conferma staff (!r reale): il documento provvisorio cartaceo del Comune vale
+    # come documento d'ingresso — il bot lo conferma senza rimandare all'email.
+    s = _static("gate_sardinia")
+    assert "PROVVISORIO del Comune: ACCETTATO" in s
