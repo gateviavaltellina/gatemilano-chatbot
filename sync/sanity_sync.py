@@ -307,7 +307,7 @@ def _fv_lists_str(fv_index: dict, date_iso: str, title: str) -> str:
         if l["slug"] == "boarding-pass":
             lines.append("- BOARDING PASS: €0, ingresso gratuito promozionale, quantità limitata — vale finché risulta disponibile sulla pagina di iscrizione")
         elif l["slug"] == "pagamento-5-euro":
-            lines.append("- Prevendita €5 (Pagamento 5 Euro): €5 anticipati online, saldo in cassa — valida entrando entro le 23:00")
+            lines.append("- Prevendita €5 (Pagamento 5 Euro): €5 anticipati online — entro le 23:00 nessun extra; dopo le 23:00 supplemento in cassa (+€5 donna / +€10 uomo)")
     return "\n".join(lines)
 
 

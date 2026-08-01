@@ -212,3 +212,13 @@ def test_sardinia_boarding_pass_promo():
     assert "Boarding Pass" in s
     assert "SOLO a pagamento" in s
     assert "ANTI-ALLUCINAZIONE" in s
+
+
+def test_sardinia_5euro_supplement_rule():
+    # regola generale definitiva: entro le 23 nessun extra; dopo, supplemento in
+    # cassa +5 donna / +10 uomo oltre ai 5 già pagati. Mai "differenza fino al
+    # prezzo pieno" (risposta reale sbagliata corretta dallo staff con !r).
+    s = _static("gate_sardinia")
+    assert "NON si paga NIENT'ALTRO" in s
+    assert "+€5 la donna" in s and "+€10 l'uomo" in s
+    assert "non chiamare MAI quel prezzo" in s  # €4,30 online = stessa prevendita
