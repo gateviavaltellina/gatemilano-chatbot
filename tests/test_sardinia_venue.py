@@ -221,4 +221,5 @@ def test_sardinia_5euro_supplement_rule():
     s = _static("gate_sardinia")
     assert "NON si paga NIENT'ALTRO" in s
     assert "+€5 la donna" in s and "+€10 l'uomo" in s
-    assert "non chiamare MAI quel prezzo" in s  # €4,30 online = stessa prevendita
+    assert "chiamare MAI quel prezzo" in s  # €4,30 online = stessa prevendita
+    assert "Early Entry Ticket" in s        # nome reale su TicketSMS
