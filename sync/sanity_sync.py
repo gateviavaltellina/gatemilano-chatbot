@@ -177,7 +177,13 @@ def _parse_ticketsms_event(data: dict) -> dict:
     body = (data or {}).get("body") or []
     about = ""
     price_min_str = ""
-    sector_min: dict[str, tuple[int, str]] = {}  # settore -> (centesimi, formatted)
+    # Ogni TIPO di biglietto con il suo NOME reale (typeTicketDescription: "Early
+    # Entry Ticket", "Early Bird - Donna", ...): prima si teneva solo il minimo per
+    # settore e il bot, alla domanda "non c'è scritto early entry?", rispondeva di
+    # non avere dettagli su un biglietto che stava vendendo (caso reale, corretto
+    # a mano dallo staff). (centesimi, label, formatted, presale_fmt)
+    tickets: list[tuple[int, str, str, str]] = []
+    seen: set = set()
     for comp in body:
         if not isinstance(comp, dict):
             continue
@@ -193,20 +199,35 @@ def _parse_ticketsms_event(data: dict) -> dict:
                 if not about:
                     about = _quill_to_text(it.get("description") or "")
             elif ct == "ticket":
+                if (it.get("stato") or "active") != "active":
+                    continue
                 price = it.get("price") or {}
                 try:
                     cents = int(price.get("amount"))
                 except (TypeError, ValueError):
                     continue
                 fmt = price.get("formatted") or f"€{cents / 100:.2f}"
-                sector = ((it.get("sector") or {}).get("name") or "Generale").strip() or "Generale"
-                if sector not in sector_min or cents < sector_min[sector][0]:
-                    sector_min[sector] = (cents, fmt)
+                sector = ((it.get("sector") or {}).get("name") or "").strip()
+                tname = (it.get("typeTicketDescription") or it.get("notes") or "").strip()
+                label = tname or sector or "Generale"
+                if tname and sector and sector.lower() not in tname.lower():
+                    label = f"{tname} ({sector})"
+                presale = it.get("presale") or {}
+                try:
+                    pcents = int(presale.get("amount"))
+                except (TypeError, ValueError):
+                    pcents = 0
+                pfmt = (presale.get("formatted") or "") if pcents else ""
+                key = (label, cents, pcents)
+                if key not in seen:
+                    seen.add(key)
+                    tickets.append((cents, label, fmt, pfmt))
     lines = []
     if price_min_str:
         lines.append(f"  {price_min_str}")
-    for sector, (_cents, fmt) in sorted(sector_min.items(), key=lambda kv: kv[1][0]):
-        lines.append(f"  - {sector}: a partire da {fmt}")
+    for cents, label, fmt, pfmt in sorted(tickets)[:10]:
+        suffix = f" + {pfmt} prevendita" if pfmt else ""
+        lines.append(f"  - {label}: {fmt}{suffix}")
     result["about"] = about
     result["prices_str"] = "\n".join(lines)
     return result

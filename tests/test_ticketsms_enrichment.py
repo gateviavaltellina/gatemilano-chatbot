@@ -46,11 +46,29 @@ def test_parse_about_and_prices():
     assert out["about"] == "Sabato 4 luglio Perreo XL"
     ps = out["prices_str"]
     assert "a partire da €11.50" in ps
-    # settore senza nome → "Generale", prezzo minimo
-    assert "Generale: a partire da €10.00" in ps
-    # per il settore VIP deve prendere il MINIMO (€45), non €60
-    assert "VIP: a partire da €45.00" in ps
-    assert "€60.00" not in ps
+    # ogni TIPO di biglietto col suo NOME reale (non più solo il minimo per settore):
+    # il bot deve saper rispondere su "early entry"/"early bird" citati sulla pagina.
+    assert "Early Bird Donna: €10.00" in ps
+    assert "Early Bird VIP: €45.00" in ps
+    assert "Last Release VIP: €60.00" in ps
+    # ordinati per prezzo crescente
+    assert ps.index("€10.00") < ps.index("€45.00") < ps.index("€60.00")
+
+
+def test_parse_ticket_names_with_sector_and_presale():
+    data = {"body": [{"list": [
+        {"componentType": "ticket", "typeTicketDescription": "Early Entry Ticket",
+         "price": {"amount": "430", "formatted": "€4.30"},
+         "presale": {"amount": "70", "formatted": "€0.70"},
+         "sector": {"name": "Posto Unico"}, "stato": "active"},
+        {"componentType": "ticket", "typeTicketDescription": "Vecchio Tier",
+         "price": {"amount": "1000", "formatted": "€10.00"},
+         "sector": {"name": "Posto Unico"}, "stato": "inactive"},  # non attivo → escluso
+    ]}]}
+    ps = _parse_ticketsms_event(data)["prices_str"]
+    # nome + settore (quando il settore non è già nel nome) + commissione prevendita
+    assert "Early Entry Ticket (Posto Unico): €4.30 + €0.70 prevendita" in ps
+    assert "Vecchio Tier" not in ps
 
 
 def test_parse_empty_is_safe():

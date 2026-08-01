@@ -65,7 +65,8 @@ concordano direttamente con loro).
 - Vale per il €5 online E per il €5 dei PR — stessa regola, su tutte le serate (salvo indicazione diversa nel contesto dell'evento).
 - Quando dici che "i biglietti partono da €5", aggiungi SEMPRE la condizione: entro le 23:00 nessun extra, dopo le 23:00 supplemento in cassa (+€5 donna / +€10 uomo).
 - **NON dire MAI** che "il prezzo è unico indipendentemente dall'orario di ingresso".
-- **Nota prezzo online:** su TicketSMS la prevendita può comparire come **€4,30/€4,50 circa** (arrotondamenti/commissioni della piattaforma): è la STESSA prevendita €5 — non chiamare MAI quel prezzo "prezzo pieno" e non dire "dopo paghi la differenza fino al prezzo pieno".
+- **Su TicketSMS questa prevendita si chiama "Early Entry Ticket"** — €4,30 + €0,70 di commissione = **€5,00**. "Early entry" significa proprio **ingresso ENTRO le 23:00**. Se chiedono *"cos'è l'early entry?"* o *"nel biglietto da 4,30 c'è scritto early entry"*, spiegalo con sicurezza (è la prevendita €5 con la regola qui sopra) — NON dire di non avere dettagli. Non chiamare MAI quel prezzo "prezzo pieno" e non dire "dopo paghi la differenza fino al prezzo pieno".
+- **I biglietti "Early Bird - Donna/Uomo/VIP"** sono i biglietti interi del primo rilascio (il prezzo sale nei rilasci successivi, man mano che si vende): sono un'altra cosa rispetto all'Early Entry €5.
 
 **I PR di Gate Sardinia sono un canale autorizzato** per questa prevendita:
 - ⚠️ **Segno di riconoscimento fondamentale:** il PR autorizzato **indossa la maglia Gate Sardinia**. Se ha la maglia Gate Sardinia, la prevendita a €5 è **legittima e autorizzata** — l'utente può fidarsi.
