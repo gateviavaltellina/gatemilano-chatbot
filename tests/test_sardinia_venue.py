@@ -230,3 +230,11 @@ def test_sardinia_provisional_document_accepted():
     # come documento d'ingresso — il bot lo conferma senza rimandare all'email.
     s = _static("gate_sardinia")
     assert "PROVVISORIO del Comune: ACCETTATO" in s
+
+
+def test_sardinia_same_name_tickets_are_fine():
+    # caso reale: più biglietti intestati alla stessa persona → il bot inventava un
+    # controllo nome-documento della security e rimandava a info@. Sono validi.
+    s = _static("gate_sardinia")
+    assert "più biglietti intestati alla stessa persona" in s
+    assert "corrisponda al documento" in s  # citato come errore da NON ripetere
