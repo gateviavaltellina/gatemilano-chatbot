@@ -203,6 +203,20 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
                 f"stasera, di' che stasera il locale è CHIUSO; NON dire che 'la serata è in corso' né dare "
                 f"orari di apertura come se fosse aperto. Indica il PROSSIMO evento in programma con la sua data."
             ))
+            # Cross-venue: questa sede è chiusa ma l'ALTRA stasera è APERTA → il bot
+            # deve dirlo subito (caso reale, canale Milano d'estate: "possiamo prenotare
+            # due biglietti?" → "chiuso" secco, senza citare la serata in corso a
+            # Gate Sardinia — che è quasi sempre ciò che il cliente intende).
+            if has_active_event(other_venue, today_str):
+                other_tonight = get_events_for_date(other_venue, today_str)
+                if other_tonight:
+                    date_parts.insert(1, (
+                        f"PERÒ STASERA {other_venue_name.upper()} È APERTO [venue diversa]. "
+                        f"Quando dici che questa sede è chiusa, aggiungi SUBITO che stasera "
+                        f"{other_venue_name} è aperto con la serata qui sotto e proponila "
+                        f"(molti scrivono a questo numero intendendo l'altra sede):\n{other_tonight}"
+                    ))
+                    cross_venue = True
 
     # Data richiesta (es. "oggi"/"stasera") SENZA eventi: dichiaralo esplicitamente,
     # altrimenti il bot pesca il primo della lista "PROSSIMI EVENTI" e lo spaccia per

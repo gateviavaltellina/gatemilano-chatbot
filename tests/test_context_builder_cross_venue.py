@@ -251,3 +251,26 @@ async def test_history_relative_terms_do_not_create_dates():
     ]
     ctx, dates = await cb.build_rag_context("gate_milano", "ok grazie mille", history=history)
     assert dates == []
+
+
+@pytest.mark.asyncio
+async def test_closed_tonight_but_other_venue_open_is_surfaced():
+    # Caso reale (canale Milano, estate): "possiamo prenotare due biglietti?" senza
+    # data → il bot diceva "stasera chiuso" SENZA citare la serata in corso a Gate
+    # Sardinia. Ora, se questa sede è chiusa e l'altra stasera è aperta, il contesto
+    # lo dice e porta la serata (e la KB) dell'altra sede.
+    _seed("gate_sardinia", "ev-tonight", "Perreo XL", "2026-06-27")  # oggi (fixture)
+    ctx, dates = await cb.build_rag_context("gate_milano", "possiamo prenotare due biglietti?")
+    assert "CHIUSO stasera" in ctx
+    assert "È APERTO" in ctx and "venue diversa" in ctx.lower()
+    assert "Perreo XL" in ctx
+    assert "INFO E POLICY GATE SARDINIA" in ctx
+
+
+@pytest.mark.asyncio
+async def test_both_closed_tonight_no_other_venue_block():
+    # entrambe chiuse stasera → nessun blocco "PERÒ STASERA ... APERTO"
+    _seed("gate_sardinia", "ev-later", "Perreo XL", "2026-07-05")
+    ctx, _ = await cb.build_rag_context("gate_milano", "possiamo prenotare due biglietti?")
+    assert "CHIUSO stasera" in ctx
+    assert "È APERTO" not in ctx
