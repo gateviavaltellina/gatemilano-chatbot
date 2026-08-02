@@ -274,3 +274,24 @@ async def test_both_closed_tonight_no_other_venue_block():
     ctx, _ = await cb.build_rag_context("gate_milano", "possiamo prenotare due biglietti?")
     assert "CHIUSO stasera" in ctx
     assert "È APERTO" not in ctx
+
+
+@pytest.mark.asyncio
+async def test_past_date_not_denied():
+    # Caso reale: "chi era il fotografo della serata 01/08?" (data passata, store
+    # tiene solo il futuro) → il bot negava la serata. La nota per le date passate
+    # deve dire di NON negare, quella per le date future non deve comparire.
+    ctx, dates = await cb.build_rag_context(
+        "gate_sardinia", "chi è stato il fotografo della serata 20/06/2026?")
+    assert dates == ["2026-06-20"]  # 20/6 < oggi (fixture 27/6)
+    assert "GIÀ PASSATE" in ctx
+    assert "NESSUN EVENTO risulta in programma" not in ctx
+
+
+@pytest.mark.asyncio
+async def test_future_empty_date_still_flagged():
+    # data futura senza eventi → resta la nota standard "NESSUN EVENTO"
+    ctx, dates = await cb.build_rag_context("gate_sardinia", "che c'è il 29/06/2026?")
+    assert dates == ["2026-06-29"]
+    assert "NESSUN EVENTO risulta in programma" in ctx
+    assert "GIÀ PASSATE" not in ctx

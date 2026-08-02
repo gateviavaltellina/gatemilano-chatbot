@@ -222,14 +222,30 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # altrimenti il bot pesca il primo della lista "PROSSIMI EVENTI" e lo spaccia per
     # stasera (allucinazione reale 8/7: "stasera c'è Flaco G" mentre Flaco G è il 9/7).
     if empty_dates:
-        dates_str = ", ".join(empty_dates)
         venue_pretty = venue.replace("_", " ").title()
-        date_parts.append(
-            f"NESSUN EVENTO risulta in programma per la/e data/e richiesta/e ({dates_str}) a {venue_pretty}. "
-            f"NON presentare come 'di oggi/stasera' un evento con una data diversa: se il cliente chiede di "
-            f"oggi/stasera e per quella data non c'è nulla, dillo chiaramente. Puoi indicare qual è il PROSSIMO "
-            f"evento citando la SUA data reale (dalla lista qui sotto), senza mai chiamarlo 'di stasera'."
-        )
+        # Le date PASSATE vanno trattate diversamente: gli eventi passati non restano
+        # in archivio, quindi "nessun evento in store" NON significa "quella sera non
+        # c'era nulla". Caso reale: "chi era il fotografo della serata dell'1/8?" →
+        # il bot negava la serata ("non risulta in programma da noi") appena passata.
+        past_dates = [d for d in empty_dates if d < today_str]
+        future_dates = [d for d in empty_dates if d >= today_str]
+        if future_dates:
+            dates_str = ", ".join(future_dates)
+            date_parts.append(
+                f"NESSUN EVENTO risulta in programma per la/e data/e richiesta/e ({dates_str}) a {venue_pretty}. "
+                f"NON presentare come 'di oggi/stasera' un evento con una data diversa: se il cliente chiede di "
+                f"oggi/stasera e per quella data non c'è nulla, dillo chiaramente. Puoi indicare qual è il PROSSIMO "
+                f"evento citando la SUA data reale (dalla lista qui sotto), senza mai chiamarlo 'di stasera'."
+            )
+        if past_dates:
+            dates_str = ", ".join(past_dates)
+            date_parts.append(
+                f"NOTA DATE PASSATE: la/e data/e richiesta/e ({dates_str}) è/sono GIÀ PASSATE e le serate "
+                f"passate non restano in archivio. NON dire MAI che quella sera 'non c'era nulla in programma' "
+                f"o 'non risulta una serata da noi': con ogni probabilità la serata c'è stata. Rispondi alla "
+                f"domanda (foto/video, fotografo, oggetti smarriti, rimborsi...) dando per assodato che la "
+                f"serata si sia svolta e indirizza al canale giusto per quel tema."
+            )
 
     # 3. Compact upcoming list (title + date + link, 1 line per event, 14 giorni).
     # Se il cliente chiede della stagione/calendario/riapertura, mostra i PROSSIMI

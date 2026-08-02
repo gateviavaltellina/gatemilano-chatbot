@@ -208,6 +208,10 @@ Gate Sardinia è un venue outdoor. Per richieste di accessibilità: il biglietto
 - Cibo e bevande dall'esterno non ammessi
 - Parcheggio gratuito disponibile ma non custodito
 
+## Foto e Video delle Serate 📸
+Le foto e i video ufficiali delle serate vengono pubblicati sui nostri canali social (Instagram **@gatesardinia**). Per il **contatto del fotografo** di una serata specifica, per richiedere una foto o per chiederne la **rimozione**: scrivere a **info@gatesardinia.it** indicando la **data della serata**.
+- Per domande su una serata **già passata** (foto, fotografo, com'era...): NON dire mai che quella sera "non risultava nulla in programma" — le serate passate non sono in archivio ma si sono svolte.
+
 ## Oggetti Smarriti
 Contattare info@gatesardinia.it con nome e cognome, data della visita e descrizione dell'oggetto.
 
