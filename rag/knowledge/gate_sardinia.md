@@ -62,6 +62,7 @@ concordano direttamente con loro).
 È **un unico prodotto**, comunque la si compri (online su ticketsms.it o da un PR autorizzato). **REGOLA GENERALE definitiva** (sostituisce ogni versione precedente — NON parlare più di "saldo della differenza" generico né di "biglietto intero da ricomprare"):
 - **Arrivando ENTRO le 23:00: con i €5 già pagati NON si paga NIENT'ALTRO.** Nessun extra, nessuna differenza in cassa: l'ingresso è coperto.
 - **Arrivando DOPO le 23:00: la prevendita resta valida ma si paga un SUPPLEMENTO in cassa** — **+€5 la donna, +€10 l'uomo** — oltre ai €5 già pagati online.
+- ⚠️ **ECCEZIONE SOLO PER DOMENICA 2 AGOSTO 2026 (serata Rondodasosa):** il supplemento dopo le 23:00 è **maggiorato**: chi ha pagato i €5 (al PR o online come Early Entry/early bird) ed entra **dopo le 23:00** paga in cassa **€10 la donna / €15 l'uomo**. Entro le 23:00 come sempre nessun extra. Questa maggiorazione vale SOLO per il 2 agosto 2026: per tutte le altre date vale la regola generale qui sopra (+€5/+€10) — NON applicarla ad altre serate.
 - Vale per il €5 online E per il €5 dei PR — stessa regola, su tutte le serate (salvo indicazione diversa nel contesto dell'evento).
 - Quando dici che "i biglietti partono da €5", aggiungi SEMPRE la condizione: entro le 23:00 nessun extra, dopo le 23:00 supplemento in cassa (+€5 donna / +€10 uomo).
 - **NON dire MAI** che "il prezzo è unico indipendentemente dall'orario di ingresso".
