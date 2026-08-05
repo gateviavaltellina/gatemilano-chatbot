@@ -82,21 +82,21 @@ def test_document_includes_hours_line():
 
 def test_sardinia_document_falls_back_to_computed_hours():
     # senza orari espliciti da Sanity, un evento Sardegna ha comunque la finestra
-    # standard fissa (22:00–03:00), mai una scheda senza orari.
+    # standard fissa (22:00–04:00), mai una scheda senza orari.
     ev = {"_id": "x", "title": "Flaco G", "date": "2026-07-09"}
     doc, _ = _build_document(ev, "Gate Sardinia")
-    assert "Orari: 22:00 - 03:00" in doc
+    assert "Orari: 22:00 - 04:00" in doc
 
 
 def test_sardinia_default_hours_fixed():
-    # orario fisso 22:00–03:00, tutte le sere (nessuna variazione per giorno)
+    # orario fisso 22:00–04:00, tutte le sere (nessuna variazione per giorno)
     for d in ("2026-07-09", "2026-07-10", "2026-07-11", "2026-07-12", "2026-07-13"):
-        assert _sardinia_default_hours(d) == "22:00 - 03:00"
+        assert _sardinia_default_hours(d) == "22:00 - 04:00"
 
 
 def test_sardinia_event_gets_computed_hours_line():
     doc, _ = _build_document({"_id": "flaco", "title": "Flaco G", "date": "2026-07-09"}, "Gate Sardinia")
-    assert "Orari: 22:00 - 03:00" in doc
+    assert "Orari: 22:00 - 04:00" in doc
 
 
 def test_explicit_hours_override_beats_computed_default():
@@ -149,8 +149,8 @@ def test_special_week_hours_2230_0330():
     assert _sardinia_default_hours("2026-07-22") == "22:00 - 03:30"
     assert _sardinia_default_hours("2026-07-26T22:00:00Z") == "22:00 - 03:30"
     # fuori dalla finestra: torna da solo l'orario standard
-    assert _sardinia_default_hours("2026-07-21") == "22:00 - 03:00"
-    assert _sardinia_default_hours("2026-07-27") == "22:00 - 03:00"
+    assert _sardinia_default_hours("2026-07-21") == "22:00 - 04:00"
+    assert _sardinia_default_hours("2026-07-27") == "22:00 - 04:00"
 
 
 def test_special_week_in_document_and_explicit_override_wins():
@@ -170,6 +170,6 @@ def test_weekend_hours_2200_0400_july30_aug2():
         assert _sardinia_default_hours(d) == "22:00 - 04:00", d
     # domenica sera in ISO col rollover (= servizio del 2/8) → esteso
     assert _sardinia_default_hours("2026-08-02T22:00:00Z") == "22:00 - 04:00"
-    # confini: 29/7 e 3/8 → orario standard
-    assert _sardinia_default_hours("2026-07-29") == "22:00 - 03:00"
-    assert _sardinia_default_hours("2026-08-03") == "22:00 - 03:00"
+    # confini: 29/7 e 3/8 → orario standard (ora 22:00-04:00 definitivo)
+    assert _sardinia_default_hours("2026-07-29") == "22:00 - 04:00"
+    assert _sardinia_default_hours("2026-08-03") == "22:00 - 04:00"
