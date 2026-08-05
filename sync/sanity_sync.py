@@ -383,7 +383,7 @@ async def _fetch_events(project_id: str, dataset: str) -> list[dict] | None:
     fino al sync successivo e risponde 'non ho la programmazione')."""
     # Filtro sul GIORNO DI SERVIZIO (rollover 06:00), non sull'UTC: altrimenti un sync
     # tra le 00:00 UTC (02:00 Rome) e le 06:00 scarterebbe la serata di stanotte ancora
-    # in corso (es. Perreo del sabato, aperto fino alle 03:00) trattandola come passata.
+    # in corso (es. Perreo del sabato, aperto fino alle 04:00) trattandola come passata.
     from rag.date_utils import business_now
     today = business_now().strftime("%Y-%m-%d")
     from config import settings as _settings
@@ -501,10 +501,10 @@ def _extract_hours(event: dict) -> str:
     return ""
 
 
-# Orario di apertura standard di Gate Sardinia: apertura 22:00, chiusura 03:00, TUTTE
+# Orario di apertura standard di Gate Sardinia: apertura 22:00, chiusura 04:00, TUTTE
 # le sere (fisso). Calcolato/inserito in codice e messo nel documento come riga "Orari:"
 # così il bot legge l'orario già pronto e non lo deduce.
-_SARDINIA_HOURS = "22:00 - 03:00"
+_SARDINIA_HOURS = "22:00 - 04:00"
 
 # Finestre speciali decise dallo staff: (dal, al) COMPRESI, per GIORNO DI SERVIZIO →
 # orario di quella serata. A termine: passata la finestra torna da solo l'orario
@@ -531,7 +531,7 @@ def _service_date_of(date_str: str) -> str:
 
 def _sardinia_default_hours(date_str: str = "") -> str:
     """Finestra oraria di apertura di Gate Sardinia per la serata data: l'orario
-    standard (22:00–03:00) oppure quello di un'eventuale finestra speciale."""
+    standard (22:00–04:00) oppure quello di un'eventuale finestra speciale."""
     day = _service_date_of(date_str)
     for (lo, hi), hours in _SARDINIA_SPECIAL_HOURS.items():
         if lo <= day <= hi:
@@ -569,7 +569,7 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
     date_fmt = _format_date(date_str)
     # Orari della serata: prima l'override esplicito da Sanity (editabile in CMS, es. un
     # opening party 18:30–20:30); in assenza, per Gate Sardinia usiamo la finestra
-    # standard fissa (22:00–03:00, tutte le sere), messa già pronta nel documento così
+    # standard fissa (22:00–04:00, tutte le sere), messa già pronta nel documento così
     # il bot la legge invece di dedurre orari.
     hours_line = _extract_hours(event)
     if not hours_line and venue_label == "Gate Sardinia":

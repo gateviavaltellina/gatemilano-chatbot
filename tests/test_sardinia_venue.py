@@ -37,10 +37,10 @@ def test_sardinia_prompt_has_no_milano_hours():
     # entrando entro le 23:00) — la guardia blocca la FINESTRA ORARIA di Milano.
     assert "23:00 – 05:00" not in s and "23:00 - 05:00" not in s
     assert "05:00" not in s
-    # orario fisso Gate Sardinia: 22:00 – 03:00, tutte le sere
-    assert "22:00" in s and "03:00" in s
-    # i vecchi orari (22:00–04:00 e lo schema per giorno 18:30/19:00) non devono comparire
-    assert "22:00 – 04:00" not in s
+    # orario fisso Gate Sardinia: 22:00 – 04:00 (definitivo da agosto 2026)
+    assert "22:00" in s and "04:00" in s
+    assert "22:00 – 03:00" not in s  # il vecchio orario non deve più comparire
+    # lo schema orari per giorno pre-go-live non deve comparire
     assert "18:30 – 02:30" not in s
 
 
