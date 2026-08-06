@@ -82,10 +82,11 @@ def test_sardinia_prompt_has_stage_policy():
 
 
 def test_sardinia_prompt_has_navette_contact():
-    # contatto navette (Navette Orosei — Salvatore) disponibile per chi chiede transfer
+    # nuovo contatto driver/transfer (agosto 2026): il numero nuovo deve esserci e il
+    # vecchio (Navette Orosei/Salvatore) può comparire SOLO nella nota che lo dismette.
     s = _static("gate_sardinia")
-    assert "328 813 4685" in s
-    assert "Navette Orosei" in s
+    assert "349 219 7091" in s
+    assert "NON va più dato" in s
 
 
 def test_sardinia_prompt_uses_ticketsms_not_xceed_dice_as_platform():

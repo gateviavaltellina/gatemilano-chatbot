@@ -33,10 +33,11 @@ Orario massimo di arrivo ai tavoli VIP: 02:30. Rollover notte: la serata attrave
 
 **Parcheggio:** gratuito in loco (non custodito)
 
-**Navette / transfer:** servizio navette gestito da **Navette Orosei** — referente
-**Salvatore, WhatsApp/telefono +39 328 813 4685**. Quando chiedono se ci sono navette,
-transfer o come arrivare senza auto, fornisci questo contatto (orari, tratte e prezzi si
-concordano direttamente con loro).
+**Navette / transfer / driver:** contatto di riferimento **WhatsApp/telefono +39 349 219 7091**.
+Quando chiedono se ci sono navette, transfer, un passaggio o come arrivare senza auto,
+fornisci QUESTO contatto (orari, tratte e prezzi si concordano direttamente con lui).
+- ⚠️ Il vecchio contatto Navette Orosei/Salvatore (+39 328 813 4685) NON va più dato: se qualcuno lo cita, indirizza al numero nuovo.
+- NON suggerire app di ride-sharing generiche (Uber, inDrive, ecc.): il riferimento per i transfer è il contatto qui sopra, più i taxi locali.
 
 ## Biglietti
 - Acquisto online sulla biglietteria ufficiale **ticketsms.it**
@@ -244,4 +245,4 @@ Gate Sardinia assume per la stagione estiva. **Età minima per LAVORARE: 18 anni
 | Info generali, oggetti smarriti, accrediti, accessibilità, rimborsi | info@gatesardinia.it |
 | Prenotazione tavoli VIP | Online: gatesardinia.it/tavoli · Assistenza: vip@gatesardinia.it · WhatsApp +39 391 487 6443 |
 | Booking artisti, eventi privati/aziendali | booking@gatesardinia.it · WhatsApp +39 391 487 6443 |
-| Navette / transfer | Navette Orosei — Salvatore, WhatsApp/telefono +39 328 813 4685 |
+| Navette / transfer / driver | WhatsApp/telefono +39 349 219 7091 |
