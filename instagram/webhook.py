@@ -9,7 +9,10 @@ from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
 from config import settings
 from webhook_security import verify_meta_signature
 from rag.context_builder import build_rag_context
-from ai.claude_client import generate_response, last_api_error, API_ERROR_FALLBACK_PREFIX, fetch_image_block
+from ai.claude_client import (
+    generate_response, last_api_error, API_ERROR_FALLBACK_PREFIX,
+    fetch_image_block, CHAT_IMAGE_NOTE,
+)
 
 
 def _relay_with_api_error(reply: str, full_reply: str) -> str:
@@ -167,17 +170,23 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
                 story = (msg.get("reply_to") or {}).get("story") or {}
                 is_story_reply = bool(story)
                 story_image_url = story.get("url") or None
-                if text:
-                    _trace("ig", sender_id, text, "webhook in ingresso", account=ig_account_id)
+                # Foto inviata IN CHAT dal cliente (screenshot biglietto, locandina,
+                # ricevuta...): l'URL è in attachments[].payload.url → la passiamo al
+                # modello con la vision. Distinta dalla story reply (contenuto NOSTRO).
+                chat_image_url = None
+                if att_type == "image" and not is_story_reply:
+                    chat_image_url = ((attachments[0] or {}).get("payload") or {}).get("url") or None
+                if text or chat_image_url:
+                    _trace("ig", sender_id, text or "[foto]", "webhook in ingresso", account=ig_account_id)
                     background_tasks.add_task(
                         process_ig_message, ig_account_id, sender_id, text,
-                        is_story_reply, story_image_url,
+                        is_story_reply, story_image_url, chat_image_url,
                     )
                 elif att_type in ("story_mention", "share"):
                     # menzione/post nella storia → mettiamo un like ❤️ invece di un testo
                     background_tasks.add_task(process_ig_story_mention, ig_account_id, sender_id, msg_id)
                 elif attachments:
-                    # foto/vocale/video in DM → fallback testuale (qui il cliente cerca aiuto)
+                    # vocale/video in DM → fallback testuale (qui il cliente cerca aiuto)
                     background_tasks.add_task(process_ig_non_text, ig_account_id, sender_id)
             except Exception:
                 logger.exception("IG: evento malformato saltato")
@@ -195,9 +204,10 @@ _ERROR_FALLBACK_REPLY = (
 
 
 async def process_ig_message(ig_account_id: str, sender_id: str, text: str,
-                             is_story_reply: bool = False, story_image_url: str | None = None) -> None:
+                             is_story_reply: bool = False, story_image_url: str | None = None,
+                             chat_image_url: str | None = None) -> None:
     try:
-        await _process_ig_message(ig_account_id, sender_id, text, is_story_reply, story_image_url)
+        await _process_ig_message(ig_account_id, sender_id, text, is_story_reply, story_image_url, chat_image_url)
     except Exception:
         logger.exception("IG: errore processando il messaggio di %s — fallback + alert staff", sender_id)
         venue = _venue_for_account(ig_account_id)
@@ -205,7 +215,7 @@ async def process_ig_message(ig_account_id: str, sender_id: str, text: str,
         context = {"ig_account_id": ig_account_id, "sender_id": sender_id}
         sent = await send_ig_message(ig_account_id, sender_id, _ERROR_FALLBACK_REPLY)
         await notify_conversation(
-            phone, venue, text,
+            phone, venue, text or "[📷 foto]",
             "[⚠️ ERRORE TECNICO — il bot NON ha risposto alla domanda]\n"
             f"Messaggio di cortesia {'inviato' if sent else 'NON inviato'} al cliente.",
             context, delivered=False,
@@ -225,33 +235,50 @@ _STORY_REPLY_HINT = (
 
 
 async def _process_ig_message(ig_account_id: str, sender_id: str, text: str,
-                              is_story_reply: bool = False, story_image_url: str | None = None) -> None:
+                              is_story_reply: bool = False, story_image_url: str | None = None,
+                              chat_image_url: str | None = None) -> None:
     venue = _venue_for_account(ig_account_id)
     conv = _get_conversation(ig_account_id, sender_id)
     phone = f"ig:{sender_id[:12]}"
     context = {"ig_account_id": ig_account_id, "sender_id": sender_id}
-    _trace("ig", sender_id, text, "ricevuto", venue=venue, account=ig_account_id)
+    display = text or "[📷 foto]"
+    _trace("ig", sender_id, display, "ricevuto", venue=venue, account=ig_account_id)
 
     if is_human_takeover(phone):
-        _trace("ig", sender_id, text, "takeover (bot in pausa)")
-        await notify_human_message(phone, venue, text, context)
+        _trace("ig", sender_id, display, "takeover (bot in pausa)")
+        await notify_human_message(phone, venue, display, context)
         return
 
     rag_context, _ = await build_rag_context(venue, text, history=conv.get("history", []))
-    # Risposta a una storia: prova a scaricare l'immagine così il modello la VEDE. Se
-    # riesce, niente hint testuale (ce l'ha davanti); se no (storia video/errore) e
-    # comunque è una story reply, aggiungi l'hint testuale come ripiego.
-    image_block = await fetch_image_block(story_image_url) if story_image_url else None
+    # Immagini, due casi distinti:
+    # - foto inviata IN CHAT dal cliente → la scarica e la legge (CHAT_IMAGE_NOTE);
+    #   se il download fallisce e non c'è testo, fallback gentile (mai silenzio).
+    # - risposta a una nostra STORIA → scarica l'immagine della storia; se non si può
+    #   (storia video/errore), resta l'hint testuale come ripiego.
+    image_block = None
+    image_note = None
+    if chat_image_url:
+        image_block = await fetch_image_block(chat_image_url)
+        if image_block is not None:
+            image_note = CHAT_IMAGE_NOTE
+        elif not text:
+            await process_ig_non_text(ig_account_id, sender_id)
+            return
+    elif story_image_url:
+        image_block = await fetch_image_block(story_image_url)
     if is_story_reply and image_block is None:
         rag_context = f"{_STORY_REPLY_HINT}\n\n---\n\n{rag_context}"
 
-    _add_to_history(conv, "user", text)
+    # In history testuale l'immagine non ci sta: resta un segnaposto, così i turni
+    # successivi sanno che è stata mandata una foto.
+    _add_to_history(conv, "user", text or "[foto inviata dal cliente]")
     reply = await generate_response(
         venue=venue,
         user_message=text,
         rag_context=rag_context,
         history=conv["history"][:-1],
         image_block=image_block,
+        image_note=image_note,
     )
     _add_to_history(conv, "assistant", reply)
 
@@ -285,7 +312,7 @@ async def _process_ig_message(ig_account_id: str, sender_id: str, text: str,
     # drink accodati inclusi), non la sola risposta LLM — altrimenti lo staff crede che il
     # link non sia partito quando invece è nel messaggio inviato.
     relay_reply = _relay_with_api_error(reply, full_reply)
-    await notify_conversation(phone, venue, text, relay_reply, context, delivered=sent)
+    await notify_conversation(phone, venue, display, relay_reply, context, delivered=sent)
 
 
 async def process_ig_non_text(ig_account_id: str, sender_id: str) -> None:

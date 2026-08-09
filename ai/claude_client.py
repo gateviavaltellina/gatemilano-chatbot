@@ -359,18 +359,30 @@ _STORY_IMAGE_NOTE = (
     "chiedere 'a quale storia ti riferisci'."
 )
 
+# Nota per le FOTO inviate in chat dal cliente (diversa dalla nota storia: qui
+# l'immagine è un allegato del cliente, non un nostro contenuto).
+CHAT_IMAGE_NOTE = (
+    "Il cliente ha INVIATO QUESTA IMMAGINE in chat (es. screenshot di un biglietto, "
+    "una locandina, una ricevuta, una foto). GUARDALA e rispondi in base a ciò che "
+    "contiene, insieme all'eventuale testo del messaggio. Se è un biglietto o una "
+    "ricevuta leggi i dettagli utili (evento, data, tipo, nominativo); se è una "
+    "locandina rispondi su quella serata; se non è chiara o non c'entra col locale, "
+    "chiedi gentilmente cosa serve. NON dire MAI di non poter vedere le immagini."
+)
+
 _IMG_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
 
 
-async def fetch_image_block(url: str) -> dict | None:
-    """Scarica un'immagine (es. una nostra storia IG dal reply_to.story.url) e la rende
-    un blocco immagine per l'API Anthropic. Ritorna None se non è un'immagine (storia
-    video/gif non supportata come frame), se è troppo grande, o su errore/timeout: il
-    chiamante ricade sul solo hint testuale. Non solleva mai."""
+async def fetch_image_block(url: str, headers: dict | None = None) -> dict | None:
+    """Scarica un'immagine (una storia IG da reply_to.story.url, o una foto inviata in
+    chat — per i media WhatsApp servono gli header di autenticazione) e la rende un
+    blocco immagine per l'API Anthropic. Ritorna None se non è un'immagine, se è troppo
+    grande, o su errore/timeout: il chiamante ricade sul comportamento testuale.
+    Non solleva mai."""
     if not url:
         return None
     try:
-        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True, headers=headers or {}) as client:
             r = await client.get(url)
         if r.status_code != 200:
             logger.debug("Fetch storia: HTTP %s per %s", r.status_code, url[:80])
@@ -418,6 +430,7 @@ async def generate_response(
     history: list[dict],
     temperature: float | None = None,
     image_block: dict | None = None,
+    image_note: str | None = None,
 ) -> str:
     # temperature: None = default API (produzione). L'eval passa 0 per risposte
     # deterministiche e riproducibili (gate affidabile, niente flakiness).
@@ -427,10 +440,14 @@ async def generate_response(
     contact_email = VENUE_CONTACT_EMAIL.get(venue, "info@gatemilano.com")
     system = build_system_blocks(venue, rag_context, current_datetime)
     history = _sanitize_history(history)
-    # Se c'è l'immagine della storia a cui l'utente risponde, la alleghiamo all'ultimo
-    # messaggio utente: così il modello VEDE la storia e capisce la domanda da solo.
+    # Se c'è un'immagine (storia IG a cui l'utente risponde, o foto inviata in chat),
+    # la alleghiamo all'ultimo messaggio utente: così il modello la VEDE. La nota
+    # spiega il contesto: default storia; i webhook passano CHAT_IMAGE_NOTE per le
+    # foto in chat. Una foto può arrivare senza testo: in quel caso resta solo la nota.
     if image_block is not None:
-        user_content = [image_block, {"type": "text", "text": f"{_STORY_IMAGE_NOTE}\n\n{user_message}"}]
+        note = image_note or _STORY_IMAGE_NOTE
+        note_text = f"{note}\n\n{user_message}" if user_message.strip() else note
+        user_content = [image_block, {"type": "text", "text": note_text}]
     else:
         user_content = user_message
     messages = [*history, {"role": "user", "content": user_content}]

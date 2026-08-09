@@ -114,6 +114,26 @@ async def send_document(to: str, url: str, filename: str, caption: str = "") -> 
             return False
 
 
+async def get_media_url(media_id: str) -> str | None:
+    """Risolve l'URL di download di un media ricevuto in chat (foto del cliente).
+    L'URL restituito da Meta scade in ~5 minuti e il download richiede lo stesso
+    header Authorization. Ritorna None su errore (il chiamante ricade sul testo)."""
+    if not media_id:
+        return None
+    headers = {"Authorization": f"Bearer {settings.wa_access_token}"}
+    async with httpx.AsyncClient(timeout=15) as client:
+        try:
+            r = await client.get(f"{settings.wa_api_url}/{media_id}", headers=headers)
+            r.raise_for_status()
+            return r.json().get("url") or None
+        except httpx.HTTPStatusError as e:
+            logger.error("Errore risoluzione media %s: %s — %s", media_id, e, e.response.text)
+            return None
+        except Exception as e:
+            logger.error("Errore risoluzione media %s: %s", media_id, e)
+            return None
+
+
 async def mark_as_read(message_id: str) -> None:
     headers = {
         "Authorization": f"Bearer {settings.wa_access_token}",
