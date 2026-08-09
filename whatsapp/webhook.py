@@ -9,11 +9,14 @@ from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
 
 from config import settings
 from webhook_security import verify_meta_signature
-from whatsapp.client import send_message, send_document, mark_as_read
+from whatsapp.client import send_message, send_document, mark_as_read, get_media_url
 from venue.detector import VenueDetector
 from venue.classifier import classify_venue
 from rag.context_builder import build_rag_context
-from ai.claude_client import generate_response, last_api_error, API_ERROR_FALLBACK_PREFIX
+from ai.claude_client import (
+    generate_response, last_api_error, API_ERROR_FALLBACK_PREFIX,
+    fetch_image_block, CHAT_IMAGE_NOTE,
+)
 from notifications.discord import notify_conversation, notify_human_message, notify_escalation
 from notifications.discord_bot import is_human_takeover
 from notifications.escalation import detect_sensitive
@@ -137,10 +140,19 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
                         continue
                     if not _mark_processed(msg_id):
                         continue
-                    if text:
-                        background_tasks.add_task(process_ig_message, ig_account_id, sender_id, text)
-                    elif msg.get("attachments"):
-                        # foto/vocale/condivisione senza testo → fallback gentile,
+                    attachments = msg.get("attachments") or []
+                    att = attachments[0] or {} if attachments else {}
+                    chat_image_url = None
+                    if att.get("type") == "image":
+                        chat_image_url = (att.get("payload") or {}).get("url") or None
+                    if text or chat_image_url:
+                        # testo, o foto in chat → il bot la scarica e la LEGGE (vision)
+                        background_tasks.add_task(
+                            process_ig_message, ig_account_id, sender_id, text,
+                            False, None, chat_image_url,
+                        )
+                    elif attachments:
+                        # vocale/video/condivisione senza testo → fallback gentile,
                         # non silenzio (prima veniva scartato senza risposta)
                         background_tasks.add_task(process_ig_non_text, ig_account_id, sender_id)
                 except Exception:
@@ -178,8 +190,18 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
                         if not text:
                             continue
                         background_tasks.add_task(process_message, phone, msg_id, text)
+                    elif msg.get("type") == "image":
+                        # foto in chat → il bot la SCARICA e la legge con la vision
+                        # (screenshot di biglietti, locandine, ricevute...)
+                        img = msg.get("image") or {}
+                        media_id = img.get("id") or ""
+                        caption = (img.get("caption") or "").strip()
+                        if media_id:
+                            background_tasks.add_task(process_image_message, phone, msg_id, media_id, caption)
+                        else:
+                            background_tasks.add_task(process_non_text, phone, msg_id, "image")
                     else:
-                        # vocali/foto/video/ecc.: niente più silenzio — fallback gentile
+                        # vocali/video/ecc.: niente più silenzio — fallback gentile
                         background_tasks.add_task(process_non_text, phone, msg_id, msg.get("type") or "")
                 except Exception:
                     logger.exception("WA: messaggio malformato saltato")
@@ -213,6 +235,83 @@ async def process_non_text(phone: str, msg_id: str, mtype: str) -> None:
     reply = _NON_TEXT_FALLBACK.get(mtype, _NON_TEXT_DEFAULT)
     sent = await send_message(phone, reply)
     await notify_conversation(phone, venue, f"[{label} ricevuto]", reply, delivered=sent)
+
+
+# --- Foto in chat: vision ---
+
+async def process_image_message(phone: str, msg_id: str, media_id: str, caption: str) -> None:
+    try:
+        await _process_image_message(phone, msg_id, media_id, caption)
+    except Exception:
+        logger.exception("WA: errore processando la foto di %s — fallback + alert staff", phone)
+        venue = _get_conversation(phone).get("venue") or "gate_milano"
+        sent = await send_message(phone, _ERROR_FALLBACK_REPLY)
+        await notify_conversation(
+            phone, venue, f"[📷 foto]{(' ' + caption) if caption else ''}",
+            "[⚠️ ERRORE TECNICO — il bot NON ha risposto alla foto]\n"
+            f"Messaggio di cortesia {'inviato' if sent else 'NON inviato'} al cliente.",
+            delivered=False,
+        )
+
+
+async def _process_image_message(phone: str, msg_id: str, media_id: str, caption: str) -> None:
+    """Foto inviata dal cliente: risolve l'URL del media, la scarica (serve l'header
+    di autenticazione Meta) e la passa al modello con la vision. Se il download
+    fallisce (media scaduto, video mascherato, errore) ricade sul fallback gentile."""
+    if phone in _get_ignored_phones():
+        return
+    await mark_as_read(msg_id)
+    conv = _get_conversation(phone)
+    display = f"[📷 foto]{(' ' + caption) if caption else ''}"
+
+    if is_human_takeover(phone):
+        venue = conv.get("venue") or "gate_milano"
+        _trace("wa", phone, display, "takeover (bot in pausa)")
+        await notify_human_message(phone, venue, display)
+        return
+
+    url = await get_media_url(media_id)
+    auth = {"Authorization": f"Bearer {settings.wa_access_token}"}
+    image_block = await fetch_image_block(url, headers=auth) if url else None
+    if image_block is None:
+        # non scaricabile → stesso fallback delle foto pre-vision, mai silenzio
+        venue = conv.get("venue") or "gate_milano"
+        reply = _NON_TEXT_DEFAULT
+        sent = await send_message(phone, reply)
+        await notify_conversation(phone, venue, f"{display} (non scaricabile)", reply, delivered=sent)
+        return
+
+    _trace("wa", phone, display, "ricevuto (foto)")
+    venue = _venue_detector.detect(caption, conv.get("venue"), conv.get("history", [])) if caption else None
+    venue = venue or conv.get("venue")
+    if venue is None:
+        venue = (await classify_venue(caption) if caption else None) or "gate_milano"
+    conv["venue"] = venue
+
+    rag_context, _ = await build_rag_context(venue, caption, history=conv.get("history", []))
+    # In history testuale l'immagine non ci sta: resta un segnaposto (+ caption),
+    # così i turni successivi sanno che è stata mandata una foto.
+    _add_to_history(conv, "user", caption or "[foto inviata dal cliente]", settings.max_history)
+    reply = await generate_response(
+        venue=venue,
+        user_message=caption,
+        rag_context=rag_context,
+        history=conv["history"][:-1],
+        image_block=image_block,
+        image_note=CHAT_IMAGE_NOTE,
+    )
+    _add_to_history(conv, "assistant", reply, settings.max_history)
+
+    sent = await send_message(phone, reply)
+    _trace("wa", phone, reply, "risposta (foto)", inviata=("SI" if sent else "NO"))
+
+    if caption and (sensitive := detect_sensitive(caption)):
+        await notify_escalation(phone, venue, display, sensitive)
+
+    relay_reply = reply
+    if reply.startswith(API_ERROR_FALLBACK_PREFIX):
+        relay_reply += f"\n\n[⚠️ ERRORE API modello (non mostrato al cliente): {last_api_error() or 'sconosciuto'}]"
+    await notify_conversation(phone, venue, display, relay_reply, delivered=sent)
 
 
 # Rete di sicurezza: se la pipeline (RAG/LLM) esplode, il cliente riceve almeno
