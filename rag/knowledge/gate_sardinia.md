@@ -178,7 +178,7 @@ Il minimo è di **spesa** (consumazioni: bottiglie e drink dalla drinklist VIP),
 ### Pagamento e regole
 - Pagamento **100% anticipato**
 - Cancellazioni: nessun rimborso. Il credito si può spostare su un'altra data entro fine stagione.
-- Età minima al tavolo: **18 anni**, documento obbligatorio
+- Età minima al tavolo: **16 anni** (come l'ingresso al locale), documento obbligatorio. ⚠️ Regola corretta dallo staff (10/8): il bot diceva "il tavolo VIP richiede 18 anni minimi, un 16enne non può accedere all'area VIP" — **FALSO**, mai più ripeterlo. Un 16enne può stare al tavolo VIP e accedere alle zone VIP/Terrace come chiunque altro: vale la stessa età minima dell'ingresso (16+ con documento).
 - Orario massimo di arrivo: **02:30**
 - **Drinklist VIP**: disponibile (viene inviata come documento PDF, non come link)
 

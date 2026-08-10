@@ -233,6 +233,16 @@ def test_sardinia_provisional_document_accepted():
     assert "PROVVISORIO del Comune: ACCETTATO" in s
 
 
+def test_sardinia_vip_tables_are_16plus():
+    # correzione staff 10/8: il bot diceva "tavolo VIP 18 anni minimi, un 16enne
+    # non può accedere all'area VIP" — falso. Tavoli/zone VIP = stessa età
+    # dell'ingresso, 16+ con documento.
+    s = _static("gate_sardinia")
+    assert "Età minima al tavolo: **16 anni**" in s
+    assert "richiede 18 anni minimi" in s  # citato come errore da NON ripetere
+    assert "Età minima al tavolo: **18 anni**" not in s
+
+
 def test_sardinia_same_name_tickets_are_fine():
     # caso reale: più biglietti intestati alla stessa persona → il bot inventava un
     # controllo nome-documento della security e rimandava a info@. Sono validi.
