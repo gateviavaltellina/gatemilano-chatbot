@@ -233,12 +233,24 @@ def _parse_ticketsms_event(data: dict) -> dict:
     return result
 
 
+# Annullamenti MANUALI segnalati dallo staff quando la biglietteria non è ancora
+# aggiornata (su TicketSMS l'evento risulta ancora in vendita): lo slug qui dentro
+# forza canceled=True qualunque cosa dica l'API. Da rimuovere quando l'evento passa
+# o quando TicketSMS viene aggiornato. Caso reale Akeem 12/8: annullato dallo staff
+# ma canceled=false su TicketSMS → il bot lo consigliava come prossimo evento.
+_MANUAL_CANCELED_SLUGS = {
+    "Akeem-Budoni-Gate-Sardinia-12-08-2026",
+}
+
+
 async def _fetch_ticketsms_enrichment(ticket_url: str) -> dict:
     """Returns {about, prices_str, canceled} per un evento TicketSMS. Non solleva mai."""
     result = {"about": "", "prices_str": "", "canceled": False}
     slug = _extract_ticketsms_slug(ticket_url)
     if not slug:
         return result
+    forced = slug in _MANUAL_CANCELED_SLUGS
+    result["canceled"] = forced
     try:
         async with httpx.AsyncClient(
             timeout=10, headers={"User-Agent": "Mozilla/5.0", "Accept-Language": "it"}
@@ -246,7 +258,10 @@ async def _fetch_ticketsms_enrichment(ticket_url: str) -> dict:
             r = await client.get(f"{_TICKETSMS_API}/{slug}")
             if r.status_code != 200:
                 return result
-            return _parse_ticketsms_event(r.json().get("data", {}))
+            parsed = _parse_ticketsms_event(r.json().get("data", {}))
+            if forced:
+                parsed["canceled"] = True
+            return parsed
     except Exception as e:
         logger.debug("TicketSMS enrichment failed for %s: %s", slug, e)
         return result
