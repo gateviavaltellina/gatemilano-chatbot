@@ -87,7 +87,8 @@ def test_canceled_document_warns_and_drops_ticket_link():
     doc, meta = _build_canceled()
     assert "EVENTO ANNULLATO" in doc
     assert "ticketsms.it" not in doc            # niente link d'acquisto
-    assert "info@gatesardinia.it" in doc        # contatto rimborsi della sede giusta
+    assert "IN AUTOMATICO" in doc               # rimborso TicketSMS automatico (conferma staff 11/8)
+    assert "info@gatesardinia.it" in doc        # contatto della sede giusta per gli altri casi
     assert meta["canceled"] is True
     assert meta["ticket_url"] == ""             # nemmeno nei metadata (compact/tavoli)
 
