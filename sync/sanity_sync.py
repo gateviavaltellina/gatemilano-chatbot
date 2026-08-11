@@ -778,6 +778,26 @@ def _build_blog_document(post: dict, venue_label: str) -> tuple[str, dict]:
     return document, metadata
 
 
+async def find_new_ticketsms_cancellations(days: int = 60) -> list[str]:
+    """Nomi degli eventi futuri ancora ATTIVI nello store il cui flag `canceled`
+    su TicketSMS è nel frattempo diventato True. Chiamata leggera (una GET per
+    evento TicketSMS in calendario) pensata per un job frequente: il sync completo
+    gira ogni 2 ore, ma un annullamento registrato in biglietteria dentro quella
+    finestra lasciava il bot a rispondere 'confermato!' [caso reale Artie 5ive
+    20/8, segnalato da un cliente e smentito dal bot]. Non solleva mai."""
+    from rag import event_store
+    found: list[str] = []
+    for venue in ("gate_milano", "gate_sardinia"):
+        for name, url in event_store.get_active_ticketsms_events(venue, days=days):
+            try:
+                enr = await _fetch_ticketsms_enrichment(url)
+                if enr.get("canceled"):
+                    found.append(name or url)
+            except Exception:  # _fetch non solleva, ma il job non deve morire mai
+                logger.exception("Ricontrollo annullamento fallito per %s", url)
+    return found
+
+
 async def sync_all_venues():
     logger.info("Avvio sync Sanity...")
 

@@ -41,6 +41,19 @@ async def sync_watchdog():
         await sync_all_venues()
 
 
+async def cancellation_recheck():
+    """Annullamenti fuori sync: ricontrolla SOLO il flag 'canceled' su TicketSMS per
+    gli eventi futuri ancora attivi. Il sync completo gira ogni 2 ore: un evento
+    annullato in biglietteria dentro quella finestra lasciava il bot a dire
+    'confermato!' (caso reale Artie 5ive 20/8). Se trova annullamenti nuovi
+    rilancia subito il sync completo, che rimarca documenti e metadata."""
+    from sync.sanity_sync import find_new_ticketsms_cancellations
+    found = await find_new_ticketsms_cancellations()
+    if found:
+        logger.warning("Annullamenti rilevati fuori sync: %s — sync completo", ", ".join(found))
+        await sync_all_venues()
+
+
 async def nightly_cleanup():
     from whatsapp.webhook import prune_conversations
     from instagram.webhook import prune_ig_conversations
@@ -83,6 +96,15 @@ async def _init_background():
             sync_watchdog,
             CronTrigger(minute="*/10"),
             id="sync_watchdog",
+            replace_existing=True,
+        )
+        # Ricontrollo annullamenti TicketSMS ogni 10 min (offset di 5 per non
+        # sovrapporsi al sync delle ore pari): chiude la finestra di 2 ore in cui
+        # un evento annullato in biglietteria restava "confermato" per il bot.
+        scheduler.add_job(
+            cancellation_recheck,
+            CronTrigger(minute="5,15,25,35,45,55"),
+            id="cancellation_recheck",
             replace_existing=True,
         )
         # Health check token Meta (IG/WA) ogni ora: un token scaduto fa fallire

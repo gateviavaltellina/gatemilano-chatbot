@@ -374,6 +374,23 @@ def count(venue: str) -> int:
     return len([e for e in _get(venue) if e["metadata"].get("type") == "event"])
 
 
+def get_active_ticketsms_events(venue: str, days: int = 60) -> list[tuple[str, str]]:
+    """(event_name, ticket_url) degli eventi futuri NON annullati con biglietteria
+    TicketSMS: la lista da ricontrollare per gli annullamenti registrati in
+    biglietteria tra un sync completo e l'altro."""
+    today_ts = _today_start_utc()
+    end_ts = today_ts + days * 86400
+    out: list[tuple[str, str]] = []
+    for e in _get(venue):
+        m = e["metadata"]
+        if (m.get("type") == "event"
+                and not m.get("canceled")
+                and today_ts <= m.get("date_ts", 0) <= end_ts
+                and "ticketsms" in (m.get("ticket_url") or "")):
+            out.append((m.get("event_name", ""), m["ticket_url"]))
+    return out
+
+
 def get_ticket_url_for_date(venue: str, date_str: str) -> str:
     """Return the ticketUrl for the first event on date_str, or empty string."""
     day_start = int(datetime.strptime(date_str[:10], "%Y-%m-%d")
