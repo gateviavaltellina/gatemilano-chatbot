@@ -233,6 +233,16 @@ def test_sardinia_provisional_document_accepted():
     assert "PROVVISORIO del Comune: ACCETTATO" in s
 
 
+def test_sardinia_ferragosto_free_pass_promo():
+    # promo staff 11/8: chi ha un biglietto TicketSMS di un qualsiasi evento Gate
+    # Sardinia entra gratis al Perreo XL del 15 agosto mostrandolo all'ingresso.
+    s = _static("gate_sardinia")
+    assert "Free Pass" in s
+    assert "15 agosto 2026" in s
+    assert "mostralo all'ingresso" in s
+    assert "Perreo XL" in s
+
+
 def test_sardinia_vip_tables_are_16plus():
     # correzione staff 10/8: il bot diceva "tavolo VIP 18 anni minimi, un 16enne
     # non può accedere all'area VIP" — falso. Tavoli/zone VIP = stessa età
