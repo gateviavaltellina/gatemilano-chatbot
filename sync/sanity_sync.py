@@ -628,9 +628,10 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
             "\n⚠️ EVENTO ANNULLATO: questa serata è stata ANNULLATA. Se chiedono di questo "
             "evento, comunica SUBITO e con chiarezza che è annullato, scusandoti per il "
             "disagio — NON confermarlo mai come in programma, NON proporre biglietti né "
-            "link d'acquisto. Per i biglietti già acquistati e i rimborsi: scrivere a "
-            f"{contact}. Quella sera il locale è chiuso, salvo ALTRI eventi in calendario "
-            "per la stessa data."
+            "link d'acquisto. Rimborsi: le prevendite acquistate online su TicketSMS "
+            "vengono rimborsate IN AUTOMATICO da TicketSMS, il cliente non deve fare "
+            f"nulla; per altri casi o dubbi scrivere a {contact}. Quella sera il locale "
+            "è chiuso, salvo ALTRI eventi in calendario per la stessa data."
         )
         ticket_str = ""
         ticket_url = ""
