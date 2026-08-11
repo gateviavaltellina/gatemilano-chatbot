@@ -31,6 +31,47 @@ def test_parse_active_event_not_canceled():
     assert _parse_ticketsms_event(data)["canceled"] is False
 
 
+# --- Override manuale: staff annulla ma TicketSMS non è aggiornato ---
+
+async def test_manual_canceled_slug_forces_canceled(monkeypatch):
+    # caso reale Akeem 12/8: annullato dallo staff ma canceled=false su TicketSMS
+    # → lo slug in _MANUAL_CANCELED_SLUGS forza l'annullamento, qualunque cosa
+    # dica l'API (anche se la chiamata fallisce del tutto).
+    import sync.sanity_sync as ss
+
+    monkeypatch.setattr(ss, "_MANUAL_CANCELED_SLUGS", {"Akeem-Budoni-Gate-Sardinia-12-08-2026"})
+
+    class _R:
+        status_code = 200
+
+        def json(self):
+            return {"data": {"body": [{"list": [{"componentType": "eventDetails",
+                                                 "canceled": False, "description": ""}]}]}}
+
+    class _C:
+        def __init__(self, *a, **k): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self, *a): return False
+        async def get(self, url): return _R()
+
+    monkeypatch.setattr(ss.httpx, "AsyncClient", _C)
+    out = await ss._fetch_ticketsms_enrichment(
+        "https://www.ticketsms.it/event/Akeem-Budoni-Gate-Sardinia-12-08-2026")
+    assert out["canceled"] is True
+
+    # evento NON in lista → resta quello che dice l'API
+    out2 = await ss._fetch_ticketsms_enrichment("https://www.ticketsms.it/event/Altro-Evento")
+    assert out2["canceled"] is False
+
+    # API giù → l'override vale comunque
+    class _CBoom(_C):
+        async def get(self, url): raise RuntimeError("rete giù")
+    monkeypatch.setattr(ss.httpx, "AsyncClient", _CBoom)
+    out3 = await ss._fetch_ticketsms_enrichment(
+        "https://www.ticketsms.it/event/Akeem-Budoni-Gate-Sardinia-12-08-2026")
+    assert out3["canceled"] is True
+
+
 # --- Documento e metadata ---
 
 def _build_canceled():
