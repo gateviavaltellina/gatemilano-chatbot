@@ -527,6 +527,7 @@ _SARDINIA_HOURS = "22:00 - 04:00"
 _SARDINIA_SPECIAL_HOURS = {
     ("2026-07-22", "2026-07-26"): "22:00 - 03:30",  # settimana 22-26/7 (conclusa)
     ("2026-07-30", "2026-08-02"): "22:00 - 04:00",  # weekend gio 30/7 - dom 2/8
+    ("2026-08-15", "2026-08-15"): "22:00 - 05:00",  # Ferragosto (Perreo XL): chiusura estesa
 }
 
 

@@ -173,3 +173,16 @@ def test_weekend_hours_2200_0400_july30_aug2():
     # confini: 29/7 e 3/8 → orario standard (ora 22:00-04:00 definitivo)
     assert _sardinia_default_hours("2026-07-29") == "22:00 - 04:00"
     assert _sardinia_default_hours("2026-08-03") == "22:00 - 04:00"
+
+
+def test_ferragosto_hours_2200_0500():
+    # Ferragosto (Perreo XL 15/8): chiusura estesa alle 05:00, solo quella serata.
+    assert _sardinia_default_hours("2026-08-15") == "22:00 - 05:00"
+    # sera del 15 in ISO col rollover (= stesso giorno di servizio) → estesa
+    assert _sardinia_default_hours("2026-08-15T22:00:00Z") == "22:00 - 05:00"
+    # confini: 14/8 e 16/8 → orario standard
+    assert _sardinia_default_hours("2026-08-14") == "22:00 - 04:00"
+    assert _sardinia_default_hours("2026-08-16") == "22:00 - 04:00"
+
+    doc, _ = _build_document({"_id": "fx", "title": "Perreo XL", "date": "2026-08-15"}, "Gate Sardinia")
+    assert "Orari: 22:00 - 05:00" in doc
