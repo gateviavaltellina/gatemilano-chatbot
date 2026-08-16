@@ -186,3 +186,12 @@ def test_ferragosto_hours_2200_0500():
 
     doc, _ = _build_document({"_id": "fx", "title": "Perreo XL", "date": "2026-08-15"}, "Gate Sardinia")
     assert "Orari: 22:00 - 05:00" in doc
+
+
+def test_closing_party_hours_2200_0500():
+    # Closing party (Perreo XL) sabato 22/8: ultima serata della stagione, 22:00-05:00.
+    assert _sardinia_default_hours("2026-08-22") == "22:00 - 05:00"
+    assert _sardinia_default_hours("2026-08-22T22:00:00Z") == "22:00 - 05:00"
+    # confini: 21/8 orario standard (il 23/8 la stagione è finita, ma l'orario
+    # di default resta comunque quello standard se mai servisse)
+    assert _sardinia_default_hours("2026-08-21") == "22:00 - 04:00"
