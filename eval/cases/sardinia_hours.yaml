@@ -22,12 +22,12 @@
   rubric:
     must:
     - Chiarisce che a febbraio NON si è aperti
-    - Indica che la stagione va dal 3 luglio al 30 agosto 2026
+    - Indica che la stagione va dal 3 luglio al 22 agosto 2026 (closing party)
     - Eventualmente invita a tornare in estate / durante la stagione
     - Tono cordiale da staff di Gate Sardinia
     must_not:
     - NON dire che a febbraio è aperto
-    - NON inventare date di stagione diverse da 3 luglio–30 agosto 2026
+    - NON inventare date di stagione diverse da 3 luglio–22 agosto 2026
     - NON dichiararsi bot/AI
 - id: sard-hours-season-3
   category: hours-season
@@ -86,13 +86,13 @@
   user_message: fino a quando va avanti la stagione? a settembre ci siete ancora?
   rubric:
     must:
-    - Indica che la stagione termina a fine agosto (30 agosto 2026)
-    - Chiarisce che a settembre non si è più aperti / si chiude a fine agosto
+    - Indica che la stagione termina sabato 22 agosto 2026 con il closing party (Perreo XL)
+    - Chiarisce che a settembre non si è più aperti / si chiude il 22 agosto
     - Può ricordare che la stagione è iniziata il 3 luglio 2026
     - Tono cordiale
     must_not:
     - NON dire che si è aperti a settembre
-    - NON inventare date di stagione diverse da 3 luglio–30 agosto 2026
+    - NON inventare date di stagione diverse da 3 luglio–22 agosto 2026
     - NON dichiararsi bot/AI
 - id: sard-timetable-1
   category: timetable

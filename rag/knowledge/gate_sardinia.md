@@ -19,7 +19,7 @@ Gate Sardinia è il venue estivo del gruppo Gate (attivo dal 2017 con Gate Milan
 **Struttura:** venue outdoor, 4 bar, area food
 
 ## Stagione e Orari
-**Stagione 2026:** aperta, fino al **30 agosto 2026**.
+**Stagione 2026:** aperta, **ultima serata sabato 22 agosto 2026: CLOSING PARTY con Perreo XL** (orario esteso **22:00 – 05:00**). Dopo il 22 agosto la stagione 2026 è **conclusa** e il locale è chiuso; le date della prossima stagione non sono ancora annunciate (novità sui social).
 **Orari di apertura del locale:** il locale è aperto **solo nelle sere con un evento in programma**; quando è aperto, l'orario è **22:00 – 04:00** (apertura e chiusura sempre certe). Se stasera non c'è un evento in calendario, stasera è chiuso.
 
 Orario massimo di arrivo ai tavoli VIP: 02:30. Rollover notte: la serata attraversa la mezzanotte; tra mezzanotte e le 04:00 la serata in corso è quella iniziata la sera prima.

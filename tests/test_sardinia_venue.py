@@ -34,9 +34,9 @@ def test_sardinia_prompt_has_no_milano_contacts():
 def test_sardinia_prompt_has_no_milano_hours():
     s = _static("gate_sardinia")
     # NB: il singolo "23:00" ora è legittimo (cutoff del biglietto ridotto €5, valido
-    # entrando entro le 23:00) — la guardia blocca la FINESTRA ORARIA di Milano.
+    # entrando entro le 23:00) e anche "05:00" lo è (closing party 22/8 fino alle 5)
+    # — la guardia blocca la FINESTRA ORARIA di Milano.
     assert "23:00 – 05:00" not in s and "23:00 - 05:00" not in s
-    assert "05:00" not in s
     # orario fisso Gate Sardinia: 22:00 – 04:00 (definitivo da agosto 2026)
     assert "22:00" in s and "04:00" in s
     assert "22:00 – 03:00" not in s  # il vecchio orario non deve più comparire
@@ -231,6 +231,15 @@ def test_sardinia_provisional_document_accepted():
     # come documento d'ingresso — il bot lo conferma senza rimandare all'email.
     s = _static("gate_sardinia")
     assert "PROVVISORIO del Comune: ACCETTATO" in s
+
+
+def test_sardinia_closing_party_22_agosto():
+    # comunicazione staff 16/8: la stagione chiude sabato 22/8 col closing party
+    # (Perreo XL), orario esteso 22:00-05:00. Niente più "fino al 30 agosto".
+    s = _static("gate_sardinia")
+    assert "CLOSING PARTY" in s
+    assert "22 agosto 2026" in s
+    assert "30 agosto" not in s
 
 
 def test_sardinia_ferragosto_free_pass_promo():
