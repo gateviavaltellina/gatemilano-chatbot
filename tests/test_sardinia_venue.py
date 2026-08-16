@@ -181,6 +181,16 @@ def test_sardinia_ticket_availability_and_tone_rule():
     assert "{contact_email}" not in blocks[1]["text"]
 
 
+def test_short_ambiguous_message_rule_in_dynamic_block():
+    # caso reale: a un semplice "?" il bot ha risposto «non ho capito "agruatos"»,
+    # parola mai scritta dal cliente. La regola vale per entrambe le sedi.
+    from ai.claude_client import build_system_blocks
+    for venue in ("gate_sardinia", "gate_milano"):
+        dyn = build_system_blocks(venue, "RAG", "DT")[1]["text"]
+        assert "MESSAGGI CORTI O AMBIGUI" in dyn
+        assert "agruatos" in dyn  # citato come errore da NON ripetere
+
+
 def test_sardinia_patente_now_accepted():
     # decisione staff 23/7 ("famo che anche patente va bene"): la patente è ACCETTATA
     # come documento d'ingresso; la tessera sanitaria resta non valida.
