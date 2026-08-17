@@ -188,8 +188,9 @@ def test_ferragosto_hours_2200_0500():
     assert "Orari: 22:00 - 05:00" in doc
 
 
-def test_closing_party_hours_2200_0500():
-    # Closing party (Perreo XL) sabato 22/8: ultima serata della stagione, 22:00-05:00.
+def test_perreo_22_agosto_hours_2200_0500():
+    # Perreo XL sabato 22/8: chiusura estesa 22:00-05:00 (non più "closing party":
+    # cambio di rotta staff, ma l'orario esteso resta).
     assert _sardinia_default_hours("2026-08-22") == "22:00 - 05:00"
     assert _sardinia_default_hours("2026-08-22T22:00:00Z") == "22:00 - 05:00"
     # confini: 21/8 orario standard (il 23/8 la stagione è finita, ma l'orario
