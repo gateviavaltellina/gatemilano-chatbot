@@ -243,13 +243,17 @@ def test_sardinia_provisional_document_accepted():
     assert "PROVVISORIO del Comune: ACCETTATO" in s
 
 
-def test_sardinia_closing_party_22_agosto():
-    # comunicazione staff 16/8: la stagione chiude sabato 22/8 col closing party
-    # (Perreo XL), orario esteso 22:00-05:00. Niente più "fino al 30 agosto".
+def test_sardinia_no_closing_party_mention():
+    # cambio di rotta staff (17/8): NON parlare più di closing party / ultima
+    # serata. Il 22/8 resta una serata normale con orario esteso 22-5; la
+    # stagione torna "fino al 30 agosto". La KB può citare "closing party" solo
+    # nella regola che lo VIETA.
     s = _static("gate_sardinia")
-    assert "CLOSING PARTY" in s
-    assert "22 agosto 2026" in s
-    assert "30 agosto" not in s
+    assert "30 agosto 2026" in s
+    assert "NON parlare MAI di \"closing party\"" in s
+    assert "ultima serata della stagione" not in s.replace(
+        "né di \"ultima serata della stagione\"", "")
+    assert "CLOSING PARTY con Perreo XL" not in s
 
 
 def test_sardinia_ferragosto_free_pass_promo():
