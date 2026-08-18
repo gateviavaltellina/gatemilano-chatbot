@@ -257,13 +257,15 @@ def test_sardinia_no_closing_party_mention():
 
 
 def test_sardinia_ferragosto_free_pass_promo():
-    # promo staff 11/8: chi ha un biglietto TicketSMS di un qualsiasi evento Gate
-    # Sardinia entra gratis al Perreo XL del 15 agosto mostrandolo all'ingresso.
+    # promo staff 11/8, estesa il 17/8 anche al 22/8: chi ha un biglietto TicketSMS
+    # di un qualsiasi evento Gate Sardinia entra gratis ai Perreo XL del 15 e del 22
+    # agosto mostrandolo all'ingresso. SOLO biglietti TicketSMS (no Fourvenues/liste).
     s = _static("gate_sardinia")
     assert "Free Pass" in s
-    assert "15 agosto 2026" in s
+    assert "sabato 15 agosto e sabato 22 agosto 2026" in s
     assert "mostralo all'ingresso" in s
     assert "Perreo XL" in s
+    assert "SOLO biglietti TICKETSMS" in s
 
 
 def test_sardinia_vip_tables_are_16plus():

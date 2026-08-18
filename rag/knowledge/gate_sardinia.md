@@ -59,10 +59,11 @@ fornisci QUESTO contatto (orari, tratte e prezzi si concordano direttamente con 
 - **Disponibilità:** vale la regola di sempre — la biglietteria mostra disponibile/esaurito, non il conteggio esatto; conviene prenderlo finché c'è.
 - ⚠️ **ANTI-ALLUCINAZIONE (tema caldo, arrivano molte domande):** NON inventare quantità, scadenze, orari limite, serate incluse o condizioni che non vedi nel contesto o sulla pagina dell'evento. NON confonderlo con: la **prevendita €5** (prodotto diverso, che ha il vincolo delle 23:00), i **braccialetti staff** (ingresso stagione) o il **free entry lavoratori di Budoni**. Se chiedono una condizione specifica che non conosci, di' che fanno fede le condizioni sulla pagina d'acquisto e per casi particolari indirizza a info@gatesardinia.it — senza inventare nulla.
 
-### Promo Ferragosto — Free Pass Perreo XL 15 agosto 2026 🎆
-**PROMO ATTIVA (comunicata dallo staff via WhatsApp l'11/8).** Chi ha acquistato su **TicketSMS un biglietto per un QUALSIASI evento di Gate Sardinia** ha diritto a un **Free Pass** per la serata **Perreo XL di sabato 15 agosto 2026**: **ingresso gratuito**.
+### Promo Free Pass Perreo XL — 15 e 22 agosto 2026 🎆
+**PROMO ATTIVA (comunicata dallo staff, estesa il 17/8).** Chi ha acquistato su **TicketSMS un biglietto per un QUALSIASI evento di Gate Sardinia** ha diritto a un **Free Pass** per le serate **Perreo XL di sabato 15 agosto e sabato 22 agosto 2026**: **ingresso gratuito**.
 - **Come funziona:** porta con te il biglietto TicketSMS di un evento Gate Sardinia (sul telefono va benissimo) e **mostralo all'ingresso: entri gratis**. Tutto qui — niente iscrizioni o passaggi online.
-- Vale **solo per la serata Perreo XL del 15 agosto 2026**, non per altre date.
+- Vale **solo per le serate Perreo XL del 15 e del 22 agosto 2026**, non per altre date.
+- ⚠️ **SOLO biglietti TICKETSMS:** il Free Pass vale ESCLUSIVAMENTE mostrando un biglietto **acquistato su TicketSMS**. NON vale con: Boarding Pass €0 o iscrizioni alle liste Fourvenues, prevendite prese dai PR senza biglietto TicketSMS, screenshot generici o altri "biglietti" di piattaforme diverse. Se il cliente ha solo quelli, per lui valgono i canali normali (biglietto o cassa).
 - ⚠️ **ANTI-ALLUCINAZIONE:** NON inventare condizioni che non vedi qui (quantità massime, orari limite, "solo eventi passati/futuri", nominativi, ecc.). Se chiedono un dettaglio che non conosci (es. "vale anche per il mio amico senza biglietto?" → per lui valgono i canali normali: biglietto o cassa), rispondi con ciò che sai e per casi particolari indirizza a info@gatesardinia.it. NON confondere questa promo con il **Boarding Pass €0** (iscrizione su Fourvenues), la **prevendita €5** o i **braccialetti staff**.
 
 ### Prevendita €5 (online o dai PR autorizzati) — entro le 23:00 nessun extra ⏰
