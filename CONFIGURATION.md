@@ -69,6 +69,10 @@ su questa app (manca la capability): Instagram richiede i token "Instagram Login
 - `SANITY_API_TOKEN` — opz., per leggere anche le bozze eventi
 - `DEBUG_KEY` — opz., protegge gli endpoint `/debug/*` (vedi §6)
 - `DISCORD_BOT_TOKEN`, `DISCORD_*_WEBHOOK_URL` — notifiche/takeover staff
+- `WA_STAFF_PHONES` — CSV dei numeri staff autorizzati al concierge, in formato
+  E.164 senza `+` (es. `393331234567`)
+- `WA_STAFF_ASSISTANT_WEBHOOK_URL` — webhook HTTPS del concierge operativo. Il
+  chatbot clienti inoltra solo DM allowlistati e status, con firma HMAC valida
 
 **Non segrete ma necessarie:**
 - `IG_API_URL = https://graph.instagram.com/v22.0`
@@ -77,6 +81,18 @@ su questa app (manca la capability): Instagram richiede i token "Instagram Login
 - `WA_VERIFY_TOKEN = gate_whatsapp_verify_2025` (verifica webhook)
 - `PERSIST_DIR = /data` (o path del volume) — **indispensabile per auto-rinnovo + storico**
 - `SANITY_WEBHOOK_SECRET` — opz., per il sync immediato alla pubblicazione
+
+### Routing staff/clienti sul numero condiviso
+
+Il callback Meta deve restare su questo chatbot. Per ogni webhook WhatsApp:
+
+- DM da `WA_STAFF_PHONES` → payload filtrato e rifirmato verso il concierge;
+- altri DM → normale chatbot clienti;
+- messaggi di gruppo → agent gruppi esistente;
+- status di consegna → inoltro al concierge, che li passa all'admin.
+
+Se l'URL concierge manca o non risponde, i DM staff restano fail-closed e non
+ricevono mai una risposta costruita con il prompt clienti.
 
 ---
 

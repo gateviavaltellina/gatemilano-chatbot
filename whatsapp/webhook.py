@@ -21,6 +21,12 @@ from notifications.discord import notify_conversation, notify_human_message, not
 from notifications.discord_bot import is_human_takeover
 from notifications.escalation import detect_sensitive
 from notifications.debug_trace import record as _trace
+from whatsapp.staff_router import (
+    build_staff_forward,
+    forward_staff_webhook,
+    normalize_wa_id,
+    parse_staff_phones,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -162,6 +168,23 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
     if body.get("object") != "whatsapp_business_account":
         return {"status": "ignored"}
 
+    # Il callback Meta resta sul chatbot clienti. I soli DM dei numeri staff e
+    # gli status di consegna vengono inoltrati al concierge in un payload
+    # filtrato e rifirmato: nessun messaggio cliente entra nel prompt staff.
+    staff_phones = parse_staff_phones(settings.wa_staff_phones)
+    staff_forward = build_staff_forward(body, staff_phones, settings.meta_app_secret)
+    if staff_forward:
+        if settings.wa_staff_assistant_webhook_url:
+            routed_raw, routed_signature = staff_forward
+            background_tasks.add_task(
+                forward_staff_webhook,
+                settings.wa_staff_assistant_webhook_url,
+                routed_raw,
+                routed_signature,
+            )
+        else:
+            logger.error("Router staff non configurato: manca WA_STAFF_ASSISTANT_WEBHOOK_URL")
+
     for entry in body.get("entry", []):
         for change in entry.get("changes", []):
             value = change.get("value") or {}
@@ -184,6 +207,11 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
                         continue
                     phone = msg.get("from") or ""
                     if not phone:
+                        continue
+                    # Fail-closed: un DM staff non deve mai cadere nel prompt del
+                    # chatbot clienti, anche se il servizio concierge è offline o
+                    # la sua URL è momentaneamente mal configurata.
+                    if normalize_wa_id(phone) in staff_phones:
                         continue
                     if msg.get("type") == "text":
                         text = ((msg.get("text") or {}).get("body") or "").strip()

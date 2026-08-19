@@ -62,6 +62,11 @@ class Settings(BaseSettings):
     # Bot loop prevention — numeri WhatsApp (E.164, es. "393331234567") da ignorare
     wa_ignored_phones: str = ""
 
+    # DM staff: i numeri in allowlist non entrano mai nel prompt clienti. Il loro
+    # webhook viene filtrato, rifirmato e inoltrato al concierge operativo.
+    wa_staff_phones: str = ""
+    wa_staff_assistant_webhook_url: str = ""
+
     # Agent staff nei gruppi WhatsApp: group_id consentiti (CSV). Vuoto = nessun
     # gruppo abilitato (l'agent di gruppo non risponde finché non li elenchi).
     wa_group_allowlist: str = ""
