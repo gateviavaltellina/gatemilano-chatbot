@@ -105,3 +105,34 @@ async def test_stato_includes_send_errors(monkeypatch):
     out = await handle_stato()
     assert "Ultimo errore di INVIO Instagram" in out
     assert "outside allowed window" in out
+
+
+# --- Webhook respinti per firma: visibili in !stato ---
+
+async def test_bad_signature_rejected_and_counted(monkeypatch):
+    from fastapi.testclient import TestClient
+    import main
+    import webhook_security as ws
+
+    monkeypatch.setattr("config.settings.meta_app_secret", "secret-giusto")
+    before, _ = ws.signature_reject_stats()
+
+    # senza header firma → 403 + contatore
+    r = TestClient(main.app).post("/webhook", json={"object": "whatsapp_business_account"})
+    assert r.status_code == 403
+    # con firma sbagliata → 403 + contatore
+    r2 = TestClient(main.app).post(
+        "/webhook", json={"object": "whatsapp_business_account"},
+        headers={"X-Hub-Signature-256": "sha256=deadbeef"})
+    assert r2.status_code == 403
+
+    after, last = ws.signature_reject_stats()
+    assert after == before + 2
+    assert last  # orario registrato
+
+    import notifications.token_health as th
+    from notifications.discord_bot import handle_stato
+    monkeypatch.setattr(th, "_targets", lambda: [])
+    out = await handle_stato()
+    assert "RESPINTI per firma non valida" in out
+    assert "META_APP_SECRET" in out

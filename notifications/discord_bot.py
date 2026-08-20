@@ -140,6 +140,33 @@ async def handle_stato() -> str:
     err = last_api_error()
     if err:
         lines.append(f"🧠 Ultimo errore API modello: {err}")
+    # Webhook RESPINTI per firma: se >0 e in crescita, META_APP_SECRET su Railway
+    # non corrisponde all'app secret dell'app Meta → il bot non riceve NIENTE.
+    from webhook_security import signature_reject_stats
+    rejected, last_rej = signature_reject_stats()
+    if rejected:
+        lines.append(
+            f"🚫 **Webhook RESPINTI per firma non valida: {rejected}** (ultimo: {last_rej})\n"
+            "   → META_APP_SECRET su Railway non corrisponde all'App Secret dell'app "
+            "Meta che chiama il webhook: correggilo e il bot torna a ricevere."
+        )
+    # Ultimi messaggi IN INGRESSO (traccia webhook): distingue "Meta non ci manda
+    # nulla" (il tuo DM di prova NON compare qui) da "arriva ma viene scartato"
+    # (compare con lo stage che spiega perché, es. mittente account del gruppo).
+    from notifications.debug_trace import recent
+    events = recent()[:6]
+    if events:
+        lines.append("📥 Ultimi messaggi in ingresso (più recente in alto):")
+        for ev in events:
+            extra = " · ".join(f"{k}={v}" for k, v in ev.items()
+                               if k not in ("at", "channel", "sender", "text", "stage"))
+            txt = (ev.get("text") or "").replace("\n", " ")[:60]
+            lines.append(
+                f"  `{ev['at'][11:]}` {ev['channel'].upper()} …{ev['sender']} [{ev['stage']}]"
+                + (f" {txt}" if txt else "") + (f" ({extra})" if extra else "")
+            )
+    else:
+        lines.append("📥 Nessun messaggio in ingresso tracciato dall'ultimo riavvio.")
     out = "\n".join(lines)
     return out if len(out) <= 1900 else out[:1900] + "\n…(troncato)"
 

@@ -141,6 +141,11 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
                     continue
                 all_bot_ids = _SARDINIA_IDS | _MILANO_IDS
                 if sender_id in all_bot_ids:
+                    # Anti-loop: DM in arrivo da un account del GRUPPO (es. staff che
+                    # scrive a @gatesardinia da @gatemilano) → ignorato di proposito.
+                    # Tracciato, così in !stato si vede che è arrivato ma scartato.
+                    _trace("ig", sender_id, ((event.get("message") or {}).get("text") or "")[:80],
+                           "scartato: mittente è un account del gruppo (anti-loop)")
                     continue
 
                 # Reaction a una nostra storia/messaggio → reagiamo a nostra volta (no testo)
