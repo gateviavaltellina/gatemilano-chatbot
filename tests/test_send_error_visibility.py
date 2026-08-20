@@ -136,3 +136,31 @@ async def test_bad_signature_rejected_and_counted(monkeypatch):
     out = await handle_stato()
     assert "RESPINTI per firma non valida" in out
     assert "META_APP_SECRET" in out
+
+
+async def test_second_ig_secret_accepted(monkeypatch):
+    # Webhook IG (Instagram Login) firmati col "Segreto dell'app Instagram",
+    # diverso dall'App Secret dell'app WhatsApp: la firma è valida se corrisponde
+    # a UNO QUALSIASI dei due secret configurati.
+    import hashlib as hl, hmac as hm, json as js
+    from fastapi.testclient import TestClient
+    import main
+
+    monkeypatch.setattr("config.settings.meta_app_secret", "secret-wa")
+    monkeypatch.setattr("config.settings.meta_app_secret_ig", "secret-ig")
+    body = js.dumps({"object": "instagram", "entry": []}).encode()
+
+    def _sig(secret):
+        return "sha256=" + hm.new(secret.encode(), body, hl.sha256).hexdigest()
+
+    c = TestClient(main.app)
+    for secret in ("secret-wa", "secret-ig"):
+        r = c.post("/webhook/instagram", content=body,
+                   headers={"Content-Type": "application/json",
+                            "X-Hub-Signature-256": _sig(secret)})
+        assert r.status_code == 200, secret
+
+    r_bad = c.post("/webhook/instagram", content=body,
+                   headers={"Content-Type": "application/json",
+                            "X-Hub-Signature-256": _sig("secret-sbagliato")})
+    assert r_bad.status_code == 403

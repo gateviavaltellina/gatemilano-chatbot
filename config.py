@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     # Meta app secret per la verifica firma webhook (X-Hub-Signature-256).
     # Se vuoto, la verifica è disabilitata (retro-compatibile, ma sconsigliato in prod).
     meta_app_secret: str = ""
+    # Secret AGGIUNTIVO per la verifica firma dei webhook: i webhook Instagram
+    # (Instagram Login, graph.instagram.com) sono firmati col "Segreto dell'app
+    # Instagram", che è DIVERSO dall'App Secret dell'app Meta principale (usato
+    # da WhatsApp). Caso reale 20/8: impostato META_APP_SECRET per il concierge
+    # → tutti i webhook IG respinti 403 finché non è stato accettato anche questo.
+    meta_app_secret_ig: str = ""
 
     # Instagram
     ig_api_url: str = "https://graph.instagram.com/v22.0"
