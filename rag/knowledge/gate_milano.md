@@ -82,7 +82,8 @@ Il calendario eventi è sincronizzato: quando nel contesto compare un blocco "PR
 **Documento obbligatorio:** originale (no fotocopie, no foto digitali)
 - Cittadini UE: carta d'identità o passaporto
 - Cittadini non UE: solo passaporto
-- Patente di guida: non accettata in nessun caso
+- Patente di guida: **ACCETTATA** come documento d'ingresso (conferma staff 20/8 — sostituisce la vecchia regola "non accettata": non dirla mai più)
+- Tessera sanitaria: NON valida come documento d'ingresso
 
 **Dress code:** libero — non siamo un locale da camicia. Vieni come vuoi, l'importante è che ci sia cura nel look.
 **Non ammessi:** pantaloncini, abbigliamento eccessivamente sportivo, abbigliamento che possa ledere la sensibilità degli altri partecipanti.

@@ -23,12 +23,36 @@ _warned_no_secret = False
 _rejected_count = 0
 _last_rejected_at = ""
 
+# Allarme Discord AUTOMATICO al primo respinto (poi al massimo uno l'ora): il
+# caso reale del 20/8 è rimasto invisibile per ore finché lo staff non ha
+# lanciato !stato a mano — un guasto di firma deve auto-segnalarsi come i token.
+_ALERT_COOLDOWN = 3600
+_last_alert_ts = 0.0
+
+
+async def _send_reject_alert() -> None:
+    from notifications.token_health import _alert
+    await _alert(
+        f"🚨 **WEBHOOK META RESPINTO — firma non valida** (totale respinti: {_rejected_count})\n"
+        "Il bot sta RIFIUTANDO messaggi in ingresso: i clienti di quel canale non ricevono "
+        "risposte. Causa tipica: secret errato su Railway — META_APP_SECRET (app Meta/"
+        "WhatsApp) o META_APP_SECRET_IG (Segreto dell'app Instagram). Lancia `!stato` per i dettagli."
+    )
+
 
 def _record_reject() -> None:
-    global _rejected_count, _last_rejected_at
+    global _rejected_count, _last_rejected_at, _last_alert_ts
+    import asyncio
     import time
     _rejected_count += 1
     _last_rejected_at = time.strftime("%d/%m %H:%M", time.localtime())
+    now = time.time()
+    if now - _last_alert_ts >= _ALERT_COOLDOWN:
+        _last_alert_ts = now
+        try:
+            asyncio.get_running_loop().create_task(_send_reject_alert())
+        except RuntimeError:
+            pass  # nessun event loop (test sincroni): niente alert, solo contatore
 
 
 def signature_reject_stats() -> tuple[int, str]:
