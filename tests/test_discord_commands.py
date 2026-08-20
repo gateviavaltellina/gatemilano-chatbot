@@ -121,3 +121,42 @@ async def test_handle_sync_sanity_failure(monkeypatch):
     monkeypatch.setattr(ss, "sync_all_venues", _boom)
     out = await db.handle_sync()
     assert "❌" in out and "Sanity" in out
+
+
+# --- !stato: diagnosi token/canali per "il bot non risponde più" ---
+
+async def test_handle_stato_reports_broken_token(monkeypatch):
+    import notifications.token_health as th
+    from notifications.discord_bot import handle_stato
+
+    monkeypatch.setattr(th, "_targets", lambda: [
+        ("Instagram @gatesardinia", "http://x/me", "tok1"),
+        ("WhatsApp Cloud API", "http://y", "tok2"),
+    ])
+
+    async def _ok(url, token):
+        if "x" in url:
+            return False, "[190/460] session invalidated because the user changed their password"
+        return True, "ok"
+    monkeypatch.setattr(th, "_token_ok", _ok)
+
+    out = await handle_stato()
+    assert "🚨 Instagram @gatesardinia" in out
+    assert "session invalidated" in out          # errore ESATTO di Meta, non dedotto
+    assert "✅ WhatsApp Cloud API: token valido" in out
+    assert "Eventi in memoria" in out
+
+
+async def test_handle_stato_all_ok(monkeypatch):
+    import notifications.token_health as th
+    from notifications.discord_bot import handle_stato
+
+    monkeypatch.setattr(th, "_targets", lambda: [("Instagram @gatemilano", "http://x/me", "t")])
+
+    async def _ok(url, token):
+        return True, "ok"
+    monkeypatch.setattr(th, "_token_ok", _ok)
+
+    out = await handle_stato()
+    assert "✅ Instagram @gatemilano: token valido" in out
+    assert "🚨" not in out
