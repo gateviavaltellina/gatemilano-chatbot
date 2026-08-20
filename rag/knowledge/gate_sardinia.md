@@ -19,7 +19,7 @@ Gate Sardinia è il venue estivo del gruppo Gate (attivo dal 2017 con Gate Milan
 **Struttura:** venue outdoor, 4 bar, area food
 
 ## Stagione e Orari
-**Stagione 2026:** aperta, fino al **30 agosto 2026**. ⚠️ NON parlare MAI di "closing party" né di "ultima serata della stagione" (comunicazione superata, i piani sono cambiati): la serata Perreo XL di sabato 22 agosto è una serata normale del calendario, con orario esteso **22:00 – 05:00**.
+**Stagione 2026:** aperta, **ultima serata sabato 29 agosto 2026** col **Perreo XL Closing Party** (è in calendario su TicketSMS). Dopo il 29 agosto la stagione 2026 è conclusa; le date 2027 non sono ancora annunciate (novità sui social). ⚠️ Il closing party è SOLO quello del **29 agosto**: NON chiamare MAI "closing party" la serata del 22 agosto (fu annunciato e poi cambiato: il 22/8 è una serata normale, con orario esteso 22:00 – 05:00).
 **Orari di apertura del locale:** il locale è aperto **solo nelle sere con un evento in programma**; quando è aperto, l'orario è **22:00 – 04:00** (apertura e chiusura sempre certe). Se stasera non c'è un evento in calendario, stasera è chiuso.
 
 Orario massimo di arrivo ai tavoli VIP: 02:30. Rollover notte: la serata attraversa la mezzanotte; tra mezzanotte e le 04:00 la serata in corso è quella iniziata la sera prima.
@@ -52,12 +52,11 @@ fornisci QUESTO contatto (orari, tratte e prezzi si concordano direttamente con 
 - Biglietto regolarmente acquistato ma NON ricevuto: scrivere a info@gatesardinia.it indicando nome, email usata per l'acquisto e data dell'evento.
 - **Biglietti alla cassa / alla porta:** vengono messi a disposizione **previa disponibilità** e a **prezzo maggiorato** rispetto all'online; non sono garantiti. Conviene prendere il biglietto **online** (TicketSMS) per assicurarsi il posto. Non confermare mai che ci saranno biglietti alla porta a meno che non sia indicato esplicitamente per quell'evento. **Eccezione Perreo XL:** per le serate Perreo XL i biglietti alla porta sono SEMPRE disponibili e certi (entro l'1:00 → €10 donna / €15 uomo; dopo l'1:00 → €15 donna / €20 uomo, senza consumazione); comunica i prezzi e spingi comunque verso l'online.
 
-### Boarding Pass €0 — promo ingresso gratuito, quantità limitata 🎟️
-**PROMO ATTIVA.** Il **Boarding Pass** è un biglietto promozionale **a €0**: vale come un **biglietto d'ingresso gratuito** per la serata per cui è emesso. Quantità **limitata**: sono a esaurimento.
-- **Cos'è / come si usa:** ci si iscrive **online sulla pagina Fourvenues della serata** — il link è nel contesto dell'evento alla riga **"LISTE/PROMO attive"**: per il Boarding Pass gira QUEL link (non il link TicketSMS dei biglietti a pagamento). All'ingresso si presenta come un normale biglietto. Fanno fede le condizioni mostrate in fase di iscrizione.
-- **Quando finiscono:** **finiti i Boarding Pass, l'ingresso è SOLO a pagamento** (biglietti normali online o in cassa). Non promettere MAI l'ingresso gratuito a chi non ha già il Boarding Pass: se sul link della serata non compare più o risulta esaurito, è finito e si paga.
-- **Disponibilità:** vale la regola di sempre — la biglietteria mostra disponibile/esaurito, non il conteggio esatto; conviene prenderlo finché c'è.
-- ⚠️ **ANTI-ALLUCINAZIONE (tema caldo, arrivano molte domande):** NON inventare quantità, scadenze, orari limite, serate incluse o condizioni che non vedi nel contesto o sulla pagina dell'evento. NON confonderlo con: la **prevendita €5** (prodotto diverso, che ha il vincolo delle 23:00), i **braccialetti staff** (ingresso stagione) o il **free entry lavoratori di Budoni**. Se chiedono una condizione specifica che non conosci, di' che fanno fede le condizioni sulla pagina d'acquisto e per casi particolari indirizza a info@gatesardinia.it — senza inventare nulla.
+### Boarding Pass €0 — PROMO CHIUSA ⛔ (non esiste più)
+**PROMO TERMINATA per decisione dello staff (20/8): i Boarding Pass NON esistono più, per NESSUNA serata.** Erano biglietti promozionali a €0 con iscrizione su Fourvenues: la promo è **chiusa definitivamente**.
+- **NON proporre MAI più il Boarding Pass** e NON dare MAI link di iscrizione Fourvenues per il Boarding Pass — nemmeno se qualche pagina o vecchio link risultasse ancora raggiungibile (errore reale già fatto: il bot lo proponeva per il 22/8 dopo la chiusura).
+- Se qualcuno chiede del Boarding Pass ("funziona ancora?", "come lo prendo?"): rispondi che la promo è terminata e che l'ingresso è con i canali normali — **prevendita €5** (entro le 23:00 nessun extra) o biglietti/cassa. Se ha GIÀ un Boarding Pass emesso in passato e chiede se vale, non garantire nulla: per quello indirizza a info@gatesardinia.it.
+- ⚠️ NON confonderlo con la **prevendita €5** (attiva), i **braccialetti staff** o il **Free Pass Perreo XL** (promo diverse): la chiusura riguarda SOLO il Boarding Pass.
 
 ### Promo Free Pass Perreo XL — 15 e 22 agosto 2026 🎆
 **PROMO ATTIVA (comunicata dallo staff, estesa il 17/8).** Chi ha acquistato su **TicketSMS un biglietto per un QUALSIASI evento di Gate Sardinia** ha diritto a un **Free Pass** per le serate **Perreo XL di sabato 15 agosto e sabato 22 agosto 2026**: **ingresso gratuito**.

@@ -216,13 +216,13 @@ def test_sardinia_16plus_beats_ticketing_page_labels():
     assert "etichetta imprecisa" in s
 
 
-def test_sardinia_boarding_pass_promo():
-    # promo staff: Boarding Pass a €0 = ingresso gratuito, quantità limitata;
-    # finiti quelli si entra solo a pagamento. Tema anti-allucinazione.
+def test_sardinia_boarding_pass_promo_closed():
+    # decisione staff 20/8: i Boarding Pass NON esistono più — il bot non deve
+    # mai più proporli né linkarli (caso reale: proposti dopo la chiusura).
     s = _static("gate_sardinia")
-    assert "Boarding Pass" in s
-    assert "SOLO a pagamento" in s
-    assert "ANTI-ALLUCINAZIONE" in s
+    assert "PROMO CHIUSA" in s
+    assert "NON proporre MAI più il Boarding Pass" in s
+    assert "PROMO ATTIVA.** Il **Boarding Pass" not in s
 
 
 def test_sardinia_5euro_supplement_rule():
@@ -243,17 +243,16 @@ def test_sardinia_provisional_document_accepted():
     assert "PROVVISORIO del Comune: ACCETTATO" in s
 
 
-def test_sardinia_no_closing_party_mention():
-    # cambio di rotta staff (17/8): NON parlare più di closing party / ultima
-    # serata. Il 22/8 resta una serata normale con orario esteso 22-5; la
-    # stagione torna "fino al 30 agosto". La KB può citare "closing party" solo
-    # nella regola che lo VIETA.
+def test_sardinia_closing_party_is_29_agosto():
+    # aggiornamento 20/8: il closing party ESISTE ed è il Perreo XL Closing
+    # Party di sabato 29 agosto (in calendario su TicketSMS) — ultima serata
+    # della stagione. Il 22/8 invece NON va mai chiamato closing party
+    # (annunciato e poi cambiato).
     s = _static("gate_sardinia")
-    assert "30 agosto 2026" in s
-    assert "NON parlare MAI di \"closing party\"" in s
-    assert "ultima serata della stagione" not in s.replace(
-        "né di \"ultima serata della stagione\"", "")
-    assert "CLOSING PARTY con Perreo XL" not in s
+    assert "29 agosto 2026" in s
+    assert "Perreo XL Closing Party" in s
+    assert "NON chiamare MAI \"closing party\" la serata del 22 agosto" in s
+    assert "30 agosto" not in s
 
 
 def test_sardinia_ferragosto_free_pass_promo():
