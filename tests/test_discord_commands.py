@@ -160,3 +160,56 @@ async def test_handle_stato_all_ok(monkeypatch):
     out = await handle_stato()
     assert "✅ Instagram @gatemilano: token valido" in out
     assert "🚨" not in out
+
+
+async def test_handle_stato_shows_inbound_trace(monkeypatch):
+    import notifications.token_health as th
+    import notifications.debug_trace as dt
+    from notifications.discord_bot import handle_stato
+
+    monkeypatch.setattr(th, "_targets", lambda: [])
+    dt._events.clear()
+    dt.record("ig", "1234567890", "ciao, info?", "webhook in ingresso")
+    dt.record("ig", "24588954374135134", "test da account gruppo",
+              "scartato: mittente è un account del gruppo (anti-loop)")
+
+    out = await handle_stato()
+    assert "Ultimi messaggi in ingresso" in out
+    assert "webhook in ingresso" in out
+    assert "account del gruppo" in out       # lo scarto anti-loop è visibile
+    assert "567890" in out                   # coda id mittente
+    dt._events.clear()
+
+
+async def test_ig_bot_sender_dropped_but_traced(monkeypatch):
+    # DM da un account del gruppo (es. @gatemilano → @gatesardinia): niente
+    # risposta (anti-loop), ma l'evento resta tracciato per la diagnosi !stato.
+    from fastapi.testclient import TestClient
+    import main
+    import instagram.webhook as igw
+    import notifications.debug_trace as dt
+
+    dt._events.clear()
+    called = []
+
+    async def _spy(*a, **k):
+        called.append(a)
+    monkeypatch.setattr(igw, "process_ig_message", _spy)
+
+    body = {
+        "object": "instagram",
+        "entry": [{
+            "id": "17841452139166980",
+            "messaging": [{
+                "sender": {"id": "17841405933946552"},   # account Milano del gruppo
+                "recipient": {"id": "17841452139166980"},
+                "message": {"mid": "grp-1", "text": "test interno"},
+            }],
+        }],
+    }
+    r = TestClient(main.app).post("/webhook/instagram", json=body)
+    assert r.status_code == 200
+    assert called == []                                  # nessuna risposta
+    stages = [e["stage"] for e in dt.recent()]
+    assert any("account del gruppo" in s for s in stages)
+    dt._events.clear()
