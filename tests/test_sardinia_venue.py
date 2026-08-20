@@ -223,6 +223,9 @@ def test_sardinia_boarding_pass_promo_closed():
     assert "PROMO CHIUSA" in s
     assert "NON proporre MAI più il Boarding Pass" in s
     assert "PROMO ATTIVA.** Il **Boarding Pass" not in s
+    # e a chi chiede del Boarding Pass per il 15/22 va SEMPRE proposto il Free
+    # Pass come alternativa (biglietto TicketSMS di un altro evento → gratis)
+    assert "Alternativa da proporre SEMPRE" in s
 
 
 def test_sardinia_5euro_supplement_rule():
