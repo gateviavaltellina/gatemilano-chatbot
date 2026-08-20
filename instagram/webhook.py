@@ -179,19 +179,24 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
                 # ricevuta...): l'URL è in attachments[].payload.url → la passiamo al
                 # modello con la vision. Distinta dalla story reply (contenuto NOSTRO).
                 chat_image_url = None
+                chat_audio_url = None
                 if att_type == "image" and not is_story_reply:
                     chat_image_url = ((attachments[0] or {}).get("payload") or {}).get("url") or None
-                if text or chat_image_url:
-                    _trace("ig", sender_id, text or "[foto]", "webhook in ingresso", account=ig_account_id)
+                elif att_type == "audio" and not is_story_reply:
+                    # vocale in DM → trascritto (Whisper) e trattato come testo
+                    chat_audio_url = ((attachments[0] or {}).get("payload") or {}).get("url") or None
+                if text or chat_image_url or chat_audio_url:
+                    _trace("ig", sender_id, text or ("[vocale]" if chat_audio_url else "[foto]"),
+                           "webhook in ingresso", account=ig_account_id)
                     background_tasks.add_task(
                         process_ig_message, ig_account_id, sender_id, text,
-                        is_story_reply, story_image_url, chat_image_url,
+                        is_story_reply, story_image_url, chat_image_url, chat_audio_url,
                     )
                 elif att_type in ("story_mention", "share"):
                     # menzione/post nella storia → mettiamo un like ❤️ invece di un testo
                     background_tasks.add_task(process_ig_story_mention, ig_account_id, sender_id, msg_id)
                 elif attachments:
-                    # vocale/video in DM → fallback testuale (qui il cliente cerca aiuto)
+                    # video/altro in DM → fallback testuale (qui il cliente cerca aiuto)
                     background_tasks.add_task(process_ig_non_text, ig_account_id, sender_id)
             except Exception:
                 logger.exception("IG: evento malformato saltato")
@@ -210,9 +215,11 @@ _ERROR_FALLBACK_REPLY = (
 
 async def process_ig_message(ig_account_id: str, sender_id: str, text: str,
                              is_story_reply: bool = False, story_image_url: str | None = None,
-                             chat_image_url: str | None = None) -> None:
+                             chat_image_url: str | None = None,
+                             chat_audio_url: str | None = None) -> None:
     try:
-        await _process_ig_message(ig_account_id, sender_id, text, is_story_reply, story_image_url, chat_image_url)
+        await _process_ig_message(ig_account_id, sender_id, text, is_story_reply,
+                                  story_image_url, chat_image_url, chat_audio_url)
     except Exception:
         logger.exception("IG: errore processando il messaggio di %s — fallback + alert staff", sender_id)
         venue = _venue_for_account(ig_account_id)
@@ -241,18 +248,37 @@ _STORY_REPLY_HINT = (
 
 async def _process_ig_message(ig_account_id: str, sender_id: str, text: str,
                               is_story_reply: bool = False, story_image_url: str | None = None,
-                              chat_image_url: str | None = None) -> None:
+                              chat_image_url: str | None = None,
+                              chat_audio_url: str | None = None) -> None:
     venue = _venue_for_account(ig_account_id)
     conv = _get_conversation(ig_account_id, sender_id)
     phone = f"ig:{sender_id[:12]}"
     context = {"ig_account_id": ig_account_id, "sender_id": sender_id}
-    display = text or "[📷 foto]"
+    display = text or ("[🎤 vocale]" if chat_audio_url else "[📷 foto]")
     _trace("ig", sender_id, display, "ricevuto", venue=venue, account=ig_account_id)
 
     if is_human_takeover(phone):
         _trace("ig", sender_id, display, "takeover (bot in pausa)")
         await notify_human_message(phone, venue, display, context)
         return
+
+    # Vocale in chat: va trascritto PRIMA di costruire il contesto RAG (che
+    # dipende dal testo). Se la trascrizione non è configurata o fallisce e non
+    # c'è altro testo → fallback gentile di sempre.
+    if chat_audio_url:
+        from ai.transcribe import transcribe_audio, transcription_enabled, fetch_media_bytes
+        transcript = None
+        if transcription_enabled():
+            media = await fetch_media_bytes(chat_audio_url)
+            if media:
+                transcript = await transcribe_audio(media[0], media[1])
+        if transcript:
+            text = f"{text}\n{transcript}".strip() if text else transcript
+            display = f"[🎤 vocale] {transcript}"
+            _trace("ig", sender_id, transcript, "vocale trascritto")
+        elif not text:
+            await process_ig_non_text(ig_account_id, sender_id)
+            return
 
     rag_context, _ = await build_rag_context(venue, text, history=conv.get("history", []))
     # Immagini, due casi distinti:

@@ -5,6 +5,9 @@ class Settings(BaseSettings):
     # Anthropic
     anthropic_api_key: str
     model: str = "claude-sonnet-5"
+    # Chiave OpenAI per la SOLA trascrizione dei vocali (Whisper). Vuota =
+    # trascrizione disattivata → i vocali ricevono il fallback "scrivimi a parole".
+    openai_api_key: str = ""
 
     # Fallback LLM per il rilevamento venue (WhatsApp, numero condiviso): quando le
     # keyword non bastano, un mini-classificatore capisce Milano/Sardegna anche dai

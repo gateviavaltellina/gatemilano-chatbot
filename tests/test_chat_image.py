@@ -87,7 +87,7 @@ def _spy_ig(monkeypatch):
     calls = []
 
     async def _spy(ig_account_id, sender_id, text, is_story_reply=False,
-                   story_image_url=None, chat_image_url=None):
+                   story_image_url=None, chat_image_url=None, chat_audio_url=None):
         calls.append({"sender": sender_id, "text": text, "story": is_story_reply,
                       "chat_url": chat_image_url})
     monkeypatch.setattr(igw, "process_ig_message", _spy)

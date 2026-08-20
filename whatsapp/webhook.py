@@ -149,16 +149,19 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
                     attachments = msg.get("attachments") or []
                     att = attachments[0] or {} if attachments else {}
                     chat_image_url = None
+                    chat_audio_url = None
                     if att.get("type") == "image":
                         chat_image_url = (att.get("payload") or {}).get("url") or None
-                    if text or chat_image_url:
-                        # testo, o foto in chat → il bot la scarica e la LEGGE (vision)
+                    elif att.get("type") == "audio":
+                        chat_audio_url = (att.get("payload") or {}).get("url") or None
+                    if text or chat_image_url or chat_audio_url:
+                        # testo, foto (vision) o vocale (trascrizione) → pipeline completa
                         background_tasks.add_task(
                             process_ig_message, ig_account_id, sender_id, text,
-                            False, None, chat_image_url,
+                            False, None, chat_image_url, chat_audio_url,
                         )
                     elif attachments:
-                        # vocale/video/condivisione senza testo → fallback gentile,
+                        # video/condivisione senza testo → fallback gentile,
                         # non silenzio (prima veniva scartato senza risposta)
                         background_tasks.add_task(process_ig_non_text, ig_account_id, sender_id)
                 except Exception:
@@ -228,6 +231,15 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
                             background_tasks.add_task(process_image_message, phone, msg_id, media_id, caption)
                         else:
                             background_tasks.add_task(process_non_text, phone, msg_id, "image")
+                    elif msg.get("type") in ("audio", "voice"):
+                        # vocale in chat → trascritto (Whisper) e trattato come testo;
+                        # se la trascrizione non è configurata/fallisce → fallback gentile
+                        aud = msg.get("audio") or msg.get("voice") or {}
+                        media_id = aud.get("id") or ""
+                        if media_id:
+                            background_tasks.add_task(process_audio_message, phone, msg_id, media_id)
+                        else:
+                            background_tasks.add_task(process_non_text, phone, msg_id, msg.get("type") or "audio")
                     else:
                         # vocali/video/ecc.: niente più silenzio — fallback gentile
                         background_tasks.add_task(process_non_text, phone, msg_id, msg.get("type") or "")
@@ -263,6 +275,60 @@ async def process_non_text(phone: str, msg_id: str, mtype: str) -> None:
     reply = _NON_TEXT_FALLBACK.get(mtype, _NON_TEXT_DEFAULT)
     sent = await send_message(phone, reply)
     await notify_conversation(phone, venue, f"[{label} ricevuto]", reply, delivered=sent)
+
+
+# --- Vocali in chat: trascrizione ---
+
+async def process_audio_message(phone: str, msg_id: str, media_id: str) -> None:
+    try:
+        await _process_audio_message(phone, msg_id, media_id)
+    except Exception:
+        logger.exception("WA: errore processando il vocale di %s — fallback + alert staff", phone)
+        venue = _get_conversation(phone).get("venue") or "gate_milano"
+        sent = await send_message(phone, _ERROR_FALLBACK_REPLY)
+        await notify_conversation(
+            phone, venue, "[🎤 vocale]",
+            "[⚠️ ERRORE TECNICO — il bot NON ha risposto al vocale]\n"
+            f"Messaggio di cortesia {'inviato' if sent else 'NON inviato'} al cliente.",
+            delivered=False,
+        )
+
+
+async def _process_audio_message(phone: str, msg_id: str, media_id: str) -> None:
+    """Vocale del cliente: risolve il media WhatsApp, lo scarica (header auth),
+    lo TRASCRIVE con Whisper e lo passa alla normale pipeline testo. Se la
+    trascrizione non è configurata o fallisce → fallback gentile di sempre."""
+    from ai.transcribe import transcribe_audio, transcription_enabled, fetch_media_bytes
+    if phone in _get_ignored_phones():
+        return
+    await mark_as_read(msg_id)
+    conv = _get_conversation(phone)
+
+    if is_human_takeover(phone):
+        venue = conv.get("venue") or "gate_milano"
+        _trace("wa", phone, "[🎤 vocale]", "takeover (bot in pausa)")
+        await notify_human_message(phone, venue, "[🎤 vocale]")
+        return
+
+    transcript = None
+    if transcription_enabled():
+        url = await get_media_url(media_id)
+        auth = {"Authorization": f"Bearer {settings.wa_access_token}"}
+        media = await fetch_media_bytes(url, headers=auth) if url else None
+        if media:
+            transcript = await transcribe_audio(media[0], media[1])
+
+    if not transcript:
+        venue = conv.get("venue") or "gate_milano"
+        reply = _NON_TEXT_FALLBACK.get("audio", _NON_TEXT_DEFAULT)
+        sent = await send_message(phone, reply)
+        await notify_conversation(phone, venue, "[🎤 vocale (non trascritto)]", reply, delivered=sent)
+        return
+
+    _trace("wa", phone, transcript, "vocale trascritto")
+    # Da qui è un normale messaggio di testo: stessa pipeline (venue, RAG,
+    # history, drinklist, escalation, relay — il relay mostra la trascrizione).
+    await _process_message(phone, msg_id, transcript)
 
 
 # --- Foto in chat: vision ---
