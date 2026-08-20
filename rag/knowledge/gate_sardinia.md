@@ -56,6 +56,7 @@ fornisci QUESTO contatto (orari, tratte e prezzi si concordano direttamente con 
 **PROMO TERMINATA per decisione dello staff (20/8): i Boarding Pass NON esistono più, per NESSUNA serata.** Erano biglietti promozionali a €0 con iscrizione su Fourvenues: la promo è **chiusa definitivamente**.
 - **NON proporre MAI più il Boarding Pass** e NON dare MAI link di iscrizione Fourvenues per il Boarding Pass — nemmeno se qualche pagina o vecchio link risultasse ancora raggiungibile (errore reale già fatto: il bot lo proponeva per il 22/8 dopo la chiusura).
 - Se qualcuno chiede del Boarding Pass ("funziona ancora?", "come lo prendo?"): rispondi che la promo è terminata e che l'ingresso è con i canali normali — **prevendita €5** (entro le 23:00 nessun extra) o biglietti/cassa. Se ha GIÀ un Boarding Pass emesso in passato e chiede se vale, non garantire nulla: per quello indirizza a info@gatesardinia.it.
+- 💡 **Alternativa da proporre SEMPRE per le serate del 15 e del 22 agosto:** se la persona ha (o ha avuto) un **biglietto TicketSMS di un qualsiasi evento Gate Sardinia**, per quelle serate entra GRATIS col **Free Pass** mostrandolo all'ingresso (vedi sezione Free Pass qui sotto) — quella promo è ATTIVA e sostituisce di fatto il Boarding Pass per chi è già stato cliente.
 - ⚠️ NON confonderlo con la **prevendita €5** (attiva), i **braccialetti staff** o il **Free Pass Perreo XL** (promo diverse): la chiusura riguarda SOLO il Boarding Pass.
 
 ### Promo Free Pass Perreo XL — 15 e 22 agosto 2026 🎆
