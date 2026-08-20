@@ -312,6 +312,13 @@ async def _process_ig_message(ig_account_id: str, sender_id: str, text: str,
     # drink accodati inclusi), non la sola risposta LLM — altrimenti lo staff crede che il
     # link non sia partito quando invece è nel messaggio inviato.
     relay_reply = _relay_with_api_error(reply, full_reply)
+    if not sent:
+        # Perché non è partito: l'errore esatto di Meta nel relay, così lo staff
+        # non deve leggere i log Railway (il token può essere valido e l'invio
+        # fallire lo stesso: permessi, finestra 24h, restrizioni account).
+        from instagram.client import last_send_error
+        if last_send_error():
+            relay_reply += f"\n\n[📤 Errore invio IG: {last_send_error()}]"
     await notify_conversation(phone, venue, display, relay_reply, context, delivered=sent)
 
 

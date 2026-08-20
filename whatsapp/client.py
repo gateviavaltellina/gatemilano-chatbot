@@ -7,6 +7,24 @@ logger = logging.getLogger(__name__)
 def _wa_base() -> str:
     return f"{settings.wa_api_url}/{settings.wa_phone_number_id}"
 
+# Ultimo errore di INVIO WhatsApp (con orario): diagnosi visibile via !stato e
+# relay, senza leggere i log Railway (speculare a instagram.client.last_send_error).
+_last_send_error: str = ""
+
+
+def _record_send_error(detail: str) -> None:
+    global _last_send_error
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    ts = datetime.now(ZoneInfo("Europe/Rome")).strftime("%d/%m %H:%M")
+    _last_send_error = f"{ts} — {detail}"
+
+
+def last_send_error() -> str:
+    """Ultimo errore di invio WhatsApp registrato ('' se nessuno)."""
+    return _last_send_error
+
+
 async def send_message(to: str, text: str) -> bool:
     headers = {
         "Authorization": f"Bearer {settings.wa_access_token}",
@@ -27,9 +45,11 @@ async def send_message(to: str, text: str) -> bool:
             return True
         except httpx.HTTPStatusError as e:
             logger.error("Errore invio WhatsApp a %s: %s — %s", to, e, e.response.text)
+            _record_send_error(f"HTTP {e.response.status_code}: {e.response.text[:400]}")
             return False
         except Exception as e:
             logger.error("Errore invio WhatsApp: %s", e)
+            _record_send_error(f"{type(e).__name__}: {e}")
             return False
 
 
