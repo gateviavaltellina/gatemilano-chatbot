@@ -44,8 +44,12 @@ async def verify_meta_signature(request: Request) -> bytes:
     Se META_APP_SECRET non è configurato, salta la verifica (log una volta).
     """
     raw = await request.body()
-    secret = settings.meta_app_secret
-    if not secret:
+    # Due firmatari possibili sullo stesso endpoint: l'app Meta principale
+    # (WhatsApp, META_APP_SECRET) e l'app Instagram Login (webhook IG, firmati
+    # col "Segreto dell'app Instagram" → META_APP_SECRET_IG). La firma è valida
+    # se corrisponde a UNO QUALSIASI dei secret configurati.
+    secrets = [s for s in (settings.meta_app_secret, settings.meta_app_secret_ig) if s]
+    if not secrets:
         global _warned_no_secret
         if not _warned_no_secret:
             logger.warning(
@@ -61,11 +65,12 @@ async def verify_meta_signature(request: Request) -> bytes:
         _record_reject()
         raise HTTPException(status_code=403, detail="Firma mancante")
 
-    expected = hmac.new(secret.encode(), raw, hashlib.sha256).hexdigest()
     received = header.split("=", 1)[1]
-    if not hmac.compare_digest(expected, received):
-        logger.warning("Firma webhook non valida — richiesta respinta")
-        _record_reject()
-        raise HTTPException(status_code=403, detail="Firma non valida")
+    for secret in secrets:
+        expected = hmac.new(secret.encode(), raw, hashlib.sha256).hexdigest()
+        if hmac.compare_digest(expected, received):
+            return raw
 
-    return raw
+    logger.warning("Firma webhook non valida — richiesta respinta")
+    _record_reject()
+    raise HTTPException(status_code=403, detail="Firma non valida")

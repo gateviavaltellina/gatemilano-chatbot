@@ -147,8 +147,9 @@ async def handle_stato() -> str:
     if rejected:
         lines.append(
             f"🚫 **Webhook RESPINTI per firma non valida: {rejected}** (ultimo: {last_rej})\n"
-            "   → META_APP_SECRET su Railway non corrisponde all'App Secret dell'app "
-            "Meta che chiama il webhook: correggilo e il bot torna a ricevere."
+            "   → Il secret su Railway non corrisponde a chi firma: META_APP_SECRET = "
+            "App Secret dell'app Meta (WhatsApp); META_APP_SECRET_IG = 'Segreto "
+            "dell'app Instagram' (prodotto Instagram Login) per i webhook IG."
         )
     # Ultimi messaggi IN INGRESSO (traccia webhook): distingue "Meta non ci manda
     # nulla" (il tuo DM di prova NON compare qui) da "arriva ma viene scartato"
