@@ -340,10 +340,15 @@ def _fv_lists_str(fv_index: dict, date_iso: str, title: str) -> str:
         head += f" — iscrizione online: {info['url']}"
     lines = [head]
     for l in info["lists"]:
+        # Boarding Pass: promo CHIUSA per decisione staff (20/8) — anche se la
+        # lista risultasse ancora aperta su Fourvenues NON va più proposta né
+        # linkata (il bot la offriva a un cliente dopo la chiusura, caso reale).
         if l["slug"] == "boarding-pass":
-            lines.append("- BOARDING PASS: €0, ingresso gratuito promozionale, quantità limitata — vale finché risulta disponibile sulla pagina di iscrizione")
-        elif l["slug"] == "pagamento-5-euro":
+            continue
+        if l["slug"] == "pagamento-5-euro":
             lines.append("- Prevendita €5 (Pagamento 5 Euro): €5 anticipati online — entro le 23:00 nessun extra; dopo le 23:00 supplemento in cassa (+€5 donna / +€10 uomo)")
+    if len(lines) == 1:
+        return ""  # solo Boarding Pass (chiuso) → nessun blocco liste
     return "\n".join(lines)
 
 
