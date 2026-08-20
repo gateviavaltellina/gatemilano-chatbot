@@ -100,6 +100,42 @@ async def handle_sync() -> str:
             f"Milano {count('gate_milano')}, Sardegna {count('gate_sardinia')}.")
 
 
+async def handle_stato() -> str:
+    """!stato — diagnosi rapida per lo staff quando 'il bot non risponde':
+    verifica DAL VIVO i token Meta (IG Milano/Sardegna + WhatsApp) riportando
+    l'errore ESATTO di Meta se un canale è rotto (caso tipico: su Discord la
+    risposta appare, su IG il cliente non riceve = token invalido → gli invii
+    falliscono), più eventi in memoria e ultimo errore del modello."""
+    from notifications.token_health import _targets, _token_ok
+    from rag.event_store import count
+    from ai.claude_client import last_api_error
+    lines = ["🩺 **Stato bot**"]
+    targets = _targets()
+    if not targets:
+        lines.append("⚠️ Nessun token configurato (env vuote?)")
+    for name, url, token in targets:
+        ok, detail = await _token_ok(url, token)
+        if ok is True:
+            lines.append(f"✅ {name}: token valido")
+        elif ok is False:
+            lines.append(
+                f"🚨 {name}: **TOKEN NON VALIDO** — {detail}\n"
+                "   → Gli invii da questo canale FALLISCONO. Rigenera il token su "
+                "Meta Business e aggiorna la variabile su Railway."
+            )
+        else:
+            lines.append(f"⚠️ {name}: check non concludente ({detail})")
+    lines.append(
+        f"📅 Eventi in memoria: Milano {count('gate_milano')}, "
+        f"Sardegna {count('gate_sardinia')}"
+    )
+    err = last_api_error()
+    if err:
+        lines.append(f"🧠 Ultimo errore API modello: {err}")
+    out = "\n".join(lines)
+    return out if len(out) <= 1900 else out[:1900] + "\n…(troncato)"
+
+
 def parse_correction_command(text: str):
     """Riconosce i comandi correzione. Ritorna (cmd, payload) o (None, '').
 
@@ -199,6 +235,13 @@ async def on_message(message: discord.Message):
     if content == "!sync":
         await message.add_reaction("🔄")
         await message.reply(await handle_sync(), mention_author=False)
+        return
+
+    # !stato: diagnosi read-only (token Meta dal vivo, eventi, errori modello),
+    # in QUALUNQUE canale come !eventi. Per i casi "il bot non risponde più".
+    if content == "!stato":
+        await message.add_reaction("🩺")
+        await message.reply(await handle_stato(), mention_author=False)
         return
 
     # Le notifiche WhatsApp e Instagram vivono su canali Discord DIVERSI. Una reply
