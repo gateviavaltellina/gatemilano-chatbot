@@ -129,6 +129,14 @@ async def handle_stato() -> str:
         f"📅 Eventi in memoria: Milano {count('gate_milano')}, "
         f"Sardegna {count('gate_sardinia')}"
     )
+    # Errori di INVIO: un token può risultare valido mentre gli invii falliscono
+    # (permessi messaging, finestra 24h, restrizioni account). Qui l'errore esatto.
+    from instagram.client import last_send_error as ig_send_err
+    from whatsapp.client import last_send_error as wa_send_err
+    if ig_send_err():
+        lines.append(f"📤 Ultimo errore di INVIO Instagram: {ig_send_err()}")
+    if wa_send_err():
+        lines.append(f"📤 Ultimo errore di INVIO WhatsApp: {wa_send_err()}")
     err = last_api_error()
     if err:
         lines.append(f"🧠 Ultimo errore API modello: {err}")

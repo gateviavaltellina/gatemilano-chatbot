@@ -339,6 +339,10 @@ async def _process_image_message(phone: str, msg_id: str, media_id: str, caption
     relay_reply = reply
     if reply.startswith(API_ERROR_FALLBACK_PREFIX):
         relay_reply += f"\n\n[⚠️ ERRORE API modello (non mostrato al cliente): {last_api_error() or 'sconosciuto'}]"
+    if not sent:
+        from whatsapp.client import last_send_error as _wa_send_err
+        if _wa_send_err():
+            relay_reply += f"\n\n[📤 Errore invio WA: {_wa_send_err()}]"
     await notify_conversation(phone, venue, display, relay_reply, delivered=sent)
 
 
@@ -433,4 +437,10 @@ async def _process_message(phone: str, msg_id: str, text: str) -> None:
     # di un guasto sistematico: credito esaurito / modello inesistente / 401), non al cliente.
     if reply.startswith(API_ERROR_FALLBACK_PREFIX):
         relay_reply += f"\n\n[⚠️ ERRORE API modello (non mostrato al cliente): {last_api_error() or 'sconosciuto'}]"
+    if not sent:
+        # Perché non è partito: l'errore esatto di Meta nel relay (il token può
+        # essere valido e l'invio fallire lo stesso), senza leggere i log Railway.
+        from whatsapp.client import last_send_error as _wa_send_err
+        if _wa_send_err():
+            relay_reply += f"\n\n[📤 Errore invio WA: {_wa_send_err()}]"
     await notify_conversation(phone, venue, text, relay_reply, delivered=sent)

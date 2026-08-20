@@ -82,6 +82,26 @@ def split_for_ig(text: str, limit: int = _IG_TEXT_LIMIT) -> list[str]:
     return [p for p in parts if p]
 
 
+# Ultimo errore di INVIO Instagram (con orario): diagnosi visibile allo staff via
+# !stato e relay, senza dover leggere i log Railway. Un token può risultare valido
+# (/me → 200) mentre l'invio fallisce per altro (permesso messaging mancante,
+# finestra 24h, restrizione dell'account): qui resta l'errore esatto di Meta.
+_last_send_error: str = ""
+
+
+def _record_send_error(detail: str) -> None:
+    global _last_send_error
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    ts = datetime.now(ZoneInfo("Europe/Rome")).strftime("%d/%m %H:%M")
+    _last_send_error = f"{ts} — {detail}"
+
+
+def last_send_error() -> str:
+    """Ultimo errore di invio IG registrato ('' se nessuno)."""
+    return _last_send_error
+
+
 async def _post_ig_payload(ig_account_id: str, token: str, payload: dict, what: str) -> bool:
     """POST all'API IG con UN retry sugli errori transitori (timeout / 5xx).
     Gli errori permanenti (4xx: token scaduto, testo rifiutato) non si ritentano."""
@@ -103,12 +123,14 @@ async def _post_ig_payload(ig_account_id: str, token: str, payload: dict, what: 
                     logger.warning("IG %s: HTTP %s al tentativo 1, riprovo — %s", what, e.response.status_code, body)
                     continue
                 logger.error("Errore IG %s: %s — %s", what, e, body)
+                _record_send_error(f"HTTP {e.response.status_code} su {what}: {body}")
                 return False
             except Exception as e:
                 if attempt == 1:
                     logger.warning("IG %s: errore transitorio al tentativo 1, riprovo — %s", what, e)
                     continue
                 logger.error("Errore IG %s: %s", what, e)
+                _record_send_error(f"{type(e).__name__} su {what}: {e}")
                 return False
     return False
 
@@ -120,6 +142,7 @@ async def send_ig_message(ig_account_id: str, recipient_id: str, text: str) -> b
     token = _token_for_account(ig_account_id)
     if not token:
         logger.warning("Nessun token IG per account %s", ig_account_id)
+        _record_send_error(f"nessun token IG per account {ig_account_id}")
         return False
     chunks = split_for_ig(text)
     if not chunks:
