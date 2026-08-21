@@ -76,6 +76,12 @@ class Settings(BaseSettings):
     wa_staff_phones: str = ""
     wa_staff_assistant_webhook_url: str = ""
 
+    # DM diretti al Concierge canonico dell'admin (separati dal precedente
+    # assistente staff). I numeri sono fail-closed: non entrano mai nel bot clienti.
+    wa_concierge_phones: str = ""
+    whatsapp_concierge_bridge_url: str = ""
+    whatsapp_concierge_bridge_secret: str = ""
+
     # Agent staff nei gruppi WhatsApp: group_id consentiti (CSV). Vuoto = nessun
     # gruppo abilitato (l'agent di gruppo non risponde finché non li elenchi).
     wa_group_allowlist: str = ""

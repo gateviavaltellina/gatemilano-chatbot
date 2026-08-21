@@ -21,6 +21,7 @@ from notifications.discord import notify_conversation, notify_human_message, not
 from notifications.discord_bot import is_human_takeover
 from notifications.escalation import detect_sensitive
 from notifications.debug_trace import record as _trace
+from whatsapp.concierge_bridge import request_concierge_reply, split_whatsapp_reply
 from whatsapp.staff_router import (
     build_staff_forward,
     forward_staff_webhook,
@@ -175,7 +176,14 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
     # gli status di consegna vengono inoltrati al concierge in un payload
     # filtrato e rifirmato: nessun messaggio cliente entra nel prompt staff.
     staff_phones = parse_staff_phones(settings.wa_staff_phones)
-    staff_forward = build_staff_forward(body, staff_phones, settings.meta_app_secret)
+    concierge_phones = parse_staff_phones(settings.wa_concierge_phones)
+    # Un numero Concierge non deve essere inoltrato anche al precedente
+    # assistente staff qualora le due allowlist si sovrappongano.
+    staff_forward = build_staff_forward(
+        body,
+        staff_phones - concierge_phones,
+        settings.meta_app_secret,
+    )
     if staff_forward:
         if settings.wa_staff_assistant_webhook_url:
             routed_raw, routed_signature = staff_forward
@@ -191,6 +199,7 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
     for entry in body.get("entry", []):
         for change in entry.get("changes", []):
             value = change.get("value") or {}
+            phone_number_id = str((value.get("metadata") or {}).get("phone_number_id") or "")
             for msg in value.get("messages") or []:
                 # Ogni messaggio è isolato: un payload malformato non deve mai
                 # far perdere gli ALTRI messaggi del batch.
@@ -211,10 +220,29 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
                     phone = msg.get("from") or ""
                     if not phone:
                         continue
+                    normalized_phone = normalize_wa_id(phone)
+                    if normalized_phone in concierge_phones:
+                        if msg.get("type") == "text":
+                            text = ((msg.get("text") or {}).get("body") or "").strip()
+                            if text:
+                                background_tasks.add_task(
+                                    process_concierge_message,
+                                    normalized_phone,
+                                    msg_id,
+                                    phone_number_id,
+                                    text,
+                                )
+                        else:
+                            background_tasks.add_task(
+                                process_concierge_non_text,
+                                normalized_phone,
+                                msg_id,
+                            )
+                        continue
                     # Fail-closed: un DM staff non deve mai cadere nel prompt del
                     # chatbot clienti, anche se il servizio concierge è offline o
                     # la sua URL è momentaneamente mal configurata.
-                    if normalize_wa_id(phone) in staff_phones:
+                    if normalized_phone in staff_phones:
                         continue
                     if msg.get("type") == "text":
                         text = ((msg.get("text") or {}).get("body") or "").strip()
@@ -247,6 +275,46 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
                     logger.exception("WA: messaggio malformato saltato")
 
     return {"status": "ok"}
+
+
+_CONCIERGE_ERROR_REPLY = (
+    "Il Concierge è momentaneamente non disponibile. "
+    "Riprova tra un minuto: la richiesta non è stata passata al bot clienti."
+)
+_CONCIERGE_TEXT_ONLY_REPLY = (
+    "Il Concierge operativo gestisce qui le richieste testuali. "
+    "Scrivimi la domanda in un messaggio e la elaboro subito."
+)
+
+
+async def process_concierge_message(
+    phone: str,
+    msg_id: str,
+    phone_number_id: str,
+    text: str,
+) -> None:
+    """Instrada un DM allowlistato senza consultare takeover o prompt clienti."""
+    await mark_as_read(msg_id)
+    reply = await request_concierge_reply(
+        bridge_url=settings.whatsapp_concierge_bridge_url,
+        bridge_secret=settings.whatsapp_concierge_bridge_secret,
+        message_id=msg_id,
+        sender_wa_id=phone,
+        phone_number_id=phone_number_id,
+        text=text,
+    )
+    chunks = split_whatsapp_reply(reply or _CONCIERGE_ERROR_REPLY)
+    for chunk in chunks:
+        if not await send_message(phone, chunk):
+            logger.error("Concierge WhatsApp: invio risposta fallito")
+            break
+
+
+async def process_concierge_non_text(phone: str, msg_id: str) -> None:
+    await mark_as_read(msg_id)
+    sent = await send_message(phone, _CONCIERGE_TEXT_ONLY_REPLY)
+    if not sent:
+        logger.error("Concierge WhatsApp: invio richiesta testo fallito")
 
 
 # --- Messaggi non testuali (vocali, foto, video, documenti...) ---

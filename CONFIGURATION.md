@@ -73,6 +73,11 @@ su questa app (manca la capability): Instagram richiede i token "Instagram Login
   E.164 senza `+` (es. `393331234567`)
 - `WA_STAFF_ASSISTANT_WEBHOOK_URL` — webhook HTTPS del concierge operativo. Il
   chatbot clienti inoltra solo DM allowlistati e status, con firma HMAC valida
+- `WA_CONCIERGE_PHONES` — CSV dei numeri abilitati al Concierge canonico
+  dell'admin; ha precedenza su `WA_STAFF_PHONES`
+- `WHATSAPP_CONCIERGE_BRIDGE_URL` — endpoint HTTPS
+  `/api/agent/channels/whatsapp` dell'admin
+- `WHATSAPP_CONCIERGE_BRIDGE_SECRET` — secret HMAC dedicato condiviso con l'admin
 
 **Non segrete ma necessarie:**
 - `IG_API_URL = https://graph.instagram.com/v22.0`
@@ -87,6 +92,8 @@ su questa app (manca la capability): Instagram richiede i token "Instagram Login
 Il callback Meta deve restare su questo chatbot. Per ogni webhook WhatsApp:
 
 - DM da `WA_STAFF_PHONES` → payload filtrato e rifirmato verso il concierge;
+- DM da `WA_CONCIERGE_PHONES` → richiesta firmata al Concierge canonico e risposta
+  nello stesso thread WhatsApp (mai prompt clienti o takeover Discord);
 - altri DM → normale chatbot clienti;
 - messaggi di gruppo → agent gruppi esistente;
 - status di consegna → inoltro al concierge, che li passa all'admin.
