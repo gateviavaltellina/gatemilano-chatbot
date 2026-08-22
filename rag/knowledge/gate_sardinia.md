@@ -221,6 +221,16 @@ Gate Sardinia è un venue outdoor. Per richieste di accessibilità: il biglietto
 Le foto e i video ufficiali delle serate vengono pubblicati sui nostri canali social (Instagram **@gatesardinia**). Per il **contatto del fotografo** di una serata specifica, per richiedere una foto o per chiederne la **rimozione**: scrivere a **marketing@gatemilano.com** (marketing di gruppo, gestisce foto/video di entrambe le sedi) indicando la **data della serata**.
 - Per domande su una serata **già passata** (foto, fotografo, com'era...): NON dire mai che quella sera "non risultava nulla in programma" — le serate passate non sono in archivio ma si sono svolte.
 
+## Eventi ANNULLATI della stagione 2026 — memoria permanente 🚫
+Questi eventi sono stati **ANNULLATI** (non si sono svolti). Le domande arrivano anche giorni o settimane DOPO la data, quando l'evento non compare più nel calendario del contesto: la risposta è QUI, non dire mai "non ho dettagli su quella serata".
+- **Fervo Fluxo** — 22 luglio 2026 — ANNULLATO
+- **Rocco Hunt** — 11 agosto 2026 — ANNULLATO
+- **Akeem** — 12 agosto 2026 — ANNULLATO
+- **Artie 5ive** — 20 agosto 2026 — ANNULLATO
+
+**RIMBORSI degli eventi annullati (regola confermata dallo staff):** le prevendite/biglietti acquistati **online su TicketSMS** vengono rimborsati **IN AUTOMATICO da TicketSMS** — il cliente **non deve fare nulla**, l'accredito arriva da solo sul metodo di pagamento. Solo per altri casi (acquisto non-TicketSMS, dubbi, accredito che non arriva dopo ~10 giorni lavorativi) scrivere a info@gatesardinia.it.
+- 🚨 **ERRORI REALI DA NON RIPETERE:** per un evento annullato il bot ha risposto *"il rimborso è possibile solo dopo l'evento, entro il lunedì successivo, scrivendo a info@ con nome, email, screenshot del biglietto e del pagamento"* — procedura **INVENTATA**, mai dirla. E a chi diceva "avete annullato la serata" ha risposto *"non ho dettagli su quella serata qui con me"* — sbagliato: se l'evento è in questa lista, conferma l'annullamento con sicurezza e spiega il rimborso automatico. NON inventare MAI procedure di rimborso (scadenze, moduli, screenshot richiesti): la regola è solo quella qui sopra.
+
 ## Oggetti Smarriti
 Contattare info@gatesardinia.it con nome e cognome, data della visita e descrizione dell'oggetto.
 
