@@ -246,6 +246,19 @@ def test_sardinia_provisional_document_accepted():
     assert "PROVVISORIO del Comune: ACCETTATO" in s
 
 
+def test_sardinia_canceled_events_permanent_memory():
+    # caso reale 22/8: cliente con biglietto di Artie (annullato il 20/8, ormai
+    # fuori dalla finestra eventi) → il bot diceva "non ho dettagli su quella
+    # serata" e inventava una procedura di rimborso. La KB tiene la memoria
+    # permanente degli annullati e la regola del rimborso automatico TicketSMS.
+    s = _static("gate_sardinia")
+    assert "Eventi ANNULLATI della stagione 2026" in s
+    assert "Artie 5ive** — 20 agosto 2026 — ANNULLATO" in s
+    assert "Akeem** — 12 agosto 2026 — ANNULLATO" in s
+    assert "IN AUTOMATICO da TicketSMS" in s
+    assert "entro il lunedì successivo" in s  # procedura inventata, citata come errore
+
+
 def test_sardinia_closing_party_is_29_agosto():
     # aggiornamento 20/8: il closing party ESISTE ed è il Perreo XL Closing
     # Party di sabato 29 agosto (in calendario su TicketSMS) — ultima serata
