@@ -268,6 +268,11 @@ def test_sardinia_ferragosto_free_pass_promo():
     assert "mostralo all'ingresso" in s
     assert "Perreo XL" in s
     assert "SOLO biglietti TICKETSMS" in s
+    # caso reale 22/8: "col biglietto di Artie entro stasera?" → il bot rispondeva
+    # "non trasferibile" e mandava a comprare. La KB cita l'errore e la risposta giusta.
+    assert "non è trasferibile" in s          # citato come errore da NON ripetere
+    assert "entri GRATIS" in s
+    assert "anche se la sua serata è passata o è stata annullata" in s
 
 
 def test_sardinia_vip_tables_are_16plus():
