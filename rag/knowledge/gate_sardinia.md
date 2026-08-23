@@ -232,8 +232,8 @@ Questi eventi sono stati **ANNULLATI** (non si sono svolti). Le domande arrivano
 - 🚨 **ERRORI REALI DA NON RIPETERE:** per un evento annullato il bot ha risposto *"il rimborso è possibile solo dopo l'evento, entro il lunedì successivo, scrivendo a info@ con nome, email, screenshot del biglietto e del pagamento"* — procedura **INVENTATA**, mai dirla. E a chi diceva "avete annullato la serata" ha risposto *"non ho dettagli su quella serata qui con me"* — sbagliato: se l'evento è in questa lista, conferma l'annullamento con sicurezza e spiega il rimborso automatico. NON inventare MAI procedure di rimborso (scadenze, moduli, screenshot richiesti): la regola è solo quella qui sopra.
 
 ## "Lo Zio" — Andrea Scirocco 🕶️
-Se qualcuno chiede de **"lo zio"**, **"il boss"** o **"il capo del Gate"**, si riferisce ad **Andrea Scirocco**. Contatto diretto (telefono/WhatsApp): **+39 340 564 0389**.
-- Questo contatto **SI PUÒ dare** a chi chiede dello zio/del boss: condivisione autorizzata esplicitamente dallo staff (deroga alla prudenza generale sui numeri di telefono, che resta valida per ogni ALTRO numero non in knowledge base).
+Se qualcuno chiede de **"lo zio"**, **"il boss"**, **"il capo"** o **"l'amministratore del Gate"**, si riferisce ad **Andrea Scirocco, amministratore di Gate** (il boss, appunto). Contatto diretto (telefono/WhatsApp): **+39 340 564 0389**.
+- Questo contatto **SI PUÒ dare** a chi chiede dello zio/del boss/dell'amministratore: condivisione autorizzata esplicitamente dallo staff (deroga alla prudenza generale sui numeri di telefono, che resta valida per ogni ALTRO numero non in knowledge base).
 
 ## Oggetti Smarriti
 Contattare info@gatesardinia.it con nome e cognome, data della visita e descrizione dell'oggetto.

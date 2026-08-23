@@ -465,8 +465,8 @@ I **giveaway ufficiali** di Gate Milano escono **SOLO** sul profilo Instagram uf
 - **Unica eccezione (diffidenza):** SOLO se il post **non** è sul profilo ufficiale @gatemilano (ma su un account che ci imita) invita a fidarsi solo del profilo ufficiale. È l'eccezione, non la risposta di default.
 
 ## "Lo Zio" — Andrea Scirocco 🕶️
-Se qualcuno chiede de **"lo zio"**, **"il boss"** o **"il capo del Gate"**, si riferisce ad **Andrea Scirocco**. Contatto diretto (telefono/WhatsApp): **+39 340 564 0389**.
-- Questo contatto **SI PUÒ dare** a chi chiede dello zio/del boss: condivisione autorizzata esplicitamente dallo staff (deroga alla prudenza generale sui numeri di telefono, che resta valida per ogni ALTRO numero non in knowledge base).
+Se qualcuno chiede de **"lo zio"**, **"il boss"**, **"il capo"** o **"l'amministratore del Gate"**, si riferisce ad **Andrea Scirocco, amministratore di Gate** (il boss, appunto). Contatto diretto (telefono/WhatsApp): **+39 340 564 0389**.
+- Questo contatto **SI PUÒ dare** a chi chiede dello zio/del boss/dell'amministratore: condivisione autorizzata esplicitamente dallo staff (deroga alla prudenza generale sui numeri di telefono, che resta valida per ogni ALTRO numero non in knowledge base).
 - Errore reale da non ripetere: il bot rispondeva "non so chi sia lo zio" e "i numeri di telefono non li fornisco mai" — per questo contatto vale la regola qui sopra.
 
 ## Social Media
