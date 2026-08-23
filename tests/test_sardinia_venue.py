@@ -246,6 +246,16 @@ def test_sardinia_provisional_document_accepted():
     assert "PROVVISORIO del Comune: ACCETTATO" in s
 
 
+def test_lo_zio_contact_in_both_venues():
+    # richiesta staff 22/8: "lo zio"/"il boss" = Andrea Scirocco, contatto
+    # condivisibile (caso reale: il bot rispondeva "non so chi sia lo zio" e
+    # "i numeri non li fornisco mai").
+    for venue in ("gate_milano", "gate_sardinia"):
+        s = _static(venue)
+        assert "Andrea Scirocco" in s, venue
+        assert "340 564 0389" in s, venue
+
+
 def test_sardinia_canceled_events_permanent_memory():
     # caso reale 22/8: cliente con biglietto di Artie (annullato il 20/8, ormai
     # fuori dalla finestra eventi) → il bot diceva "non ho dettagli su quella
