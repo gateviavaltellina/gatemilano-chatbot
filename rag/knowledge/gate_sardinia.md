@@ -1,10 +1,16 @@
 # Gate Sardinia — Informazioni Ufficiali
 
-## ✅ STAGIONE APERTA — il locale è operativo
-Gate Sardinia **è aperto**: la stagione è iniziata. Presenta gli eventi in calendario come confermati e rispondi con entusiasmo. Fonte di verità di date e orari: il calendario sincronizzato (Sanity) nel contesto.
-- Orari: usa SEMPRE la riga "Orari:" dell'evento nel contesto se presente (serate speciali/opening party possono avere orari diversi da quelli standard); altrimenti vale l'orario di apertura del locale: **22:00 – 04:00**, tutte le sere.
-- Rimborsi dei biglietti del primo weekend (3-4-5 luglio, date posticipate): erano **automatici** via TicketSMS (accredito entro 10 giorni lavorativi, nessuna azione del cliente). Se qualcuno chiede ancora di quei rimborsi e dopo 10 giorni lavorativi non è arrivato nulla: scrivere a info@gatesardinia.it. Non citare questa nota a chi non chiede dei rimborsi del primo weekend.
+## 🌅 STAGIONE 2026 CONCLUSA — il locale è chiuso (comunicazione "in sordina")
+La stagione 2026 di Gate Sardinia **si è conclusa**: il locale è **chiuso** e non ci sono altre serate in programma. **Anche la serata del 29 agosto (Perreo XL Closing Party) NON si farà** — è stata annullata insieme alla chiusura anticipata.
+
+**COME COMUNICARLO (regola di tono, da big company della comunicazione):**
+- **Senza drammi**: niente scuse prolungate, niente toni tristi o giustificazioni. Un saluto elegante, leggero, sicuro: la stagione è stata bellissima e si è chiusa qui.
+- **NON dire MAI esplicitamente** che "riapriamo l'anno prossimo", "ci vediamo nel 2027", "torneremo" — nessuna promessa e nessuna data futura.
+- **MA lascia SEMPRE un'onda di mistero e speranza**: chiudi con qualcosa tipo *"tenete d'occhio i nostri canali… 👀"*, *"il viaggio di Gate non finisce mai davvero"*, *"quando c'è qualcosa da sapere, lo saprete per primi"*. Mai sbilanciarsi, mai chiudere la porta.
+- Chi ha **biglietti per il 29/8**: conferma con serenità che la serata non si farà e che il rimborso degli acquisti TicketSMS è **automatico** (nessuna azione richiesta); per casi particolari info@gatesardinia.it.
+- Per domande su serate passate, rimborsi, oggetti smarriti, foto: rispondi normalmente con le info di questa KB (il servizio clienti resta attivo).
 - Adatta SEMPRE la lingua dell'utente (se scrive in inglese, rispondi in inglese).
+- Rimborsi dei biglietti del primo weekend (3-4-5 luglio, date posticipate): erano **automatici** via TicketSMS. Se dopo 10 giorni lavorativi non è arrivato nulla: info@gatesardinia.it. Non citare questa nota a chi non la chiede.
 
 ## Venue
 Gate Sardinia è il venue estivo del gruppo Gate (attivo dal 2017 con Gate Milano), situato a Budoni in Sardegna. Venue outdoor con 2.500 mq e capacità 1.500 persone. Unisce l'energia urbana di Gate Milano con lo spirito dell'isola.
@@ -19,7 +25,7 @@ Gate Sardinia è il venue estivo del gruppo Gate (attivo dal 2017 con Gate Milan
 **Struttura:** venue outdoor, 4 bar, area food
 
 ## Stagione e Orari
-**Stagione 2026:** aperta, **ultima serata sabato 29 agosto 2026** col **Perreo XL Closing Party** (è in calendario su TicketSMS). Dopo il 29 agosto la stagione 2026 è conclusa; le date 2027 non sono ancora annunciate (novità sui social). ⚠️ Il closing party è SOLO quello del **29 agosto**: NON chiamare MAI "closing party" la serata del 22 agosto (fu annunciato e poi cambiato: il 22/8 è una serata normale, con orario esteso 22:00 – 05:00).
+**Stagione 2026: CONCLUSA.** L'ultima serata svolta è stata il **Perreo XL di sabato 22 agosto**; la serata del **29 agosto (Perreo XL Closing Party) è stata ANNULLATA** e non si farà (chiusura anticipata). Nessuna data futura annunciata: vale la regola di tono "in sordina, mistero e speranza" della sezione in cima.
 **Orari di apertura del locale:** il locale è aperto **solo nelle sere con un evento in programma**; quando è aperto, l'orario è **22:00 – 04:00** (apertura e chiusura sempre certe). Se stasera non c'è un evento in calendario, stasera è chiuso.
 
 Orario massimo di arrivo ai tavoli VIP: 02:30. Rollover notte: la serata attraversa la mezzanotte; tra mezzanotte e le 04:00 la serata in corso è quella iniziata la sera prima.
@@ -227,6 +233,7 @@ Questi eventi sono stati **ANNULLATI** (non si sono svolti). Le domande arrivano
 - **Rocco Hunt** — 11 agosto 2026 — ANNULLATO
 - **Akeem** — 12 agosto 2026 — ANNULLATO
 - **Artie 5ive** — 20 agosto 2026 — ANNULLATO
+- **Perreo XL Closing Party** — 29 agosto 2026 — ANNULLATO (chiusura anticipata della stagione: rispondi col tono "in sordina" della sezione STAGIONE CONCLUSA, senza drammi)
 
 **RIMBORSI degli eventi annullati (regola confermata dallo staff):** le prevendite/biglietti acquistati **online su TicketSMS** vengono rimborsati **IN AUTOMATICO da TicketSMS** — il cliente **non deve fare nulla**, l'accredito arriva da solo sul metodo di pagamento. Solo per altri casi (acquisto non-TicketSMS, dubbi, accredito che non arriva dopo ~10 giorni lavorativi) scrivere a info@gatesardinia.it.
 - 🚨 **ERRORI REALI DA NON RIPETERE:** per un evento annullato il bot ha risposto *"il rimborso è possibile solo dopo l'evento, entro il lunedì successivo, scrivendo a info@ con nome, email, screenshot del biglietto e del pagamento"* — procedura **INVENTATA**, mai dirla. E a chi diceva "avete annullato la serata" ha risposto *"non ho dettagli su quella serata qui con me"* — sbagliato: se l'evento è in questa lista, conferma l'annullamento con sicurezza e spiega il rimborso automatico. NON inventare MAI procedure di rimborso (scadenze, moduli, screenshot richiesti): la regola è solo quella qui sopra.

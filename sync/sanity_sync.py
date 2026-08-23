@@ -240,6 +240,9 @@ def _parse_ticketsms_event(data: dict) -> dict:
 # ma canceled=false su TicketSMS → il bot lo consigliava come prossimo evento.
 _MANUAL_CANCELED_SLUGS = {
     "Akeem-Budoni-Gate-Sardinia-12-08-2026",
+    # Chiusura anticipata stagione (decisione staff 23/8): la serata del 29
+    # non si farà. Annullamento "in sordina": la KB detta il tono della risposta.
+    "Perreo-Xl-Closing-Party-Budoni-Gate-Sardinia-29-08-2026",
 }
 
 

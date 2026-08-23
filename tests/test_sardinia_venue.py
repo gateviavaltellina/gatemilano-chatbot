@@ -273,16 +273,17 @@ def test_sardinia_canceled_events_permanent_memory():
     assert "entro il lunedì successivo" in s  # procedura inventata, citata come errore
 
 
-def test_sardinia_closing_party_is_29_agosto():
-    # aggiornamento 20/8: il closing party ESISTE ed è il Perreo XL Closing
-    # Party di sabato 29 agosto (in calendario su TicketSMS) — ultima serata
-    # della stagione. Il 22/8 invece NON va mai chiamato closing party
-    # (annunciato e poi cambiato).
+def test_sardinia_season_closed_in_sordina():
+    # chiusura anticipata (23/8): la serata del 29 non si farà, stagione conclusa.
+    # Tono richiesto dallo staff: senza drammi, MAI promettere l'anno prossimo,
+    # ma sempre "un'onda di mistero e speranza" (stile big company).
     s = _static("gate_sardinia")
-    assert "29 agosto 2026" in s
-    assert "Perreo XL Closing Party" in s
-    assert "NON chiamare MAI \"closing party\" la serata del 22 agosto" in s
-    assert "30 agosto" not in s
+    assert "STAGIONE 2026 CONCLUSA" in s
+    assert "29 agosto (Perreo XL Closing Party) NON si farà" in s
+    assert "mistero e speranza" in s
+    assert "NON dire MAI esplicitamente" in s      # niente promesse sul futuro
+    assert "Perreo XL Closing Party** — 29 agosto 2026 — ANNULLATO" in s
+    assert "STAGIONE APERTA" not in s
 
 
 def test_sardinia_ferragosto_free_pass_promo():
