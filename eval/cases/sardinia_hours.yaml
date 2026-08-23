@@ -22,12 +22,11 @@
   rubric:
     must:
     - Chiarisce che a febbraio NON si è aperti
-    - Indica che la stagione va dal 3 luglio al 29 agosto 2026
-    - Eventualmente invita a tornare in estate / durante la stagione
-    - Tono cordiale da staff di Gate Sardinia
+    - Chiarisce che a febbraio non si è aperti (Gate Sardinia è un venue estivo) e che la stagione 2026 si è conclusa
+    - Tono leggero e sicuro, con un tocco di mistero/speranza sui canali social per le novità
     must_not:
     - NON dire che a febbraio è aperto
-    - NON inventare date di stagione diverse da 3 luglio–29 agosto 2026
+    - NON promettere esplicitamente riaperture o date future (es. "riapriamo l'anno prossimo")
     - NON dichiararsi bot/AI
 - id: sard-hours-season-3
   category: hours-season
@@ -86,13 +85,13 @@
   user_message: fino a quando va avanti la stagione? a settembre ci siete ancora?
   rubric:
     must:
-    - Indica che la stagione termina sabato 29 agosto 2026 con il Perreo XL Closing Party
-    - Chiarisce che a settembre non si è più aperti / si chiude il 29 agosto
+    - Chiarisce che la stagione 2026 si è conclusa e a settembre non si è aperti
+    - Tono senza drammi, con un tocco di mistero/speranza (es. tenere d'occhio i canali social)
     - Può ricordare che la stagione è iniziata il 3 luglio 2026
     - Tono cordiale
     must_not:
     - NON dire che si è aperti a settembre
-    - NON inventare date di stagione diverse da 3 luglio–29 agosto 2026
+    - NON promettere esplicitamente riaperture o date future
     - NON dichiararsi bot/AI
 - id: sard-timetable-1
   category: timetable
