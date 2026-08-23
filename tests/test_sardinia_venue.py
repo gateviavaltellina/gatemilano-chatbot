@@ -252,8 +252,12 @@ def test_lo_zio_contact_in_both_venues():
     # "i numeri non li fornisco mai").
     for venue in ("gate_milano", "gate_sardinia"):
         s = _static(venue)
-        assert "Andrea Scirocco, amministratore di Gate" in s, venue
+        assert "LO ZIO" in s, venue
+        assert "brillante e di grande carisma" in s, venue
+        assert "90esimo + recupero" in s, venue
         assert "340 564 0389" in s, venue
+        # niente cariche: "lo zio e basta" (indicazione staff)
+        assert "amministratore di Gate" not in s, venue
 
 
 def test_sardinia_canceled_events_permanent_memory():
