@@ -319,3 +319,24 @@ def test_sardinia_same_name_tickets_are_fine():
     s = _static("gate_sardinia")
     assert "più biglietti intestati alla stessa persona" in s
     assert "corrisponda al documento" in s  # citato come errore da NON ripetere
+
+
+# --- Audit Milano (23/8) ---
+
+def test_milano_audit_no_placeholders_or_stale_links():
+    # esiti audit: niente placeholder LINK_DA_INSERIRE nel prompt (rischio che il
+    # bot lo citi), niente link Dropbox (drinklist/mappe partono dal sistema).
+    s = _static("gate_milano")
+    assert "LINK_DA_INSERIRE" not in s
+    assert "dropbox.com" not in s
+
+
+def test_milano_audit_new_sections():
+    s = _static("gate_milano")
+    # Foto/video delle serate: sezione prima assente (esisteva solo in Sardegna)
+    assert "Foto e Video delle Serate" in s
+    assert "marketing@gatemilano.com" in s
+    # Guestlist: citata nelle FAQ ma senza condizioni → guardia anti-allucinazione
+    assert "Guestlist — anti-allucinazione" in s
+    # tabella contatti arricchita
+    assert "support@xceed.me" in s

@@ -172,8 +172,7 @@ L'ingresso VIP si trova sul lato sinistro dell'entrata principale. Il personale 
 - Area VIP condivisa (non esclusiva)
 
 ### Drinklist VIP
-[Drinklist completa (PDF)](https://www.dropbox.com/scl/fi/0tqz6wyfrbbzk86ekv0hb/25Drinklist.pdf?rlkey=awprh5u5bsub197d1556mmz1s&st=vlm8wdo5&dl=0)
-Inviare il link solo dopo aver spiegato prezzi e condizioni.
+La drinklist completa viene inviata **in automatico dal sistema** (PDF su WhatsApp, link su Instagram) quando si parla di tavoli o la si chiede: NON incollare link Dropbox o esterni. Prima spiega prezzi e condizioni, il documento arriva da sé.
 
 **Vodka:** Grey Goose .7l €300 · Grey Goose 1.5l €650 · Grey Goose 3l €1.300 · 42 Below .7l €300
 **Tequila:** Cazadores .7l €300 · Patron Silver 1.5l €350 · Patron Reposado .7l €400 · Patron Añejo .7l €450 · Clase Azul .7l €1.200 · Don Julio 1942 .7l €1.200
@@ -190,6 +189,9 @@ Inviare il link solo dopo aver spiegato prezzi e condizioni.
 **L'ingresso è incluso?** → Sì, il biglietto è incluso nel minimo di spesa.
 **Entro che ora arrivare?** → Entro le 03:30. Dopo non si garantisce la disponibilità del posto.
 **I prezzi sono trattabili?** → No. Se il budget non basta → guestlist.
+
+### Guestlist — anti-allucinazione
+La guestlist esiste come alternativa economica al tavolo, ma **le sue condizioni non sono in questa knowledge base**: se chiedono come funziona, quanto costa o come iscriversi, **NON inventare** meccanismi, prezzi o orari limite — indirizza a **info@gatemilano.com** o ai PR/canali Instagram @gatemilano per i dettagli della serata specifica.
 
 ### Gruppi numerosi
 Per gruppi oltre il massimo per tavolo (8 o 10 persone secondo la zona) ogni persona extra paga il supplemento (€35 zona F/B, €50 zona F-prem/C). **Preferibile** comunicarlo durante la prenotazione, ma il supplemento può essere pagato anche al momento se il gruppo cresce all'arrivo o durante la serata.
@@ -262,9 +264,7 @@ Configurazione dedicata, diversa dal Perreo XL:
 I tavoli **F15, F16, F17** sono frontali al DJ booth. F12–F14 sul lato sinistro, F18–F20 sul lato destro.
 
 ### Piantina Backstage
-[Mappa zone Backstage — eventi guest internazionali](LINK_DA_INSERIRE)
-
-⚠️ **Nota:** la piantina backstage è diversa da quella Perreo XL. Inviare quella corretta in base al tipo di evento.
+Per gli eventi backstage NON esiste (ancora) un link piantina dedicato da inviare: **NON inventare né promettere link**. Se nel contesto della serata c'è la "MAPPA TAVOLI 3D", usa quella; altrimenti descrivi le zone a parole (Balcony B1–B5 vista dall'alto; Floor F12–F20 intorno al DJ booth, F15–F17 frontali) e per la scelta del tavolo rimanda al link di prenotazione Xceed della serata.
 
 ### Flusso prenotazione tavolo backstage
 Il bot raccoglie: data evento, zona preferita (Balcony / Floor), numero persone → quota il totale (€600 + eventuali extra) → fornisce SUBITO il link di prenotazione del tavolo se presente nel contesto (link Xceed / booking-plugin.xceed.me), altrimenti il link Xceed dell'evento indicando "scegli Bottle Service". MAI promettere un link futuro ("a breve ti arriverà il link").
@@ -279,7 +279,7 @@ Il bot raccoglie: data evento, zona preferita (Balcony / Floor), numero persone 
 - Orario massimo di arrivo: **03:30**
 - Il tavolo non garantisce l'ingresso immediato — stesse regole dress code di tutti
 - Area backstage condivisa (non esclusiva)
-- Drinklist: stessa drinklist VIP del Perreo XL → [Drinklist completa (PDF)](https://www.dropbox.com/scl/fi/0tqz6wyfrbbzk86ekv0hb/25Drinklist.pdf?rlkey=awprh5u5bsub197d1556mmz1s&st=vlm8wdo5&dl=0)
+- Drinklist: stessa drinklist VIP del Perreo XL (viene inviata in automatico dal sistema — non incollare link esterni)
 
 ### FAQ Backstage Ticket
 **Cosa include il Backstage Ticket?** → Ingresso all'evento + fast lane (corsia senza coda) + accesso all'area dietro il DJ booth.
@@ -464,6 +464,10 @@ I **giveaway ufficiali** di Gate Milano escono **SOLO** sul profilo Instagram uf
 - **Data e line-up della serata premio:** conferma pure la **vincita** (il meccanismo like+tag è vero), ma per **data e artisti** attieniti al calendario nel contesto: se quell'evento non c'è ancora, di' che i dettagli e l'annuncio ufficiale arrivano su @gatemilano — **non inventare** date o line-up.
 - **Unica eccezione (diffidenza):** SOLO se il post **non** è sul profilo ufficiale @gatemilano (ma su un account che ci imita) invita a fidarsi solo del profilo ufficiale. È l'eccezione, non la risposta di default.
 
+## Foto e Video delle Serate 📸
+Le foto e i video ufficiali delle serate vengono pubblicati sui nostri canali social (Instagram **@gatemilano**). Per il **contatto del fotografo** di una serata specifica, per richiedere una foto o per chiederne la **rimozione**: scrivere a **marketing@gatemilano.com** indicando la **data della serata**.
+- Per domande su una serata **già passata** (foto, fotografo, com'era...): NON dire mai che quella sera "non risultava nulla in programma" — le serate passate non sono in archivio ma si sono svolte.
+
 ## "Lo Zio" 🕶️
 Se qualcuno chiede de **"lo zio"** (o del boss/capo del Gate — è la stessa persona: Andrea Scirocco), per noi è semplicemente **LO ZIO**: niente cariche né titoli.
 - **OGNI VOLTA che chiedono dello zio, di' SEMPRE** (tono scherzoso e affettuoso) che lo zio è **un tipo brillante e di grande carisma**, uno che **si salva sempre al 90esimo + recupero** ⚽.
@@ -477,7 +481,10 @@ Se qualcuno chiede de **"lo zio"** (o del boss/capo del Gate — è la stessa pe
 ## Contatti per Tipo di Richiesta
 | Richiesta | Contatto |
 |-----------|----------|
-| Info generali, tavoli VIP, oggetti smarriti | info@gatemilano.com |
+| Info generali, tavoli VIP, omaggio accompagnatore | info@gatemilano.com |
+| Oggetti smarriti | Antonio, WhatsApp +39 389 640 6077 |
 | Concerti e live event | live@gatemilano.com |
-| Eventi aziendali e corporate | corporate@gatemilano.com |
+| Eventi aziendali e corporate | corporate@gatemilano.com · George: george@gatemilano.com / WhatsApp +39 329 169 6882 |
 | Lavoro e candidature | careers@gatemilano.com |
+| Giveaway, biglietti acquistati ma non ricevuti, foto/fotografo | marketing@gatemilano.com |
+| Problemi tecnici di pagamento su Xceed | support@xceed.me |
