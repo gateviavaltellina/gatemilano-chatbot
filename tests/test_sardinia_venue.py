@@ -359,3 +359,15 @@ def test_milano_carl_cox_tables_page():
     assert "gatemilano.it/carlcox/tavoli" in s
     assert "mappa 3D del Carroponte" in s
     assert "+39 391 487 6443" in s
+
+
+def test_milano_carl_cox_dedicated_drinklist():
+    # drinklist evento-specifica Carl Cox (prezzi propri, ~doppi dello standard):
+    # PDF in static/ + prezzi in KB, con divieto di citare i prezzi standard.
+    import os as _os
+    root = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    assert _os.path.exists(_os.path.join(root, "static", "drinklist_carlcox.pdf"))
+    s = _static("gate_milano")
+    assert "static/drinklist_carlcox.pdf" in s
+    assert "Grey Goose .7l €600" in s          # prezzo Carl Cox
+    assert "NON quelli della drinklist standard" in s
