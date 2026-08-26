@@ -200,6 +200,8 @@ Per gruppi oltre il massimo per tavolo (8 o 10 persone secondo la zona) ogni per
 
 Per gli eventi con DJ guest internazionale (es. Claptone, Disciples, ecc.) la configurazione è diversa dal Perreo XL standard. Sono disponibili due opzioni: **Backstage Tickets** (singoli) e **Backstage Tables** (con bottle service).
 
+⚠️ **QUESTA SEZIONE VALE SOLO PER GLI EVENTI IN VIA VALTELLINA.** Per gli eventi **off-site** (es. Carl Cox al Carroponte) i prezzi e le configurazioni backstage sono **quelli della pagina evento nel contesto** (es. Carl Cox: Backstage Ticket €200) — NON applicare MAI la tabella qui sotto (€25–40) né i tavoli €600 a un evento off-site. Se per un evento off-site chiedono **tavoli** in backstage e nel contesto non c'è un blocco tavoli: non inventare — raccogli la richiesta (data, numero persone) e indirizza a info@gatemilano.com per una proposta dedicata.
+
 ### Backstage Ticket — Cosa include
 
 Il Backstage Ticket include:
