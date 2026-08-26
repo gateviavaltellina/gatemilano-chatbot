@@ -207,6 +207,13 @@ I tavoli per Carl Cox **ESISTONO** e hanno una pagina dedicata sul sito: **https
 - A CHIUNQUE chieda **tavoli o backstage per Carl Cox**: manda **SUBITO** quel link (ed eventualmente il WhatsApp). NON dire mai "non ci sono tavoli per questo evento" e NON limitarti al Backstage Ticket.
 - Il **Backstage Ticket €200** (su Xceed) resta l'alternativa per chi vuole il singolo ingresso all'area backstage senza tavolo.
 
+**Drinklist DEDICATA Carl Cox** — ⚠️ per i tavoli di Carl Cox valgono QUESTI prezzi (evento speciale), NON quelli della drinklist standard di Via Valtellina: non citare MAI i prezzi standard (es. Grey Goose €300) parlando di Carl Cox. PDF da girare a chi chiede bottiglie/prezzi per Carl Cox: https://gatemilano-chatbot-production.up.railway.app/static/drinklist_carlcox.pdf
+- **Vodka:** Grey Goose .7l €600 · 1.5l €1.300 · 3l €2.600
+- **Gin:** Bombay .7l €600 · Bombay Cru Premium €700 · Nordes €700 · Roku €700 · Hendrick's €700 · Gin Mare €700 · Monkey €800
+- **Tequila:** Patron Silver 1.5l €700 · Patron Reposado .7l €800 · Patron Añejo .7l €900 · Clase Azul .7l €2.400 · Don Julio 1942 .7l €2.400
+- **Whisky/Cognac:** Jim Beam .7l €600 · Hennessy .7l €800
+- **Champagne:** Moët & Chandon .7l €600 · 1.5l €1.200 · Moët Rosè .7l €700 · Veuve Clicquot .7l €600 · 1.5l €1.200 · Dom Perignon .7l €1.400 · Armand de Brignac .7l €2.000 · Cristal .7l €2.400 · Cristal 1.5l €6.000
+
 ### Backstage Ticket — Cosa include
 
 Il Backstage Ticket include:
