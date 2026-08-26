@@ -340,3 +340,13 @@ def test_milano_audit_new_sections():
     assert "Guestlist — anti-allucinazione" in s
     # tabella contatti arricchita
     assert "support@xceed.me" in s
+
+
+def test_milano_backstage_offsite_pricing_guard():
+    # caso reale (mail Carl Cox): il backstage di Via Valtellina (tabella €25-40,
+    # tavoli €600) NON vale per gli eventi off-site — lì fanno fede i prezzi
+    # della pagina evento (Carl Cox: Backstage Ticket €200).
+    s = _static("gate_milano")
+    assert "VALE SOLO PER GLI EVENTI IN VIA VALTELLINA" in s
+    assert "Backstage Ticket €200" in s
+    assert "proposta dedicata" in s
