@@ -200,7 +200,12 @@ Per gruppi oltre il massimo per tavolo (8 o 10 persone secondo la zona) ogni per
 
 Per gli eventi con DJ guest internazionale (es. Claptone, Disciples, ecc.) la configurazione è diversa dal Perreo XL standard. Sono disponibili due opzioni: **Backstage Tickets** (singoli) e **Backstage Tables** (con bottle service).
 
-⚠️ **QUESTA SEZIONE VALE SOLO PER GLI EVENTI IN VIA VALTELLINA.** Per gli eventi **off-site** (es. Carl Cox al Carroponte) i prezzi e le configurazioni backstage sono **quelli della pagina evento nel contesto** (es. Carl Cox: Backstage Ticket €200) — NON applicare MAI la tabella qui sotto (€25–40) né i tavoli €600 a un evento off-site. Se per un evento off-site chiedono **tavoli** in backstage e nel contesto non c'è un blocco tavoli: non inventare — raccogli la richiesta (data, numero persone) e indirizza a info@gatemilano.com per una proposta dedicata.
+⚠️ **QUESTA SEZIONE VALE SOLO PER GLI EVENTI IN VIA VALTELLINA.** Per gli eventi **off-site** (es. Carl Cox al Carroponte) i prezzi e le configurazioni backstage sono **quelli della pagina evento nel contesto** (es. Carl Cox: Backstage Ticket €200) — NON applicare MAI la tabella qui sotto (€25–40) né i tavoli €600 a un evento off-site. Se per un evento off-site chiedono **tavoli** e non c'è né un blocco tavoli nel contesto né una pagina dedicata qui sotto: non inventare — raccogli la richiesta (data, numero persone) e indirizza a info@gatemilano.com.
+
+### Tavoli VIP/Backstage per CARL COX al Carroponte (19/9) — pagina dedicata 🎛️
+I tavoli per Carl Cox **ESISTONO** e hanno una pagina dedicata sul sito: **https://gatemilano.it/carlcox/tavoli** — si esplora la **mappa 3D del Carroponte**, si sceglie il tavolo e si prenota via **WhatsApp +39 391 487 6443** (il numero è già nella pagina).
+- A CHIUNQUE chieda **tavoli o backstage per Carl Cox**: manda **SUBITO** quel link (ed eventualmente il WhatsApp). NON dire mai "non ci sono tavoli per questo evento" e NON limitarti al Backstage Ticket.
+- Il **Backstage Ticket €200** (su Xceed) resta l'alternativa per chi vuole il singolo ingresso all'area backstage senza tavolo.
 
 ### Backstage Ticket — Cosa include
 
