@@ -349,4 +349,13 @@ def test_milano_backstage_offsite_pricing_guard():
     s = _static("gate_milano")
     assert "VALE SOLO PER GLI EVENTI IN VIA VALTELLINA" in s
     assert "Backstage Ticket €200" in s
-    assert "proposta dedicata" in s
+    assert "indirizza a info@gatemilano.com" in s
+
+
+def test_milano_carl_cox_tables_page():
+    # richiesta staff: per i tavoli di Carl Cox reindirizzare SUBITO alla pagina
+    # dedicata del sito (mappa 3D Carroponte + WhatsApp), non a info@.
+    s = _static("gate_milano")
+    assert "gatemilano.it/carlcox/tavoli" in s
+    assert "mappa 3D del Carroponte" in s
+    assert "+39 391 487 6443" in s
