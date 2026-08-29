@@ -213,3 +213,59 @@ async def test_ig_bot_sender_dropped_but_traced(monkeypatch):
     stages = [e["stage"] for e in dt.recent()]
     assert any("account del gruppo" in s for s in stages)
     dt._events.clear()
+
+
+# --- !tavoli: copertura tavoli VIP Milano dal sito ---
+
+async def test_handle_tavoli_reports_states(monkeypatch):
+    import datetime
+    import rag.date_utils as du
+    from rag import event_store as es
+    import notifications.discord_bot as db
+
+    es._store.clear()
+    monkeypatch.setattr(du, "business_now",
+                        lambda now=None: datetime.datetime(2026, 9, 1, 12, 0, tzinfo=du._ROME))
+
+    def _seed(eid, name, dstr):
+        ts = int(datetime.datetime.strptime(dstr, "%Y-%m-%d")
+                 .replace(tzinfo=datetime.timezone.utc).timestamp())
+        es.upsert_event("gate_milano", eid, f"EVENTO: {name}\nData: {dstr}", {
+            "type": "event", "source": "sanity", "event_name": name, "date": dstr,
+            "date_ts": ts, "venue": "gate_milano", "ticket_url": "https://xceed.me/x",
+            "canceled": False, "sanity_id": eid,
+        })
+
+    _seed("a", "LILYA MANDRE", "2026-09-04")
+    _seed("b", "NIKOLINA", "2026-09-05")
+    _seed("c", "SENZA MAPPA", "2026-09-06")
+
+    class _R:
+        def __init__(self, code, payload=None):
+            self.status_code = code
+            self._p = payload or {}
+        def json(self): return self._p
+
+    class _C:
+        def __init__(self, *a, **k): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self, *a): return False
+        async def get(self, url, params=None):
+            name = (params or {}).get("name", "")
+            if name == "LILYA MANDRE":
+                return _R(200, {"tables": [
+                    {"codice": "S1", "zona": "BACKSTAGE", "prezzo": 500, "stato": "libero"},
+                    {"codice": "S2", "zona": "BACKSTAGE", "prezzo": 500, "stato": "venduto"}]})
+            if name == "NIKOLINA":
+                return _R(200, {"tables": [
+                    {"codice": "B4", "zona": "VIP BALCONY", "prezzo": 500, "stato": "chiuso"}]})
+            return _R(404)
+
+    import httpx as _hx
+    monkeypatch.setattr(_hx, "AsyncClient", _C)
+
+    out = await db.handle_tavoli(30)
+    assert "LILYA MANDRE" in out and "✅ 1 liberi" in out and "⛔ 1 venduti" in out
+    assert "NIKOLINA" in out and "🔒 1 vendita non aperta" in out
+    assert "SENZA MAPPA" in out and "senza mappa tavoli" in out
+    es._store.clear()
