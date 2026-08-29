@@ -183,8 +183,14 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
         _site_cache[key] = {"text": "", "ts": time.time()}
         return ""
 
+    # Stati del sito: libero (prenotabile ora) · chiuso (vendita online NON ancora
+    # aperta per la serata) · altro (venduto/opzionato → non disponibile).
+    # ⚠️ "chiuso" NON è "esaurito": caso reale (Nikolina 16/10, vendite non aperte)
+    # in cui il blocco diceva "tutti esauriti" / il bot ripiegava sulla tabella
+    # statica quotando €300 un tavolo che quella sera costa €500.
     available = [t for t in tables if t.get("stato") == "libero"]
-    unavailable = [t for t in tables if t.get("stato") != "libero"]
+    closed = [t for t in tables if t.get("stato") == "chiuso"]
+    sold = [t for t in tables if t.get("stato") not in ("libero", "chiuso")]
 
     def _row(t: dict) -> str:
         zona = t.get("zona", "VIP")
@@ -198,14 +204,29 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
     map_url = f"{settings.site_base_url.rstrip('/')}/mappa-vip?{urlencode({'name': event_name, 'date': date_iso})}"
     map_line = f"MAPPA TAVOLI 3D ({date_iso}): {map_url}"
 
-    lines = ["TAVOLI VIP DISPONIBILI:"]
+    if available:
+        header = "TAVOLI VIP DISPONIBILI:"
+    elif closed:
+        header = (
+            "TAVOLI VIP DELLA SERATA — vendita online NON ANCORA APERTA (NON dire mai "
+            "'esauriti'): i tavoli esistono e i prezzi REALI della serata sono questi "
+            "(usali TU, mai la tabella indicativa della knowledge). Per bloccare un "
+            "tavolo in anticipo raccogli data/zona/numero persone e indirizza a "
+            "info@gatemilano.com; altrimenti invita a riprovare sul link mappa a ridosso "
+            "della serata."
+        )
+    else:
+        header = "TAVOLI VIP: tutti esauriti per questo evento."
+
+    lines = [header]
     for t in available:
         lines.append(f"- {_row(t)}: €{t.get('prezzo')} → Prenota: {t.get('checkoutUrl')}")
-    for t in unavailable:
+    for t in closed:
+        lines.append(f"- {_row(t)}: €{t.get('prezzo')} — vendita online non ancora aperta")
+    for t in sold:
         lines.append(f"- {_row(t)}: €{t.get('prezzo')} — NON DISPONIBILE")
 
-    body = "TAVOLI VIP: tutti esauriti per questo evento." if not available else "\n".join(lines)
-    text = f"{map_line}\n{body}"
+    text = f"{map_line}\n" + "\n".join(lines)
     _site_cache[key] = {"text": text, "ts": time.time()}
     return text
 
