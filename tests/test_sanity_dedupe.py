@@ -51,3 +51,30 @@ def test_draft_loses_to_published():
 def test_tba_placeholders_never_deduped():
     evs = [_ev("a", "?????", "2026-11-20"), _ev("b", "?????", "2026-11-20")]
     assert len(_dedupe_sanity_events(evs)) == 2
+
+
+# --- Dedup CROSS-FONTE (Sanity vs Xceed): has_matching_event per set di parole ---
+
+def test_cross_source_dedupe_token_sets():
+    # I doppioni reali NON venivano fermati dal confronto per prefisso: qui il
+    # match deve scattare per set di parole (ordine diverso / parola in mezzo).
+    import datetime
+    from rag import event_store as es
+    es._store.clear()
+    ts = int(datetime.datetime(2026, 9, 18, tzinfo=datetime.timezone.utc).timestamp())
+    es.upsert_event("gate_milano", "s1", "EVENTO: BISCOTTO: BLANKA & QUELZA", {
+        "type": "event", "source": "sanity", "event_name": "BISCOTTO: BLANKA & QUELZA",
+        "date_ts": ts, "venue": "gate_milano"})
+    # ordine artisti invertito (payload Xceed) → stesso evento
+    assert es.has_matching_event("gate_milano", ts, "BISCOTTO: QUELZA & BLANKA",
+                                 exclude_source="xceed")
+    # parola in mezzo ("MUSIC") → stesso evento
+    ts2 = int(datetime.datetime(2026, 9, 23, tzinfo=datetime.timezone.utc).timestamp())
+    es.upsert_event("gate_milano", "s2", "EVENTO: LATE NIGHT VIBES", {
+        "type": "event", "source": "sanity", "event_name": "LATE NIGHT VIBES",
+        "date_ts": ts2, "venue": "gate_milano"})
+    assert es.has_matching_event("gate_milano", ts2, "LATE NIGHT MUSIC VIBES",
+                                 exclude_source="xceed")
+    # evento DIVERSO stessa sera → nessun falso match
+    assert not es.has_matching_event("gate_milano", ts, "PERREO XL", exclude_source="xceed")
+    es._store.clear()

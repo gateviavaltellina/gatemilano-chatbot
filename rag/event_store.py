@@ -56,6 +56,7 @@ def has_matching_event(venue: str, date_ts: int, name: str, exclude_source: str 
     target = _norm_name(name)
     if not target:
         return False
+    target_tokens = _name_tokens(name)
     for e in _get(venue):
         meta = e["metadata"]
         if meta.get("type") != "event":
@@ -66,6 +67,15 @@ def has_matching_event(venue: str, date_ts: int, name: str, exclude_source: str 
             continue
         existing = _norm_name(meta.get("event_name", ""))
         if existing and (existing == target or existing.startswith(target) or target.startswith(existing)):
+            return True
+        # Confronto per SET di parole, non solo per prefisso: 'BISCOTTO: QUELZA &
+        # BLANKA' (Xceed) e 'BISCOTTO: BLANKA & QUELZA' (Sanity) sono lo stesso
+        # evento con gli artisti in ordine diverso, e 'LATE NIGHT VIBES' è incluso
+        # in 'LATE NIGHT MUSIC VIBES' — il solo prefisso li faceva passare come
+        # eventi nuovi (doppioni reali in calendario, 18/9 e 23/9).
+        existing_tokens = _name_tokens(meta.get("event_name", ""))
+        if target_tokens and existing_tokens and \
+                (target_tokens <= existing_tokens or existing_tokens <= target_tokens):
             return True
     return False
 
