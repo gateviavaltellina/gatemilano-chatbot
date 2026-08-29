@@ -46,8 +46,11 @@ def test_numeric_dates_parsed(monkeypatch):
     assert du.extract_query_dates("il 31/07 siete aperti?") == ["2026-07-31"]
     assert du.extract_query_dates("serata del 31-07-2026") == ["2026-07-31"]
     assert du.extract_query_dates("che c'è il 31.07.26?") == ["2026-07-31"]
-    # senza anno e già passata → anno prossimo
-    assert du.extract_query_dates("il 3/5 che serata c'era?") == ["2027-05-03"]
+    # senza anno e passata DA POCO (≤90gg) → resta quest'anno, al passato
+    # ("che serata c'era?" si riferisce alla serata passata, non al 2027!)
+    assert du.extract_query_dates("il 3/5 che serata c'era?") == ["2026-05-03"]
+    # senza anno e passata da MESI (oltre la finestra) → anno prossimo
+    assert du.extract_query_dates("per il 3/1 si può prenotare?") == ["2027-01-03"]
 
 
 def test_numeric_dates_no_false_positives(monkeypatch):
