@@ -789,6 +789,48 @@ def _build_blog_document(post: dict, venue_label: str) -> tuple[str, dict]:
     return document, metadata
 
 
+def _dedupe_sanity_events(events: list[dict]) -> list[dict]:
+    """Due schede Sanity per la STESSA serata con titoli equivalenti sono doppioni
+    e vanno collassate in una (casi reali 18/9 e 23/9: 'BISCOTTO: BLANKA & QUELZA'
+    vs 'BISCOTTO: QUELZA & BLANKA', 'LATE NIGHT VIBES' vs 'LATE NIGHT MUSIC VIBES'
+    → il bot elencava due serate). Equivalenza: stesso giorno di servizio e set di
+    parole del titolo uguale o incluso nell'altro. Si tiene la scheda 'migliore':
+    con ticketUrl > senza, pubblicata > bozza, poi titolo più lungo. Titoli senza
+    token utili (es. '?????' TBA) non vengono mai deduplicati tra loro."""
+    from rag.event_store import _name_tokens
+
+    def _score(ev: dict) -> tuple:
+        return (
+            bool(ev.get("ticketUrl")),
+            not (ev.get("_id") or "").startswith("drafts."),
+            len(ev.get("title") or ""),
+        )
+
+    kept: list[dict] = []
+    for ev in events:
+        day = _service_date_of(ev.get("date") or "")
+        toks = _name_tokens(ev.get("title") or "")
+        dup_idx = None
+        if toks:
+            for i, other in enumerate(kept):
+                if _service_date_of(other.get("date") or "") != day:
+                    continue
+                otoks = _name_tokens(other.get("title") or "")
+                if otoks and (toks <= otoks or otoks <= toks):
+                    dup_idx = i
+                    break
+        if dup_idx is None:
+            kept.append(ev)
+        elif _score(ev) > _score(kept[dup_idx]):
+            logger.info("Doppione Sanity scartato: '%s' (tengo '%s') per il %s",
+                        kept[dup_idx].get("title"), ev.get("title"), day)
+            kept[dup_idx] = ev
+        else:
+            logger.info("Doppione Sanity scartato: '%s' (tengo '%s') per il %s",
+                        ev.get("title"), kept[dup_idx].get("title"), day)
+    return kept
+
+
 async def find_new_ticketsms_cancellations(days: int = 60) -> list[str]:
     """Nomi degli eventi futuri ancora ATTIVI nello store il cui flag `canceled`
     su TicketSMS è nel frattempo diventato True. Chiamata leggera (una GET per
@@ -836,6 +878,7 @@ async def sync_all_venues():
         current_ids = []
         if events is not None:
             status["fetched"] = len(events)
+            events = _dedupe_sanity_events(events)
             # Liste/promo Fourvenues (Boarding Pass €0, prevendita €5): indice unico
             # per sync, solo Sardegna. {} se la chiave API non è configurata.
             fv_index = (await _fetch_fourvenues_index(_settings.fourvenues_api_key)
