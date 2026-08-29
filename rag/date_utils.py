@@ -165,6 +165,30 @@ def _next_weekday(now: datetime, target_weekday: int, force_next: bool = False) 
     return now + timedelta(days=days)
 
 
+def _prev_weekday(now: datetime, target_weekday: int) -> datetime:
+    """Occorrenza PRECEDENTE del giorno della settimana ("venerdì scorso")."""
+    days = (now.weekday() - target_weekday) % 7 or 7
+    return now - timedelta(days=days)
+
+
+# Una data giorno+mese SENZA anno già passata DA POCO (es. "la serata del 4
+# settembre" chiesta il 10/9) si riferisce quasi sempre alla serata appena
+# passata (foto, fotografo, oggetti smarriti, rimborsi) — NON allo stesso
+# giorno dell'anno prossimo. Caso reale: il parser la spostava al 2027 e la
+# nota "date passate" non scattava mai ("nessun evento in programma per il
+# 2027-09-04"). Solo oltre questa finestra si assume l'anno successivo.
+_RECENT_PAST_DAYS = 90
+
+
+def _resolve_yearless(d: _date, now_date: _date) -> _date:
+    if d >= now_date or (now_date - d).days <= _RECENT_PAST_DAYS:
+        return d
+    try:
+        return _date(d.year + 1, d.month, d.day)
+    except ValueError:  # 29 febbraio
+        return d
+
+
 def extract_query_dates(text: str, now: datetime | None = None, explicit_only: bool = False) -> list[str]:
     """explicit_only=True: solo date ESPLICITE (numeriche o "31 luglio"), niente
     termini relativi (stasera/domani/weekend/giorni della settimana). Serve quando il
@@ -178,20 +202,27 @@ def extract_query_dates(text: str, now: datetime | None = None, explicit_only: b
             dates.append(now.strftime("%Y-%m-%d"))
         if any(t in lower for t in _TOMORROW_TERMS):
             dates.append((now + timedelta(days=1)).strftime("%Y-%m-%d"))
+        # "ieri" / "ieri sera" (regex col confine di parola: "pensieri" non deve matchare)
+        if re.search(r"\b(ieri|yesterday|ayer)\b", lower):
+            dates.append((now - timedelta(days=1)).strftime("%Y-%m-%d"))
 
         # "prossimo X" / "next X" → salta alla settimana successiva se oggi è già quel giorno
         force_next = bool(re.search(r'\b(prossim\w*|next)\b', lower))
+        # "X scorso/passato" / "last X" → occorrenza PRECEDENTE (caso reale:
+        # "venerdì scorso" veniva letto come venerdì PROSSIMO)
+        force_prev = bool(re.search(r'\b(scors\w*|passat\w*|last)\b', lower))
 
         # Weekend → sabato + domenica
         if any(t in lower for t in _WEEKEND_TERMS):
-            sat = _next_weekday(now, 5, force_next)
+            sat = _prev_weekday(now, 5) if force_prev else _next_weekday(now, 5, force_next)
             dates.append(sat.strftime("%Y-%m-%d"))
             dates.append((sat + timedelta(days=1)).strftime("%Y-%m-%d"))
 
         # Giorni della settimana specifici
         for term, weekday in _WEEKDAY_TERMS.items():
             if term in lower:
-                dates.append(_next_weekday(now, weekday, force_next).strftime("%Y-%m-%d"))
+                d = _prev_weekday(now, weekday) if force_prev else _next_weekday(now, weekday, force_next)
+                dates.append(d.strftime("%Y-%m-%d"))
 
     # Date esplicite italiane: "15 maggio", "il 15 maggio 2026"
     for month_name, month_num in _IT_MONTHS.items():
@@ -201,8 +232,8 @@ def extract_query_dates(text: str, now: datetime | None = None, explicit_only: b
             year = int(m.group(2)) if m.group(2) else now.year
             try:
                 d = _date(year, month_num, day)
-                if d < now.date() and not m.group(2):
-                    d = _date(year + 1, month_num, day)
+                if not m.group(2):
+                    d = _resolve_yearless(d, now.date())
                 dates.append(d.strftime("%Y-%m-%d"))
             except ValueError:
                 pass
@@ -223,8 +254,8 @@ def extract_query_dates(text: str, now: datetime | None = None, explicit_only: b
             d = _date(year, month, day)
         except ValueError:
             continue
-        if d < now.date() and not year_raw:
-            d = _date(year + 1, month, day)
+        if not year_raw:
+            d = _resolve_yearless(d, now.date())
         dates.append(d.strftime("%Y-%m-%d"))
 
     return list(dict.fromkeys(dates))
