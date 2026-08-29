@@ -100,6 +100,52 @@ async def handle_sync() -> str:
             f"Milano {count('gate_milano')}, Sardegna {count('gate_sardinia')}.")
 
 
+async def handle_tavoli(days: int = 30) -> str:
+    """!tavoli [giorni] — copertura tavoli VIP Milano: per ogni evento in calendario
+    interroga l'endpoint live del sito e riassume lo stato (liberi/chiusi/venduti,
+    prezzi, eventi senza mappa). Serve a scovare in anticipo serate con la vendita
+    tavoli non configurata o nomi che non agganciano la mappa (fallimento silenzioso
+    del lookup — caso reale Nikolina 16/10 quotata coi prezzi statici)."""
+    import httpx as _httpx
+    from config import settings as _s
+    from rag.event_store import get_vip_candidates
+
+    cands = get_vip_candidates("gate_milano", days=days)[:25]
+    if not cands:
+        return f"Nessun evento Milano nei prossimi {days} giorni."
+    lines = [f"🪑 **Copertura tavoli Milano** (prossimi {days} giorni, live dal sito):"]
+    base = _s.site_base_url.rstrip("/")
+    async with _httpx.AsyncClient(timeout=10, headers={"User-Agent": "Mozilla/5.0"}) as client:
+        for name, date_iso, _tu, _sid in cands:
+            try:
+                r = await client.get(f"{base}/api/vip-availability",
+                                     params={"name": name, "date": date_iso})
+                if r.status_code == 404:
+                    status = "❌ senza mappa tavoli sul sito"
+                elif r.status_code != 200:
+                    status = f"⚠️ HTTP {r.status_code}"
+                else:
+                    tabs = r.json().get("tables", [])
+                    if not tabs:
+                        status = "— nessun tavolo configurato"
+                    else:
+                        free = sum(1 for t in tabs if t.get("stato") == "libero")
+                        chiusi = sum(1 for t in tabs if t.get("stato") == "chiuso")
+                        sold = len(tabs) - free - chiusi
+                        prezzi = "/".join(f"€{p}" for p in sorted({t.get("prezzo") for t in tabs}))
+                        parts = [f"✅ {free} liberi"] if free else []
+                        if chiusi:
+                            parts.append(f"🔒 {chiusi} vendita non aperta")
+                        if sold:
+                            parts.append(f"⛔ {sold} venduti")
+                        status = " · ".join(parts) + f" · {prezzi}"
+            except Exception:
+                status = "⚠️ endpoint non raggiungibile"
+            lines.append(f"`{date_iso[5:]}` {name[:34]}: {status}")
+    out = "\n".join(lines)
+    return out if len(out) <= 1900 else out[:1900] + "\n…(troncato)"
+
+
 async def handle_stato() -> str:
     """!stato — diagnosi rapida per lo staff quando 'il bot non risponde':
     verifica DAL VIVO i token Meta (IG Milano/Sardegna + WhatsApp) riportando
@@ -278,6 +324,14 @@ async def on_message(message: discord.Message):
     if content == "!stato":
         await message.add_reaction("🩺")
         await message.reply(await handle_stato(), mention_author=False)
+        return
+
+    # !tavoli [giorni]: copertura tavoli VIP Milano dal sito, on-demand.
+    if content == "!tavoli" or content.startswith("!tavoli "):
+        arg = content[len("!tavoli"):].strip()
+        days = int(arg) if arg.isdigit() else 30
+        await message.add_reaction("🪑")
+        await message.reply(await handle_tavoli(days), mention_author=False)
         return
 
     # Le notifiche WhatsApp e Instagram vivono su canali Discord DIVERSI. Una reply
