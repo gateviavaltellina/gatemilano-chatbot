@@ -337,7 +337,7 @@ def test_milano_audit_new_sections():
     assert "Foto e Video delle Serate" in s
     assert "marketing@gatemilano.com" in s
     # Guestlist: citata nelle FAQ ma senza condizioni → guardia anti-allucinazione
-    assert "Guestlist — anti-allucinazione" in s
+    assert "Guestlist — NON è una lista pubblica" in s
     # tabella contatti arricchita
     assert "support@xceed.me" in s
 
@@ -371,3 +371,25 @@ def test_milano_carl_cox_dedicated_drinklist():
     assert "static/drinklist_carlcox.pdf" in s
     assert "Grey Goose .7l €600" in s          # prezzo Carl Cox
     assert "NON quelli della drinklist standard" in s
+
+
+def test_milano_staff_answers_28_08():
+    # risposte staff al questionario pre-stagione (28/8), una per buco chiuso.
+    s = _static("gate_milano")
+    # 1. braccialetti: non esistono a Milano
+    assert "Braccialetti — NON esistono a Milano" in s
+    # 2. tavoli 18+ di regola, 16+ se la serata lo indica
+    assert "Eccezione:** se l'evento nel contesto indica \"Età minima: 16+\"" in s
+    # 3. guestlist riservata a creator/influencer/artisti, mai lista pubblica
+    assert "valutata caso per caso" in s
+    assert "creator, influencer e artisti" in s
+    # 4. cassa: sì ma più cara dell'online
+    assert "Cassa la sera stessa: SÌ" in s
+    assert "in cassa il prezzo è più alto" in s
+    # 5. prezzi bar: carta non ancora in KB → niente invenzioni
+    assert "NON inventare prezzi** dei drink al bar" in s
+    # 6. area fumatori: cortile esterno
+    assert "cortile esterno" in s
+    # 7. guardaroba: obbligo zaini/borse grandi/ombrelli, giacche facoltative
+    assert "OBBLIGATORIO** depositare: zaini, borse grandi e **ombrelli" in s
+    assert "Facoltativi: giacche" in s

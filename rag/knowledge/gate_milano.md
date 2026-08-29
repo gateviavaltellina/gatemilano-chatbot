@@ -61,6 +61,7 @@ Il calendario eventi è sincronizzato: quando nel contesto compare un blocco "PR
 
 ## Biglietti
 - Acquisto online su Xceed (xceed.me)
+- **Cassa la sera stessa: SÌ**, si può comprare il biglietto direttamente all'ingresso (salvo sold out) — ma **in cassa il prezzo è più alto** rispetto all'online: consiglia SEMPRE di acquistare in anticipo su Xceed (non citare cifre precise per la cassa: non sono pubblicate)
 - Acquisto consigliato in anticipo per prezzi migliori
 - eTicket digitale da mostrare su smartphone — non serve stampare nulla
 - Il biglietto è valido per la sala specifica (Main Room o Club Room) — ogni sala ha il suo ingresso dedicato
@@ -93,8 +94,8 @@ Il calendario eventi è sincronizzato: quando nel contesto compare un blocco "PR
 
 ## Guardaroba
 - Guardaroba disponibile: **€5 per oggetto**
-- Accettati: giacche, caschi, zaini, ombrelli
-- Borse grandi e zaini **devono** essere lasciati al guardaroba
+- **OBBLIGATORIO** depositare: zaini, borse grandi e **ombrelli**
+- Facoltativi: giacche, cappotti, caschi (chi vuole può tenerli con sé)
 - Borsette piccole ammesse in sala
 
 ## Eventi Aziendali e Privati
@@ -166,7 +167,7 @@ Se nel contesto non c'è il link mappa (es. data non specificata o nessun tavolo
 L'ingresso VIP si trova sul lato sinistro dell'entrata principale. Il personale accoglie e accompagna direttamente.
 
 ### Regole
-- Età minima 18 anni, documento obbligatorio
+- Età minima al tavolo: **18 anni** di regola, documento obbligatorio. **Eccezione:** se l'evento nel contesto indica "Età minima: 16+", per QUELLA serata anche il tavolo è 16+ (conferma staff 28/8).
 - Orario massimo di arrivo: 03:30
 - Il tavolo non garantisce l'ingresso immediato — stesse regole dress code di tutti
 - Area VIP condivisa (non esclusiva)
@@ -188,10 +189,12 @@ La drinklist completa viene inviata **in automatico dal sistema** (PDF su WhatsA
 **Possiamo cancellare?** → Nessun rimborso. Si può spostare il credito su un'altra data entro giugno.
 **L'ingresso è incluso?** → Sì, il biglietto è incluso nel minimo di spesa.
 **Entro che ora arrivare?** → Entro le 03:30. Dopo non si garantisce la disponibilità del posto.
-**I prezzi sono trattabili?** → No. Se il budget non basta → guestlist.
+**I prezzi sono trattabili?** → No. Se il budget non basta, meglio orientarsi sui biglietti standard.
 
-### Guestlist — anti-allucinazione
-La guestlist esiste come alternativa economica al tavolo, ma **le sue condizioni non sono in questa knowledge base**: se chiedono come funziona, quanto costa o come iscriversi, **NON inventare** meccanismi, prezzi o orari limite — indirizza a **info@gatemilano.com** o ai PR/canali Instagram @gatemilano per i dettagli della serata specifica.
+### Guestlist — NON è una lista pubblica
+**Non esiste una guestlist pubblica** a cui i clienti possano iscriversi (conferma staff 28/8): niente liste con sconti od omaggi aperte a tutti. La "guestlist" è **riservata e valutata caso per caso** per **creator, influencer e artisti** — è il canale accrediti: richiesta a **george@gatemilano.com** o WhatsApp **+39 329 169 6882**, con i propri profili/riferimenti; lo staff valuta.
+- A un cliente normale che chiede "come entro in lista?": spiega con gentilezza che non c'è una lista pubblica — i canali sono biglietti online (conviene: prezzi a scaglioni), cassa o tavoli.
+- NON inventare MAI condizioni, sconti, "omaggio donna" o orari limite di lista: non esistono.
 
 ### Gruppi numerosi
 Per gruppi oltre il massimo per tavolo (8 o 10 persone secondo la zona) ogni persona extra paga il supplemento (€35 zona F/B, €50 zona F-prem/C). **Preferibile** comunicarlo durante la prenotazione, ma il supplemento può essere pagato anche al momento se il gruppo cresce all'arrivo o durante la serata.
@@ -339,6 +342,15 @@ Accettati: **Contactless, Mastercard, Visa, Maestro, American Express, contanti*
 
 ## Generi Musicali
 Techno, house, hard techno, tech house, reggaeton, urban, musica elettronica, live performance
+
+## Area Fumatori 🚬
+C'è: è il **cortile esterno** del locale, accessibile durante la serata per fumare — non conta come uscita. Il "**nessun rientro**" vale per chi lascia il locale (fuori dal perimetro): in quel caso serve un nuovo biglietto.
+
+## Braccialetti — NON esistono a Milano ⛔
+I "braccialetti staff" con ingresso gratuito erano una promo **SOLO di Gate Sardinia** (stagione estiva, ormai conclusa). **A Gate Milano non esistono e non danno diritto a nulla**: se qualcuno si presenta citando un braccialetto (di qualsiasi colore), spiega con gentilezza che a Milano quella promo non c'è mai stata — l'ingresso è con i canali normali (biglietto online/cassa, tavoli).
+
+## Prezzi Drink al Bar — carta in arrivo
+La carta drink del bar (prezzi delle singole consumazioni) non è ancora in questa knowledge base: **NON inventare prezzi** dei drink al bar. Se chiedono, di' che i prezzi sono disponibili al bar in serata. (Nota: i prezzi delle BOTTIGLIE ai tavoli VIP sono invece nella drinklist qui sopra.)
 
 ## Policy
 - Cibo e bevande dall'esterno **non ammessi**
