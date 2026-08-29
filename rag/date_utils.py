@@ -219,10 +219,22 @@ def extract_query_dates(text: str, now: datetime | None = None, explicit_only: b
             dates.append((sat + timedelta(days=1)).strftime("%Y-%m-%d"))
 
         # Giorni della settimana specifici
+        matched_weekday = False
         for term, weekday in _WEEKDAY_TERMS.items():
             if term in lower:
+                matched_weekday = True
                 d = _prev_weekday(now, weekday) if force_prev else _next_weekday(now, weekday, force_next)
                 dates.append(d.strftime("%Y-%m-%d"))
+        # Pass fuzzy sui giorni della settimana ("sbato", "vnerdì"): typo di 1
+        # lettera su nomi >=5 lettere. Solo se nessun giorno esatto ha già
+        # matchato (evita doppi match sulla stessa parola).
+        if not matched_weekday:
+            for tok in re.findall(r"[a-zà-ù]{5,10}", lower):
+                for term, weekday in _WEEKDAY_TERMS.items():
+                    if len(term) >= 5 and _edit_distance_le(tok, term, 1):
+                        d = _prev_weekday(now, weekday) if force_prev else _next_weekday(now, weekday, force_next)
+                        dates.append(d.strftime("%Y-%m-%d"))
+                        break
 
     # Date esplicite italiane: "15 maggio", "il 15 maggio 2026"
     for month_name, month_num in _IT_MONTHS.items():
@@ -237,6 +249,25 @@ def extract_query_dates(text: str, now: datetime | None = None, explicit_only: b
                 dates.append(d.strftime("%Y-%m-%d"))
             except ValueError:
                 pass
+
+    # Pass fuzzy su "giorno + mese col typo" ("il 19 setembre", "3 ottobr"):
+    # typo di 1 lettera su nomi di mese >=6 lettere (con 2 scattavano falsi
+    # positivi su parole comuni: "costa 5.10 giusto?" matchava "giugno"). Senza questo il giorno si
+    # perdeva e restava solo il match a livello di mese: niente dettaglio evento
+    # né lookup tavoli per la data chiesta.
+    if not dates:
+        for m in re.finditer(r"\b(\d{1,2})\s+([a-zà-ù]{5,12})\b", lower):
+            word = m.group(2)
+            if word in _MONTH_NAMES:
+                continue  # già gestito dal pass esatto
+            for month_name, month_num in _MONTH_NAMES.items():
+                if len(month_name) >= 6 and _edit_distance_le(word, month_name, 1):
+                    try:
+                        d = _resolve_yearless(_date(now.year, month_num, int(m.group(1))), now.date())
+                        dates.append(d.strftime("%Y-%m-%d"))
+                    except ValueError:
+                        pass
+                    break
 
     # Date NUMERICHE (dd/mm, dd/mm/aa, dd/mm/aaaa, anche con - o .): è il formato più
     # comune in Italia ("la serata del 31/07/26"). Caso reale: la data numerica non
