@@ -10,6 +10,8 @@ from rag.event_store import (
     get_vip_candidates,
     find_event_dates_by_name,
     has_active_event,
+    get_events_around_compact,
+    get_calendar_horizon,
 )
 from rag.date_utils import extract_query_dates, extract_query_months
 from rag.vip_tables import get_vip_tables_context, get_vip_tables_via_site, get_vip_tables_sardinia
@@ -237,6 +239,13 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
                 f"oggi/stasera e per quella data non c'è nulla, dillo chiaramente. Puoi indicare qual è il PROSSIMO "
                 f"evento citando la SUA data reale (dalla lista qui sotto), senza mai chiamarlo 'di stasera'."
             )
+            # Le serate VICINE alla data richiesta: senza queste il bot vede solo la
+            # finestra breve e nega serate che esistono (caso reale: compleanno il
+            # 17/11, weekend 14-15/11 pieno, risposta "non ho eventi").
+            for d in future_dates:
+                around = get_events_around_compact(venue, d)
+                if around:
+                    date_parts.append(around)
         if past_dates:
             dates_str = ", ".join(past_dates)
             date_parts.append(
@@ -260,7 +269,12 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # NB: la knowledge base statica NON è più qui — è costante per venue e viene
     # iniettata nel blocco system cacheato (vedi ai/claude_client.build_system_blocks).
     # Qui resta solo il contesto DINAMICO (cambia per messaggio/giorno).
-    parts = [p for p in [vip_context, *date_parts, upcoming] if p]
+    # Orizzonte reale del calendario: impedisce al bot di dedurre dalla lista (parziale)
+    # che la programmazione finisca prima di quanto sia vero. Caso reale: "la
+    # programmazione arriva fino a metà settembre" con eventi confermati fino a dicembre.
+    horizon = get_calendar_horizon(venue)
+
+    parts = [p for p in [vip_context, *date_parts, upcoming, horizon] if p]
 
     # 4. Cross-venue: se c'è un evento dell'ALTRA venue, inietta anche le SUE info e
     # policy (età, dress code, rimborsi, tavoli…). Senza questo il bot risolve l'evento
