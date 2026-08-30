@@ -305,6 +305,45 @@ ACCESSIBILITÀ:
 - Tema delicato: tono empatico, parla direttamente alla persona senza etichette; per chi accompagna usa SEMPRE la parola "accompagnatore" (es. "anche tu come accompagnatore hai bisogno del biglietto standard"), mai termini freddi o clinici.
 """
 
+# --- Compatibilita' famiglie di modelli -------------------------------------
+# I modelli dal 4.7 in su (Sonnet 5, Opus 5, Fable 5, Opus 4.8/4.7) hanno RIMOSSO
+# i parametri di sampling: passare `temperature` restituisce 400. E su Sonnet 5 /
+# Opus 5 il "thinking" e' ATTIVO di default, quindi la risposta arriva con un
+# ThinkingBlock in testa: leggere `content[0].text` esplode con AttributeError.
+# Caso reale (30/8, subito dopo il passaggio a Sonnet 5): i clienti su Instagram
+# ricevevano "al momento non riesco a rispondere" con
+# AttributeError: 'ThinkingBlock' object has no attribute 'text'.
+_NO_SAMPLING_MODELS = ("claude-sonnet-5", "claude-opus-5", "claude-fable-5",
+                       "claude-opus-4-8", "claude-opus-4-7", "claude-mythos-5")
+# Modelli che pensano di default: per le DM (risposte brevi, latenza bassa e
+# max_tokens stretto) il thinking va spento esplicitamente, altrimenti consuma il
+# budget di token e la risposta puo' arrivare vuota o troncata.
+_THINKS_BY_DEFAULT = ("claude-sonnet-5", "claude-opus-5", "claude-fable-5", "claude-mythos-5")
+
+
+def supports_sampling(model: str) -> bool:
+    """False se il modello rifiuta temperature/top_p/top_k (400)."""
+    return not any(model.startswith(m) for m in _NO_SAMPLING_MODELS)
+
+
+def thinking_param(model: str) -> dict | None:
+    """`thinking` da passare per tenere il comportamento delle DM invariato
+    (nessun blocco di ragionamento), o None se il modello non va configurato."""
+    if any(model.startswith(m) for m in _THINKS_BY_DEFAULT):
+        return {"type": "disabled"}
+    return None
+
+
+def first_text(response) -> str:
+    """Primo blocco di TESTO della risposta, ignorando thinking/tool_use.
+    Non usare mai `response.content[0].text`: con il thinking attivo il primo
+    blocco NON e' il testo."""
+    for block in response.content:
+        if getattr(block, "type", None) == "text":
+            return block.text or ""
+    return ""
+
+
 def _strip_markdown(text: str) -> str:
     """Remove WhatsApp markdown markers (*bold*, _italic_) that Claude inserts despite instructions."""
     text = re.sub(r'\*{1,3}([^*\n]+)\*{1,3}', r'\1', text)
@@ -475,8 +514,12 @@ async def generate_response(
             messages=messages,
             extra_headers={"anthropic-beta": "extended-cache-ttl-2025-04-11"},
         )
-        if temperature is not None:
+        # `temperature` solo dove e' ancora accettato: sui modelli recenti da' 400.
+        if temperature is not None and supports_sampling(settings.model):
             create_kwargs["temperature"] = temperature
+        thinking = thinking_param(settings.model)
+        if thinking:
+            create_kwargs["thinking"] = thinking
         response = await _client.messages.create(**create_kwargs)
         u = response.usage
         cache_read = getattr(u, "cache_read_input_tokens", 0) or 0
@@ -486,8 +529,18 @@ async def generate_response(
             u.input_tokens, cache_read, cache_write, u.output_tokens,
             100 * cache_read / max(1, u.input_tokens + cache_read),
         )
+        text = first_text(response)
+        if not text.strip():
+            # Nessun blocco di testo (es. risposta troncata): meglio il messaggio di
+            # cortesia che una risposta vuota al cliente.
+            _last_api_error = f"risposta senza testo (stop_reason={response.stop_reason})"
+            logger.error("Risposta senza blocco di testo: %s", _last_api_error)
+            return (
+                f"Mi dispiace, al momento non riesco a rispondere. "
+                f"Per assistenza contatta {contact_email}."
+            )
         _last_api_error = None  # successo → azzera l'ultimo errore
-        return _strip_markdown(response.content[0].text)
+        return _strip_markdown(text)
     except Exception as e:
         logger.error("Errore Claude API: %s", e)
         _last_api_error = f"{type(e).__name__}: {str(e)[:300]}"
