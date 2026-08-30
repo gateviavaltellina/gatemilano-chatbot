@@ -72,12 +72,16 @@ class _Usage:
 
 
 class _Content:
+    # `type` è indispensabile: la risposta reale può contenere anche blocchi
+    # thinking, e il codice seleziona il blocco di testo per tipo.
+    type = "text"
     text = "risposta"
 
 
 class _FakeApiResponse:
     usage = _Usage()
     content = [_Content()]
+    stop_reason = "end_turn"
 
 
 async def test_generate_response_attaches_image(monkeypatch):

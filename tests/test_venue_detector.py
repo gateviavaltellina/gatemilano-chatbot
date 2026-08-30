@@ -39,7 +39,8 @@ from venue import classifier
 
 class _FakeResp:
     def __init__(self, txt):
-        self.content = [type("B", (), {"text": txt})()]
+        self.content = [type("B", (), {"type": "text", "text": txt})()]
+        self.stop_reason = "end_turn"
 
 
 def _fake_client(txt):
