@@ -241,6 +241,67 @@ def get_events_for_month_compact(venue: str, year: int, month: int, limit: int =
     return "\n".join(lines)
 
 
+def get_events_around_compact(venue: str, date_str: str, span_days: int = 4, limit: int = 12) -> str:
+    """Lista compatta degli eventi VICINI a una data richiesta che NON ha eventi.
+
+    Caso reale (IG, 30/8): "compio gli anni il 17 novembre" — il 17/11 è un martedì
+    senza serata, ma il weekend prima (14-15/11) è pieno. Senza questo blocco il bot
+    vede solo la finestra dei 14 giorni (settembre) e risponde "non ho eventi per il
+    weekend del 14-15 novembre", che è FALSO: perde una prenotazione di compleanno.
+    """
+    try:
+        target = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return ""
+    center = int(target.timestamp())
+    lo = max(center - span_days * 86400, _today_start_utc())
+    hi = center + span_days * 86400
+    events = [
+        e for e in _get(venue)
+        if e["metadata"].get("type") == "event"
+        and lo <= e["metadata"].get("date_ts", 0) <= hi
+        and e["metadata"].get("date_ts", 0) != center
+    ]
+    if not events:
+        return ""
+    events.sort(key=lambda e: e["metadata"].get("date_ts", 0))
+    events = events[:limit]
+    venue_label = venue.replace("_", " ").title()
+    from rag.date_utils import format_italian_date
+    lines = [
+        f"SERATE VICINE a {format_italian_date(target)} a {venue_label} "
+        f"(date confermate in calendario — proponile come alternativa invece di dire "
+        f"che non c'è nulla in quel periodo):"
+    ]
+    lines.extend(_compact_event_line(e) for e in events)
+    return "\n".join(lines)
+
+
+def get_calendar_horizon(venue: str) -> str:
+    """Data dell'ULTIMO evento in calendario, come riga di contesto.
+
+    Senza questa riga il bot deduce la copertura del calendario da ciò che vede nel
+    contesto (14 giorni) e dichiara orizzonti falsi — caso reale: "la programmazione
+    arriva fino a metà settembre" mentre il calendario arrivava al 22 dicembre.
+    """
+    ts = [
+        e["metadata"].get("date_ts", 0) for e in _get(venue)
+        if e["metadata"].get("type") == "event"
+        and e["metadata"].get("date_ts", 0) >= _today_start_utc()
+    ]
+    if not ts:
+        return ""
+    last = datetime.fromtimestamp(max(ts), tz=timezone.utc)
+    from rag.date_utils import format_italian_date
+    return (
+        f"COPERTURA CALENDARIO: le date già confermate arrivano fino a "
+        f"{format_italian_date(last)}. NON dire MAI che la programmazione si ferma "
+        f"prima di questa data né dedurre l'orizzonte del calendario dagli eventi che "
+        f"vedi elencati qui (l'elenco è parziale). Oltre questa data le serate non "
+        f"sono ancora annunciate."
+    )
+
+
 def has_active_event(venue: str, date_str: str) -> bool:
     """True se per quel giorno c'è almeno un evento NON annullato. È il criterio per
     lo stato aperto/chiuso: un evento annullato non tiene aperto il locale (il suo
