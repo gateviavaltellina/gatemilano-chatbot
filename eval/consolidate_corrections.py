@@ -73,13 +73,16 @@ def _format_placement(kb_text: str, rule: str) -> str:
     return f"REGOLA:\n{rule}\n\nSEZIONI DISPONIBILI:\n{hs}"
 
 
+from ai.claude_client import compat_kwargs
+
+
 async def propose_placement(kb_text: str, rule: str, *, client, model: str) -> dict | None:
     """Chiede all'LLM dove inserire la regola. Ritorna {section, line} o None."""
     try:
         response = await client.messages.create(
             model=model,
             max_tokens=300,
-            temperature=0,
+            **compat_kwargs(model, 0),
             system=_PLACEMENT_INSTRUCTIONS,
             tools=[_PLACEMENT_TOOL],
             tool_choice={"type": "tool", "name": "propose_kb_placement"},

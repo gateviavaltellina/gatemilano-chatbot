@@ -52,13 +52,16 @@ def _parse_tool(response) -> dict | None:
     return None
 
 
+from ai.claude_client import compat_kwargs
+
+
 async def draft_case(correction: dict, *, client, model: str) -> dict | None:
     """Ritorna un eval case (schema eval) o None se la generazione fallisce."""
     try:
         response = await client.messages.create(
             model=model,
             max_tokens=600,
-            temperature=0,
+            **compat_kwargs(model, 0),
             system=_DRAFT_INSTRUCTIONS,
             tools=[_DRAFT_TOOL],
             tool_choice={"type": "tool", "name": "draft_eval_case"},

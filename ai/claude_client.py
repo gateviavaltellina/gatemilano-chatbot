@@ -334,6 +334,25 @@ def thinking_param(model: str) -> dict | None:
     return None
 
 
+def compat_kwargs(model: str, temperature: float | None = None) -> dict:
+    """Parametri di chiamata compatibili con la famiglia del modello.
+
+    Va usato in OGNI punto che chiama l'API, non solo nella chat: dopo il passaggio a
+    Sonnet 5 il giudice della eval suite, il classificatore di venue e i draft delle
+    correzioni fallivano tutti con 400 '`temperature` is deprecated for this model'
+    — la eval suite dava 0/126 senza che nessuno se ne accorgesse.
+    Spegne anche il thinking dove e' attivo di default: quelle chiamate hanno
+    max_tokens stretti e un tool forzato, il ragionamento consumerebbe il budget.
+    """
+    kwargs: dict = {}
+    if temperature is not None and supports_sampling(model):
+        kwargs["temperature"] = temperature
+    thinking = thinking_param(model)
+    if thinking:
+        kwargs["thinking"] = thinking
+    return kwargs
+
+
 def first_text(response) -> str:
     """Primo blocco di TESTO della risposta, ignorando thinking/tool_use.
     Non usare mai `response.content[0].text`: con il thinking attivo il primo

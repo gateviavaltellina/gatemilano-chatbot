@@ -30,22 +30,17 @@ async def classify_venue(text: str) -> str | None:
     if not text or not settings.venue_llm_fallback:
         return None
     try:
-        from ai.claude_client import _client, supports_sampling, thinking_param, first_text
+        from ai.claude_client import _client, compat_kwargs, first_text
         model = settings.venue_classifier_model or settings.model
-        kwargs = dict(
+        # Sui modelli recenti `temperature` da' 400 e il thinking e' attivo di
+        # default (con max_tokens=8 mangerebbe tutto il budget lasciando 0 testo).
+        resp = await _client.messages.create(
             model=model,
             max_tokens=8,
             system=_SYSTEM,
             messages=[{"role": "user", "content": text[:500]}],
+            **compat_kwargs(model, 0),
         )
-        # Sui modelli recenti `temperature` da' 400 e il thinking e' attivo di
-        # default (con max_tokens=8 mangerebbe tutto il budget lasciando 0 testo).
-        if supports_sampling(model):
-            kwargs["temperature"] = 0
-        thinking = thinking_param(model)
-        if thinking:
-            kwargs["thinking"] = thinking
-        resp = await _client.messages.create(**kwargs)
         out = first_text(resp).strip().lower()
     except Exception as e:
         logger.warning("classify_venue fallita (fallback su default): %s", e)
