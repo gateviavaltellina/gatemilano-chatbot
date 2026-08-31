@@ -73,3 +73,38 @@ def test_nessun_parametro_thinking_sui_modelli_precedenti(model):
     # Sui modelli che NON pensano di default non va passato nulla: il parametro
     # potrebbe non essere accettato e il comportamento è già quello voluto.
     assert cc.thinking_param(model) is None
+
+
+def test_compat_kwargs_modelli_recenti():
+    # Sonnet 5 & co.: niente temperature (400) e thinking spento.
+    k = cc.compat_kwargs("claude-sonnet-5", 0)
+    assert "temperature" not in k
+    assert k["thinking"] == {"type": "disabled"}
+
+
+def test_compat_kwargs_modelli_precedenti():
+    k = cc.compat_kwargs("claude-sonnet-4-6", 0)
+    assert k["temperature"] == 0
+    assert "thinking" not in k
+
+
+def test_compat_kwargs_senza_temperature():
+    assert "temperature" not in cc.compat_kwargs("claude-sonnet-4-6")
+
+
+def test_tutte_le_chiamate_api_usano_lhelper():
+    """Nessun `temperature=` passato a mano fuori dall'helper.
+
+    La eval suite è rimasta a 0/126 senza che nessuno se ne accorgesse perché il
+    giudice passava temperature direttamente: il guasto va bloccato qui.
+    """
+    import pathlib, re
+    root = pathlib.Path(__file__).resolve().parent.parent
+    offenders = []
+    for f in root.rglob("*.py"):
+        if "tests" in f.parts or "__pycache__" in f.parts:
+            continue
+        for i, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+            if re.match(r"\s*temperature\s*=", line) and "def " not in line:
+                offenders.append(f"{f.relative_to(root)}:{i}")
+    assert not offenders, f"usare compat_kwargs() invece di temperature= diretto: {offenders}"

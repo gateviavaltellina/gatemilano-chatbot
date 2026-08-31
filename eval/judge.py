@@ -69,6 +69,9 @@ def parse_verdict(response) -> JudgeVerdict:
     return JudgeVerdict(verdict="fail", violated=["judge: nessun tool_use nella risposta"], reasoning="")
 
 
+from ai.claude_client import compat_kwargs
+
+
 async def judge_reply(case: Case, reply: str, *, client, model: str) -> JudgeVerdict:
     # max_tokens ampio: lo schema mette 'reasoning' PRIMA del verdict, quindi serve
     # spazio per ragionamento + violated + verdict. Con un budget stretto (es. 500)
@@ -77,7 +80,8 @@ async def judge_reply(case: Case, reply: str, *, client, model: str) -> JudgeVer
     response = await client.messages.create(
         model=model,
         max_tokens=2000,
-        temperature=0,  # giudizio deterministico, riduce i falsi positivi
+        # temperature solo dove accettata + thinking spento (tool forzato):
+        **compat_kwargs(model, 0),  # giudizio deterministico, riduce i falsi positivi
         system=build_judge_system(),
         tools=[_VERDICT_TOOL],
         tool_choice={"type": "tool", "name": "record_verdict"},
