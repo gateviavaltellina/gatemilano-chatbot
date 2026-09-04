@@ -37,7 +37,7 @@ def _extract_slug_id(ticket_url: str) -> tuple[str, int] | tuple[None, None]:
 async def _fetch_uuid_for_numeric_id(numeric_id: int, api_key: str) -> str | None:
     """Find the Xceed UUID for a given numeric event ID.
     Uses Open Events API first (no auth, fast), falls back to Partner API search."""
-    async with httpx.AsyncClient(timeout=15) as client:
+    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
         # Fast path: Open Events API returns UUID directly from numeric ID
         try:
             r = await client.get(f"https://events.xceed.me/v1/events/{numeric_id}")
@@ -73,7 +73,7 @@ async def _fetch_uuid_for_numeric_id(numeric_id: int, api_key: str) -> str | Non
 
 async def _fetch_bottleservice(event_uuid: str, api_key: str) -> list[dict]:
     headers = {"X-API-Key": api_key, "Accept": "application/json"}
-    async with httpx.AsyncClient(timeout=15) as client:
+    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
         try:
             r = await client.get(
                 f"{_PARTNER_BASE}/v2/events/{event_uuid}/offers",
@@ -168,7 +168,7 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
 
     url = f"{settings.site_base_url.rstrip('/')}/api/vip-availability"
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
             r = await client.get(url, params={"name": event_name, "date": date_iso})
             if r.status_code != 200:
                 logger.debug("VIP via sito: HTTP %s per %s %s", r.status_code, event_name, date_iso)
@@ -178,10 +178,26 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
         logger.debug("VIP via sito: errore per %s %s: %s", event_name, date_iso, e)
         return ""
 
+    # La MAPPA 3D esiste per OGNI serata: si costruisce da nome+data e non dipende
+    # dall'elenco tavoli. Va quindi calcolata PRIMA di qualsiasi uscita anticipata.
+    # Caso reale (WA 4/9, Perreo XL 26/9): l'endpoint tavoli non rispondeva e il bot
+    # diceva "non ho ancora il link della mappa", che e' falso e fa perdere vendite.
+    map_url = f"{settings.site_base_url.rstrip('/')}/mappa-vip?{urlencode({'name': event_name, 'date': date_iso})}"
+    map_line = f"MAPPA TAVOLI 3D ({date_iso}): {map_url}"
+
     tables = data.get("tables", []) if isinstance(data, dict) else []
     if not tables:
-        _site_cache[key] = {"text": "", "ts": time.time()}
-        return ""
+        # Nessun tavolo dall'endpoint: NON e' "la mappa non c'e'". Diamo comunque il
+        # link, che mostra tavoli e disponibilita' in tempo reale per quella serata.
+        text = (
+            f"{map_line}\n"
+            "TAVOLI VIP: elenco non disponibile in questo momento. MANDA COMUNQUE al "
+            "cliente il link della MAPPA qui sopra (vale per QUALSIASI serata e mostra "
+            "tavoli e disponibilita' aggiornate). NON dire mai che per questa serata la "
+            "mappa non esiste o non ce l'hai, e non dire che i tavoli sono esauriti."
+        )
+        _site_cache[key] = {"text": text, "ts": time.time()}
+        return text
 
     # Stati del sito: libero (prenotabile ora) · chiuso (vendita online NON ancora
     # aperta per la serata) · altro (venduto/opzionato → non disponibile).
@@ -198,11 +214,6 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
         cop = t.get("coperti")
         cop_str = f" — max {cop} persone" if cop else ""
         return f"{zona} {cod}{cop_str}".strip()
-
-    # Link alla mappa interattiva 3D della serata (da inviare quando chiedono "la mappa",
-    # al posto del vecchio JPG Dropbox).
-    map_url = f"{settings.site_base_url.rstrip('/')}/mappa-vip?{urlencode({'name': event_name, 'date': date_iso})}"
-    map_line = f"MAPPA TAVOLI 3D ({date_iso}): {map_url}"
 
     if available:
         header = "TAVOLI VIP DISPONIBILI:"
@@ -258,7 +269,7 @@ async def get_vip_tables_sardinia(sanity_id: str) -> str:
     data = None
     for attempt in (1, 2):
         try:
-            async with httpx.AsyncClient(timeout=15) as client:
+            async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
                 r = await client.get(url, params={"event": sanity_id})
                 if r.status_code == 200:
                     data = r.json()
