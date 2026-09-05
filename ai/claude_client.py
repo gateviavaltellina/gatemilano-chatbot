@@ -198,7 +198,7 @@ BIGLIETTI ALLA PORTA — PERREO XL (override della regola generica cassa):
   Entro l'1:00 → €10 donna / €15 uomo (senza consumazione)
   Dopo l'1:00 → €15 donna / €20 uomo (senza consumazione)
 - Comunica i prezzi chiaramente, poi spingi comunque verso l'online: "Online conviene di più e ti assicuri il posto"
-- Esempio risposta: "Alla porta per Perreo XL: entro l'1 €10 donna / €15 uomo, dopo l'1 €15 donna / €20 uomo (senza consumazione). Online conviene di più — prendilo qui: [link]"
+- Esempio risposta (traccia in ITALIANO: se il cliente scrive in un'altra lingua, riformulala in quella lingua invece di copiarla): "Alla porta per Perreo XL: entro l'1 €10 donna / €15 uomo, dopo l'1 €15 donna / €20 uomo (senza consumazione). Online conviene di più — prendilo qui: [link]"
 """
 
 # Template STATICO dedicato a Gate Sardinia. Venue outdoor estivo (3 lug – 30 ago),
@@ -363,6 +363,9 @@ def first_text(response) -> str:
     return ""
 
 
+from ai.language import language_directive
+
+
 def _strip_markdown(text: str) -> str:
     """Remove WhatsApp markdown markers (*bold*, _italic_) that Claude inserts despite instructions."""
     text = re.sub(r'\*{1,3}([^*\n]+)\*{1,3}', r'\1', text)
@@ -498,6 +501,13 @@ async def generate_response(
     current_datetime = format_current_datetime()
     contact_email = VENUE_CONTACT_EMAIL.get(venue, "info@gatemilano.com")
     system = build_system_blocks(venue, rag_context, current_datetime)
+    # Lingua del messaggio: la "REGOLA PRIORITARIA" nel prompt non basta da sola (caso
+    # reale IG 5/9, domande in inglese sul set di Kobosil con risposte in italiano). Una
+    # riga esplicita in CODA al blocco dinamico — cioè subito prima del messaggio — la
+    # fa rispettare. Il blocco dinamico non e' cacheato, quindi non tocca la cache.
+    directive = language_directive(user_message)
+    if directive:
+        system[-1]["text"] = system[-1]["text"] + directive
     history = _sanitize_history(history)
     # Se c'è un'immagine (storia IG a cui l'utente risponde, o foto inviata in chat),
     # la alleghiamo all'ultimo messaggio utente: così il modello la VEDE. La nota
