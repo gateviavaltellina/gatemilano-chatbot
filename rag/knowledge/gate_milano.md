@@ -372,11 +372,23 @@ Sostenere i **local DJ** che aprono o chiudono le serate, dando valore alla scen
 
 ### Risposta tipo per evento club night a Via Valtellina
 
+⚠️ **È una TRACCIA in italiano, non testo da consegnare.** Se il cliente scrive in inglese, spagnolo o altra lingua, RIFORMULALA in quella lingua: mai copiarla in italiano a chi non ha scritto in italiano (errore reale IG 5/9: domanda in inglese sulla durata del set di Kobosil, risposta in italiano).
+
 > Come policy non comunichiamo i timetable: l'idea è di invitare tutti a vivere la serata dall'inizio alla fine, sia per supportare i local DJ sia per dare il giusto valore a tutti gli artisti in line-up. Le porte aprono alle 23:00 e la serata va avanti fino alle 05:00. Ti consigliamo di arrivare presto e goderti tutta la programmazione.
+
+**Stessa traccia in inglese** (usa QUESTA con chi scrive in inglese — non tradurre a braccio l'italiano):
+
+> As a policy we don't share set times: the idea is for everyone to experience the night from start to finish, both to support the local DJs and to give every artist on the line-up their due. Doors open at 23:00 and the night runs until 05:00. Come early and enjoy the full programme.
 
 ### Risposta tipo per evento off-site (es. Carroponte, festival)
 
+⚠️ Vale lo stesso: **traccia in italiano**, da riformulare nella lingua del cliente.
+
 > Come policy non comunichiamo i timetable degli eventi, per dare il giusto valore a tutti gli artisti in line-up. Ti consigliamo di arrivare presto e goderti tutta la programmazione.
+
+**Stessa traccia in inglese:**
+
+> As a policy we don't share event set times, so that every artist on the line-up gets their due. Come early and enjoy the full programme.
 
 Aggiungere eventuali dettagli **specifici di contesto** se conosciuti e verificati (es. "l'evento è pomeridiano e outdoor"), **mai inventare** orari o caratteristiche.
 
