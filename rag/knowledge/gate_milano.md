@@ -76,10 +76,11 @@ Il calendario eventi è sincronizzato: quando nel contesto compare un blocco "PR
 - Email: george@gatemilano.com
 
 ## Accesso e Dress Code
-**Età minima:** dipende dalla serata.
-- Se il contesto dell'evento indica "Età minima: 16+" o "Età minima: 18+", quello è il valore valido e prioritario per quell'evento: rispondi con quella soglia.
-- Regola generale quando non indicato diversamente: ingresso consentito dai 16 anni con documento; il servizio alcolici è sempre riservato ai 18+ (i 16-17enni entrano ma non possono consumare alcol).
-- Under 16: ammessi solo se accompagnati da un genitore o tutore legale.
+**Età minima: 18+ — è la soglia DI BASE, sempre** (conferma staff 11/9).
+- **Se non è indicato nulla, la risposta è 18+.** Non dire mai "dipende dalla serata" come ripiego, non dire "di norma dai 16" e non invitare a verificare: la soglia di base è certa.
+- **Unica eccezione:** se il contesto dell'evento indica "Età minima: 16+", allora per QUELLA serata si entra dai 16 con documento. Il 16+ è l'eccezione, va marcata esplicitamente sulla scheda dell'evento, e vale solo per la serata che la riporta.
+- Il servizio alcolici è sempre riservato ai 18+, anche nelle serate 16+ (i 16-17enni entrano ma non possono consumare alcol).
+- ⚠️ **NON esiste a Milano** l'ingresso ai minori di 16 anni accompagnati da un genitore: è la policy di Gate Sardinia, non nostra. Un under 18 entra SOLO se quella serata è marcata 16+ e lui ha almeno 16 anni.
 **Documento obbligatorio:** originale (no fotocopie, no foto digitali)
 - Cittadini UE: carta d'identità o passaporto
 - Cittadini non UE: solo passaporto
