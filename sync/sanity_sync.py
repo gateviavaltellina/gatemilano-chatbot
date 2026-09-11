@@ -607,10 +607,19 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
     lineup_str = f"\nLineup: {', '.join(artists)}" if artists else ""
     # Età minima per-evento da Sanity. Accetta numero (16/18) o stringa ("16+", "18+").
     # Se valorizzata è ESPLICITA e prioritaria per il bot (vedi regola ETÀ nel system prompt).
+    #
+    # Campo VUOTO a Milano = 18+ (conferma staff 11/9): la soglia di base e' sempre 18+
+    # e il 16+ e' l'eccezione da marcare esplicitamente in Sanity. Il fallback va scritto
+    # nella scheda, non lasciato dedurre: senza questa riga il bot ripiegava sulla regola
+    # generale della knowledge base, che per un refuso riportava la policy della Sardegna
+    # ("ingresso dai 16") e diceva ai minorenni che potevano entrare a Milano.
+    # A Gate Sardinia NON si applica: là il 16+ e' davvero la regola della casa.
     age_str = ""
     if min_age not in (None, "", 0):
         age_label = f"{min_age}+" if isinstance(min_age, (int, float)) else str(min_age).strip()
         age_str = f"\nEtà minima: {age_label} (documento obbligatorio)"
+    elif "Sardinia" not in venue_label:
+        age_str = "\nEtà minima: 18+ (documento obbligatorio)"
 
     ticket_str = ""
     if ticket_url:

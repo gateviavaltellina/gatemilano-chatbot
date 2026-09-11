@@ -46,15 +46,18 @@
     Data: {{TODAY+7}}
   rubric:
     must:
-      - "Senza un'età specifica nel contesto, deve dare la regola generale (ingresso dai 16 con documento, alcol riservato ai 18+) oppure invitare a verificare l'evento; il documento è sempre obbligatorio"
+      - "Deve rispondere 18+ con documento obbligatorio: a Milano la soglia di base è sempre 18+ (conferma staff 11/9)"
     must_not:
-      - "Non deve inventare una soglia di età specifica e diversa non presente nel contesto, né negare seccamente l'ingresso"
+      - "Non deve dire che si entra dai 16 anni: a Milano il 16+ esiste solo se la scheda della serata lo indica esplicitamente"
+      - "Non deve rispondere 'dipende dalla serata' o rimandare a verificare senza dare la soglia: 18+ è certo"
 
 - id: age-no-context-da-policy-generale
   category: age
   venue: gate_milano
   # Caso reale (chat IG 26/6, Perreo XL senza minAge): il bot rispondeva solo
-  # "non ho l'età, controlla il sito". Ora deve dare SUBITO la policy generale.
+  # "non ho l'età, controlla il sito". Ora deve dare SUBITO la soglia di base.
+  # Aggiornato 11/9: la soglia di base a Milano è 18+, non 16+ (la vecchia rubric
+  # codificava per errore la policy di Gate Sardinia).
   user_message: "Che età è l'evento?"
   rag_context: |
     EVENTO: Perreo XL
@@ -62,9 +65,10 @@
     Data: {{TODAY+1}}
   rubric:
     must:
-      - "Deve dare la regola generale (ingresso di norma dai 16 con documento, alcune serate 18+, alcol riservato ai 18+) e ricordare il documento originale obbligatorio"
+      - "Deve dare la soglia di base 18+ e ricordare il documento originale obbligatorio"
     must_not:
-      - "Non deve limitarsi a dire 'non ho l'età, controlla su gatemilano.it' senza prima fornire la regola generale; non deve inventare una soglia specifica per quella serata"
+      - "Non deve dire 'di norma dai 16': a Milano si entra dai 16 solo nelle serate marcate 16+"
+      - "Non deve limitarsi a dire 'non ho l'età, controlla su gatemilano.it' senza prima fornire la soglia"
 
 - id: age-alcol-16
   category: age
