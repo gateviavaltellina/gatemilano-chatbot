@@ -10,6 +10,8 @@ from rag.event_store import (
     get_vip_candidates,
     find_event_dates_by_name,
     has_active_event,
+    _name_tokens,
+    _NAME_STOPWORDS,
     get_events_around_compact,
     get_calendar_horizon,
 )
@@ -52,11 +54,26 @@ _OTHER_VENUE_ALIASES = {
 _VENUE_CHANNEL = {"gate_milano": "gate-milano", "gate_sardinia": "gate-sardinia"}
 
 
-async def _vip_lookup(venue: str, date_str: str | None, channel: str) -> str:
-    """Disponibilità tavoli per una venue. Candidati: eventi della data richiesta,
-    oppure i prossimi in programma (in ordine); si ferma al primo che ha tavoli.
-    Milano usa l'endpoint del sito (name+date); Sardegna l'endpoint /api/vip/availability
-    (MAI link Xceed); le altre venue la pipeline Xceed. Ritorna "" se nessun tavolo."""
+async def _vip_lookup(venue: str, date_str: str | None, channel: str,
+                      text: str = "") -> str:
+    """Disponibilità tavoli per una venue, per la data richiesta (o i prossimi eventi).
+
+    Una serata ha spesso PIÙ eventi (Main Room + Club Room, o un off-site in
+    contemporanea): fermarsi al primo candidato con tavoli era un bug. Caso reale
+    (WhatsApp 12/9, 4 tavoli per il Perreo XL del 19/9): il primo candidato era il
+    Carl Cox al Carroponte — 10 tavoli e ZERO link di acquisto — e il Perreo XL con
+    30 tavoli e i link validi non veniva mai interrogato. Il bot finiva per mandare
+    il cliente a scrivere un'email invece di dargli i link di pagamento.
+
+    Ordine di preferenza fra i candidati della data:
+    1. l'evento NOMINATO dal cliente nel messaggio (è quello di cui sta parlando);
+    2. un evento i cui tavoli sono acquistabili online (hanno un link di checkout);
+    3. il primo con tavoli, come prima.
+    """
+    lower = (text or "").lower()
+    named: str = ""
+    bookable: str = ""
+    first: str = ""
     for name, date_iso, ticket_url, sanity_id in get_vip_candidates(venue, date_str):
         if venue == "gate_milano":
             result = await get_vip_tables_via_site(name, date_iso)
@@ -66,9 +83,19 @@ async def _vip_lookup(venue: str, date_str: str | None, channel: str) -> str:
             if "xceed" not in (ticket_url or ""):
                 continue
             result = await get_vip_tables_context(ticket_url, channel)
-        if result:
-            return result
-    return ""
+        if not result:
+            continue
+        if not first:
+            first = result
+        if not bookable and "Prenota: http" in result:
+            bookable = result
+        # Nome dell'evento citato dal cliente: match sui token significativi del titolo
+        # (così "perreo" aggancia "Perreo XL" senza pretendere il titolo esatto).
+        if not named and name:
+            tokens = _name_tokens(name) - _NAME_STOPWORDS
+            if tokens and any(t in lower for t in tokens):
+                named = result
+    return named or bookable or first
 
 
 async def build_rag_context(venue: str, text: str, history: list[dict] | None = None) -> tuple[str, list[str]]:
@@ -143,7 +170,7 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # 1. VIP context — when VIP keywords in current message OR recent history.
     vip_context = ""
     if any(t in lower_text for t in _VIP_TRIGGERS) or any(t in history_text for t in _VIP_TRIGGERS):
-        vip_context = await _vip_lookup(venue, query_dates[0] if query_dates else None, channel)
+        vip_context = await _vip_lookup(venue, query_dates[0] if query_dates else None, channel, text)
         # Cross-venue: il cliente scrive a una venue ma chiede di un evento dell'ALTRA
         # (caso reale: "tavoli del 5 luglio a Gate Sardinia" sul numero di Milano). Se
         # qui non troviamo tavoli e c'è una data richiesta con un evento nell'altra
@@ -151,7 +178,7 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
         # risponde con i dati giusti senza spacciarli per questa venue.
         if not vip_context and query_dates:
             other_channel = _VENUE_CHANNEL.get(other_venue, "gate-milano")
-            other_vip = await _vip_lookup(other_venue, query_dates[0], other_channel)
+            other_vip = await _vip_lookup(other_venue, query_dates[0], other_channel, text)
             if other_vip:
                 vip_context = f"[TAVOLI A {other_venue_name.upper()} — venue diversa]\n{other_vip}"
 

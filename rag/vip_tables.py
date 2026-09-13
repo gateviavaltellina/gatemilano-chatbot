@@ -216,7 +216,7 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
         return f"{zona} {cod}{cop_str}".strip()
 
     if available:
-        header = "TAVOLI VIP DISPONIBILI:"
+        header = f"TAVOLI VIP DISPONIBILI — evento: {event_name} ({date_iso}):"
     elif closed:
         header = (
             "TAVOLI VIP DELLA SERATA — vendita online NON ANCORA APERTA (NON dire mai "
@@ -227,11 +227,21 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
             "della serata."
         )
     else:
-        header = "TAVOLI VIP: tutti esauriti per questo evento."
+        header = f"TAVOLI VIP: tutti esauriti per {event_name} ({date_iso})."
 
     lines = [header]
     for t in available:
-        lines.append(f"- {_row(t)}: €{t.get('prezzo')} → Prenota: {t.get('checkoutUrl')}")
+        url = (t.get("checkoutUrl") or "").strip()
+        if url:
+            lines.append(f"- {_row(t)}: €{t.get('prezzo')} → Prenota: {url}")
+        else:
+            # Senza checkoutUrl il tavolo esiste ed e' libero, ma NON si compra online.
+            # Prima qui finiva la stringa "None" e il bot rischiava di girarla al cliente.
+            lines.append(
+                f"- {_row(t)}: €{t.get('prezzo')} — libero ma SENZA acquisto online per "
+                f"questo evento: raccogli data/zona/numero persone e indirizza a "
+                f"info@gatemilano.com (NON inventare un link)"
+            )
     for t in closed:
         lines.append(f"- {_row(t)}: €{t.get('prezzo')} — vendita online non ancora aperta")
     for t in sold:

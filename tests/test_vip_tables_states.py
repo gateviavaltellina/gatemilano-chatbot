@@ -53,7 +53,7 @@ async def test_closed_tables_show_real_prices_not_soldout():
 async def test_free_tables_have_direct_checkout_links():
     _C._payload = {"tables": [_t("B2", "libero"), _t("B3", "venduto")]}
     out = await vt.get_vip_tables_via_site("EVENTO", "2026-10-16")
-    assert "TAVOLI VIP DISPONIBILI:" in out
+    assert "TAVOLI VIP DISPONIBILI — evento:" in out
     assert "Prenota: https://booking-plugin.xceed.me/x/B2" in out
     assert "B3" in out and "NON DISPONIBILE" in out
 
