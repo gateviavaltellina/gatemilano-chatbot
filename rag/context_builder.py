@@ -202,7 +202,12 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # che sono in Sanity (caso reale: 30 eventi ad agosto ma rispondeva "non ho eventi
     # per agosto"). Salta i mesi per cui c'è già un giorno specifico tra query_dates.
     for (yr, mo) in extract_query_months(text):
-        if any(d[:7] == f"{yr:04d}-{mo:02d}" for d in query_dates):
+        # Salta il mese solo se il cliente ha scritto ESPLICITAMENTE un giorno di quel
+        # mese: una data dedotta dal nome di un evento non basta. Caso reale (IG 13/9):
+        # la parola "Milan" agganciava un evento del 31/10, e quella data spuria faceva
+        # sparire tutto l'elenco di ottobre — il bot rispondeva che a metà ottobre non
+        # c'era nulla mentre il 16/10 e il 17/10 erano pieni.
+        if any(d[:7] == f"{yr:04d}-{mo:02d}" for d in explicit_dates):
             continue
         mev = get_events_for_month_compact(venue, yr, mo)
         if mev:

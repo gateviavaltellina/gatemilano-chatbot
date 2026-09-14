@@ -236,19 +236,34 @@ def extract_query_dates(text: str, now: datetime | None = None, explicit_only: b
                         dates.append(d.strftime("%Y-%m-%d"))
                         break
 
-    # Date esplicite italiane: "15 maggio", "il 15 maggio 2026"
-    for month_name, month_num in _IT_MONTHS.items():
-        pattern = rf"\b(\d{{1,2}})\s+{month_name}(?:\s+(\d{{4}}))?"
-        for m in re.finditer(pattern, lower):
-            day = int(m.group(1))
-            year = int(m.group(2)) if m.group(2) else now.year
-            try:
-                d = _date(year, month_num, day)
-                if not m.group(2):
-                    d = _resolve_yearless(d, now.date())
-                dates.append(d.strftime("%Y-%m-%d"))
-            except ValueError:
-                pass
+    # Date esplicite con il mese scritto a parole, in TUTTE le lingue supportate e nei
+    # DUE ordini: "15 maggio", "il 15 maggio 2026", "16 October", "16th October",
+    # "October 16th", "16 de octubre".
+    #
+    # Prima qui si iterava solo _IT_MONTHS e solo l'ordine giorno-mese: un cliente
+    # inglese che scriveva "the 16th October weekend" non otteneva nessuna data a
+    # livello di giorno. Caso reale (IG, 13/9, cliente in viaggio dall'India per il
+    # weekend del 16 ottobre): il bot ha risposto che a metà ottobre non aveva nulla
+    # in calendario, mentre il 16/10 c'era Nikolina e il 17/10 il Perreo XL.
+    # "may" resta escluso da _EN_MONTHS di proposito (troppo ambiguo in inglese).
+    _ORD = r"(?:st|nd|rd|th|°)?"
+    for month_name, month_num in _MONTH_NAMES.items():
+        mn = re.escape(month_name)
+        patterns = (
+            rf"\b(\d{{1,2}}){_ORD}\s+(?:de\s+|of\s+)?{mn}\b(?:\s+(\d{{4}}))?",
+            rf"\b{mn}\s+(?:the\s+)?(\d{{1,2}}){_ORD}\b(?:\s+(\d{{4}}))?",
+        )
+        for pattern in patterns:
+            for m in re.finditer(pattern, lower):
+                day = int(m.group(1))
+                year = int(m.group(2)) if m.group(2) else now.year
+                try:
+                    d = _date(year, month_num, day)
+                    if not m.group(2):
+                        d = _resolve_yearless(d, now.date())
+                    dates.append(d.strftime("%Y-%m-%d"))
+                except ValueError:
+                    pass
 
     # Pass fuzzy su "giorno + mese col typo" ("il 19 setembre", "3 ottobr"):
     # typo di 1 lettera su nomi di mese >=6 lettere (con 2 scattavano falsi

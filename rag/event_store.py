@@ -334,6 +334,13 @@ _NAME_STOPWORDS = {
     "gate", "milano", "sardinia", "sardegna", "budoni", "club", "live", "show",
     "night", "serata", "serate", "evento", "eventi", "party", "festival", "tour",
     "presents", "open", "opening", "closing",
+    # Nomi di città e parole di contorno che compaiono nei MESSAGGI, non solo nei
+    # titoli. Caso reale (IG 13/9): "trying to be in Milan for the 16th October
+    # weekend" agganciava i titoli "MILAN 8 MILE" (27/9) e "WEGZ LIVE IN MILAN"
+    # (31/10), e quella data spuria sopprimeva l'elenco di ottobre — il bot ha
+    # risposto che a metà ottobre non c'era nulla in programma.
+    "milan", "milaan", "sesto", "giovanni", "italia", "italy",
+    "weekend", "week", "settimana", "giorno", "giorni", "date", "datta",
 }
 
 # Nomi artista CORTI (<4 lettere, normalizzati: minuscolo, senza accenti) di forte
