@@ -1,6 +1,7 @@
 """Shared RAG context builder for WhatsApp and Instagram webhooks."""
 from __future__ import annotations
 import logging
+import re
 
 from rag.event_store import (
     get_upcoming_events_compact,
@@ -12,6 +13,7 @@ from rag.event_store import (
     has_active_event,
     _name_tokens,
     _NAME_STOPWORDS,
+    _norm_name,
     get_events_around_compact,
     get_calendar_horizon,
 )
@@ -58,22 +60,23 @@ async def _vip_lookup(venue: str, date_str: str | None, channel: str,
                       text: str = "") -> str:
     """Disponibilità tavoli per una venue, per la data richiesta (o i prossimi eventi).
 
-    Una serata ha spesso PIÙ eventi (Main Room + Club Room, o un off-site in
-    contemporanea): fermarsi al primo candidato con tavoli era un bug. Caso reale
-    (WhatsApp 12/9, 4 tavoli per il Perreo XL del 19/9): il primo candidato era il
-    Carl Cox al Carroponte — 10 tavoli e ZERO link di acquisto — e il Perreo XL con
-    30 tavoli e i link validi non veniva mai interrogato. Il bot finiva per mandare
-    il cliente a scrivere un'email invece di dargli i link di pagamento.
+    Una serata ha quasi sempre PIÙ eventi (Main Room + Club Room, o un off-site in
+    contemporanea) e ognuno ha i SUOI tavoli. Restituirne uno solo ha prodotto due
+    danni reali:
 
-    Ordine di preferenza fra i candidati della data:
-    1. l'evento NOMINATO dal cliente nel messaggio (è quello di cui sta parlando);
-    2. un evento i cui tavoli sono acquistabili online (hanno un link di checkout);
-    3. il primo con tavoli, come prima.
+    - 12/9: il primo candidato del 19/9 era il Carl Cox al Carroponte (10 tavoli,
+      ZERO link di acquisto) e il Perreo XL con 30 tavoli e link validi non veniva
+      mai interrogato: il bot mandava il cliente a scrivere un'email.
+    - 23/9: per il 2/10 il contesto conteneva solo i tavoli del Mantikore, e il bot
+      ha DEDOTTO dall'assenza che il Raw non avesse tavoli ("non risultano tavoli VIP
+      a listino online") — mentre il Raw aveva 4 Balcony liberi a €500 con link.
+
+    Quindi: blocco COMPLETO per l'evento più pertinente (quello nominato dal cliente,
+    altrimenti uno con tavoli acquistabili) e una RIGA DI RIEPILOGO per ogni altro
+    evento della stessa data, così il bot sa che esistono e non può negarli.
     """
     lower = (text or "").lower()
-    named: str = ""
-    bookable: str = ""
-    first: str = ""
+    found: list[tuple[str, str]] = []  # (nome evento, blocco)
     for name, date_iso, ticket_url, sanity_id in get_vip_candidates(venue, date_str):
         if venue == "gate_milano":
             result = await get_vip_tables_via_site(name, date_iso)
@@ -83,19 +86,48 @@ async def _vip_lookup(venue: str, date_str: str | None, channel: str,
             if "xceed" not in (ticket_url or ""):
                 continue
             result = await get_vip_tables_context(ticket_url, channel)
-        if not result:
-            continue
-        if not first:
-            first = result
-        if not bookable and "Prenota: http" in result:
-            bookable = result
-        # Nome dell'evento citato dal cliente: match sui token significativi del titolo
-        # (così "perreo" aggancia "Perreo XL" senza pretendere il titolo esatto).
-        if not named and name:
-            tokens = _name_tokens(name) - _NAME_STOPWORDS
-            if tokens and any(t in lower for t in tokens):
-                named = result
-    return named or bookable or first
+        if result:
+            found.append((name, result))
+    if not found:
+        return ""
+
+    def _is_named(name: str) -> bool:
+        """L'evento è citato nel messaggio del cliente?
+
+        Soglia a 3 lettere (non 4 come nel match generico): i nomi corti sono proprio
+        quelli su cui serve — "Raw" è una serata vera e con la soglia a 4 non veniva
+        mai agganciata. E match su CONFINE DI PAROLA, non sottostringa, altrimenti
+        "raw" scatterebbe dentro "drawn".
+        """
+        tokens = {t for t in _norm_name(name).split()
+                  if len(t) >= 3} - _NAME_STOPWORDS
+        return any(re.search(rf"\b{re.escape(t)}\b", lower) for t in tokens)
+
+    main = next((f for f in found if _is_named(f[0])), None)
+    if main is None:
+        main = next((f for f in found if "Prenota: http" in f[1]), found[0])
+
+    others = [f for f in found if f is not main]
+    if not others:
+        return main[1]
+
+    lines = [main[1], "", "ALTRE SERATE DELLA STESSA DATA — hanno TAVOLI PROPRI:"]
+    for name, block in others:
+        libere = block.count("→ Prenota: http")
+        if libere:
+            lines.append(
+                f"- {name}: {libere} tavoli acquistabili online. Se il cliente è "
+                f"interessato a questa serata, chiediglielo e ti passo i link."
+            )
+        else:
+            lines.append(f"- {name}: tavoli presenti, nessuno acquistabile online ora.")
+    lines.append(
+        "⚠️ NON dire MAI che una di queste serate è senza tavoli o che i tavoli non "
+        "sono a listino: i loro tavoli esistono, qui sopra c'è solo il riepilogo. Se "
+        "il cliente chiede proprio quella serata, dillo e chiedi conferma invece di "
+        "negare."
+    )
+    return "\n".join(lines)
 
 
 async def build_rag_context(venue: str, text: str, history: list[dict] | None = None) -> tuple[str, list[str]]:

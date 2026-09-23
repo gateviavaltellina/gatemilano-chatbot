@@ -106,3 +106,65 @@ async def test_blocco_dichiara_levento():
     # il bot attribuisce al Perreo XL i prezzi del Carroponte.
     out = await vt.get_vip_tables_via_site("Perreo XL", "2026-09-19")
     assert "evento: Perreo XL" in out
+
+
+async def test_altre_serate_della_data_sono_dichiarate():
+    """Il bot non deve poter dedurre dall'assenza che un evento sia senza tavoli.
+
+    Caso reale (IG 23/9, serata del 2/10): nel contesto c'erano solo i tavoli del
+    Mantikore e il bot ha risposto che per il Raw "non risultano tavoli VIP a listino
+    online" — mentre il Raw aveva 4 Balcony liberi a €500 con link di acquisto.
+    """
+    # Nessun evento nominato: vince uno dei due, ma l'ALTRO dev'essere dichiarato.
+    out = await cb._vip_lookup("gate_milano", "2026-09-19", "gate-milano",
+                               "vorrei info sui tavoli della prima serata")
+    assert "ALTRE SERATE DELLA STESSA DATA" in out
+    assert "Carl Cox Invites Loco Dice" in out
+    assert "NON dire MAI" in out
+
+
+async def test_riepilogo_conta_i_tavoli_acquistabili():
+    out = await cb._vip_lookup("gate_milano", "2026-09-19", "gate-milano",
+                               "tavoli per il carl cox")
+    # Nominato il Carl Cox: blocco completo suo (senza link), Perreo XL nel riepilogo
+    # con il numero di tavoli acquistabili.
+    assert "evento: Carl Cox Invites Loco Dice" in out
+    assert "Perreo XL: 2 tavoli acquistabili online" in out
+
+
+async def test_nome_corto_aggancia_la_serata():
+    """Una serata dal nome corto ("Raw") dev'essere agganciabile.
+
+    Il match generico scarta i token sotto le 4 lettere: qui la soglia scende a 3,
+    altrimenti chi scrive "tavoli per la serata raw" riceve i tavoli dell'altro evento.
+    """
+    es.upsert_event("gate_milano", "raw", "EVENTO: Raw", {
+        "type": "event", "source": "sanity", "event_name": "Raw",
+        "date": "2026-09-19", "date_ts": int(datetime.datetime(
+            2026, 9, 19, tzinfo=datetime.timezone.utc).timestamp()),
+        "venue": "gate_milano", "sanity_id": "raw", "ticket_url": "",
+    })
+    out = await cb._vip_lookup("gate_milano", "2026-09-19", "gate-milano",
+                               "tavoli per la serata raw")
+    assert "evento: Raw" in out
+
+
+async def test_sottostringa_non_aggancia():
+    # "raw" dentro "drawn" non deve selezionare la serata Raw: match su parola intera.
+    es.upsert_event("gate_milano", "raw", "EVENTO: Raw", {
+        "type": "event", "source": "sanity", "event_name": "Raw",
+        "date": "2026-09-19", "date_ts": int(datetime.datetime(
+            2026, 9, 19, tzinfo=datetime.timezone.utc).timestamp()),
+        "venue": "gate_milano", "sanity_id": "raw", "ticket_url": "",
+    })
+    out = await cb._vip_lookup("gate_milano", "2026-09-19", "gate-milano",
+                               "we were drawn to your club, any tables?")
+    assert "evento: Raw" not in out.split("ALTRE SERATE")[0]
+
+
+async def test_evento_unico_nessun_riepilogo():
+    # Con una sola serata in data non deve comparire il blocco "ALTRE SERATE".
+    es._store.clear()
+    _seed("solo", "Perreo XL", "2026-09-26")
+    out = await cb._vip_lookup("gate_milano", "2026-09-26", "gate-milano", "tavoli")
+    assert "ALTRE SERATE DELLA STESSA DATA" not in out
