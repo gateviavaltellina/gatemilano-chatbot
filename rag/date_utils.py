@@ -107,6 +107,17 @@ _ES_MONTHS = {
 }
 _MONTH_NAMES = {**_IT_MONTHS, **_EN_MONTHS, **_ES_MONTHS}
 
+# Parole che NON sono mesi ma ci cadono a un solo errore di distanza. Il fuzzy sui
+# mesi serve ai refusi ("agsoto", "setembre"), non deve trasformare il lessico di
+# tutti i giorni in una data:
+# - la famiglia di "aprire" cade su "aprile", e "a che ora aprite?" è una delle
+#   domande più frequenti che riceviamo: ogni volta iniettava aprile nel contesto;
+# - "Marco" (nome comunissimo) e "marca" cadono su "marzo"/"march".
+_NOT_A_MONTH = {
+    "aprite", "aprire", "apriti", "apriamo", "aprono", "aprira", "aprirà", "aprili",
+    "marco", "marca", "marchi", "marche",
+}
+
 
 def _edit_distance_le(a: str, b: str, max_d: int) -> bool:
     """True se la distanza di Levenshtein tra a e b è <= max_d (con early-exit)."""
@@ -147,12 +158,14 @@ def extract_query_months(text: str, now: datetime | None = None) -> list[tuple[i
     # Pass fuzzy: token del messaggio a distanza 1-2 da un nome di mese (>=5 lettere).
     # Cattura i refusi comuni senza allargare troppo (soglia bassa, guardia di lunghezza).
     if not found:
-        tokens = {t for t in re.findall(r"[a-zàèéìòù]+", lower) if len(t) >= 5}
+        tokens = {t for t in re.findall(r"[a-zàèéìòù]+", lower)
+                  if len(t) >= 5 and t not in _NOT_A_MONTH}
         for name, mnum in _MONTH_NAMES.items():
             if len(name) < 5:
                 continue
-            max_d = 2 if len(name) >= 6 else 1
-            if any(abs(len(t) - len(name)) <= 2 and _edit_distance_le(t, name, max_d)
+            # Una sola differenza, ma con le trasposizioni contate come un errore:
+            # cattura "agsoto" senza far matchare "giorno" con "giugno".
+            if any(abs(len(t) - len(name)) <= 1 and _osa_distance_le(t, name, 1)
                    for t in tokens):
                 found.append((_year(mnum), mnum))
     return list(dict.fromkeys(found))
@@ -189,6 +202,67 @@ def _resolve_yearless(d: _date, now_date: _date) -> _date:
         return d
 
 
+_MONTH_WORD_RE = "|".join(sorted((re.escape(m) for m in _MONTH_NAMES), key=len, reverse=True))
+
+# Numero che NON è una data: orari ("23:00"), prezzi ("23€", "23 euro"), quantità
+# ("siamo in 23", "23 persone", "23 anni").
+# Esclude anche la PRIMA cifra di una data numerica ("il 3/5", "il 31/08/26"): quella
+# la gestisce il pass sulle date numeriche, che conosce anche il mese.
+_NOT_A_DAY_AFTER = r"(?!\s*[:./-]\s*\d)(?!\s*(?:€|euro|eur\b|persone|person|people|ragazz|amici|anni|years))"
+_NOT_A_DAY_BEFORE = r"(?<!€)"
+
+
+def _osa_distance_le(a: str, b: str, max_d: int) -> bool:
+    """Distanza di Damerau-Levenshtein (OSA) <= max_d.
+
+    Conta lo scambio di due lettere adiacenti come UN errore: "agsoto" → "agosto" è
+    una trasposizione, cioè il refuso più comune quando si digita in fretta. Serviva
+    alzare la soglia a 2 per catturarla, ma a 2 "giorno" matchava "giugno" e "il
+    giorno 23" finiva a giugno dell'anno dopo. Con l'OSA la trasposizione costa 1 e
+    la collisione sparisce.
+    """
+    if abs(len(a) - len(b)) > max_d:
+        return False
+    prev2: list[int] = []
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        row_best = i
+        for j, cb in enumerate(b, 1):
+            cost = 0 if ca == cb else 1
+            v = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost)
+            if i > 1 and j > 1 and ca == b[j - 2] and a[i - 2] == cb:
+                v = min(v, prev2[j - 2] + 1)
+            cur.append(v)
+            row_best = min(row_best, v)
+        if row_best > max_d:
+            return False
+        prev2, prev = prev, cur
+    return prev[-1] <= max_d
+
+
+def _next_day_of_month(now_date, day: int):
+    """Prossima occorrenza del giorno `day` a partire da oggi (incluso).
+
+    "il 23" detto il 1° ottobre è il 23 ottobre; detto il 25 ottobre è il 23 novembre.
+    Salta i mesi in cui il giorno non esiste (il 31 a novembre → dicembre).
+    """
+    if not 1 <= day <= 31:
+        return None
+    year, month = now_date.year, now_date.month
+    for _ in range(14):  # abbondante: copre anche il 29 febbraio
+        try:
+            cand = _date(year, month, day)
+        except ValueError:
+            cand = None
+        if cand is not None and cand >= now_date:
+            return cand
+        month += 1
+        if month > 12:
+            month, year = 1, year + 1
+    return None
+
+
 def extract_query_dates(text: str, now: datetime | None = None, explicit_only: bool = False) -> list[str]:
     """explicit_only=True: solo date ESPLICITE (numeriche o "31 luglio"), niente
     termini relativi (stasera/domani/weekend/giorni della settimana). Serve quando il
@@ -196,6 +270,9 @@ def extract_query_dates(text: str, now: datetime | None = None, explicit_only: b
     now = business_now(now)
     lower = text.lower()
     dates = []
+    # Giorni "nudi": restano fuori da explicit_only, come gli altri termini
+    # relativi — un "il 23" ripescato dalla storia non e' una data esplicita.
+    bare_days: list[str] = []
 
     if not explicit_only:
         if any(t in lower for t in _TODAY_TERMS):
@@ -218,11 +295,38 @@ def extract_query_dates(text: str, now: datetime | None = None, explicit_only: b
             dates.append(sat.strftime("%Y-%m-%d"))
             dates.append((sat + timedelta(days=1)).strftime("%Y-%m-%d"))
 
-        # Giorni della settimana specifici
+        # GIORNO DEL MESE "NUDO": "il 23", "per il 23", "the 23rd", "sabato 23".
+        # Caso reale (IG 1/10): un cliente chiede i biglietti per "the 23rd"; nessuna
+        # data veniva risolta, nel contesto c'era solo la finestra di 14 giorni, e il
+        # bot gli ha mandato il link di ACQUISTO di un'altra serata (Schranz del 3/10)
+        # dicendo poi di non avere quello del 23 — che invece esiste.
+        # Guardie: niente orari (23:00), prezzi (23€), quantità (siamo in 23), e niente
+        # numeri seguiti da un mese (li gestisce il pass giorno+mese, più preciso).
+        bare_day_found = False
+        _bare_patterns = (
+            rf"\b(?:il|lo|del|dal|per il)\s+(\d{{1,2}})\b(?!\s+(?:{_MONTH_WORD_RE}))",
+            rf"\bgiorno\s+(\d{{1,2}})\b(?!\s+(?:{_MONTH_WORD_RE}))",
+            rf"\b(?:the|on the)\s+(\d{{1,2}})(?:st|nd|rd|th)\b(?!\s+(?:{_MONTH_WORD_RE}))",
+            rf"\b(\d{{1,2}})(?:st|nd|rd|th)\b(?!\s+(?:{_MONTH_WORD_RE}))",
+            rf"\b(?:{'|'.join(re.escape(t) for t in _WEEKDAY_TERMS)})\s+(?:il\s+)?(\d{{1,2}})\b(?!\s+(?:{_MONTH_WORD_RE}))",
+        )
+        for pattern in _bare_patterns:
+            for m in re.finditer(_NOT_A_DAY_BEFORE + pattern + _NOT_A_DAY_AFTER, lower):
+                d = _next_day_of_month(now.date(), int(m.group(1)))
+                if d is not None:
+                    bare_days.append(d.strftime("%Y-%m-%d"))
+                    bare_day_found = True
+
+        # Giorni della settimana specifici. Se il messaggio portava GIÀ un giorno del
+        # mese ("sabato 23"), quello vince: il numero è la data vera, il nome del
+        # giorno solo un contorno. Prima "sabato 23" restituiva il sabato successivo,
+        # cioè una serata diversa da quella chiesta.
         matched_weekday = False
         for term, weekday in _WEEKDAY_TERMS.items():
             if term in lower:
                 matched_weekday = True
+                if bare_day_found:
+                    continue
                 d = _prev_weekday(now, weekday) if force_prev else _next_weekday(now, weekday, force_next)
                 dates.append(d.strftime("%Y-%m-%d"))
         # Pass fuzzy sui giorni della settimana ("sbato", "vnerdì"): typo di 1
@@ -303,5 +407,11 @@ def extract_query_dates(text: str, now: datetime | None = None, explicit_only: b
         if not year_raw:
             d = _resolve_yearless(d, now.date())
         dates.append(d.strftime("%Y-%m-%d"))
+
+    # Il giorno "nudo" è il segnale più debole: vale solo se nessun pass più preciso
+    # (mese a parole, typo sul mese, data numerica) ha prodotto una data. Così
+    # "serata del 3 ottobr" resta ottobre e non diventa il prossimo giorno 3.
+    if not dates and bare_days:
+        dates.extend(bare_days)
 
     return list(dict.fromkeys(dates))
