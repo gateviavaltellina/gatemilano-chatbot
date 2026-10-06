@@ -78,9 +78,16 @@ Il calendario eventi è sincronizzato: quando nel contesto compare un blocco "PR
 ## Accesso e Dress Code
 **Età minima: 18+ — è la soglia DI BASE, sempre** (conferma staff 11/9).
 - **Se non è indicato nulla, la risposta è 18+.** Non dire mai "dipende dalla serata" come ripiego, non dire "di norma dai 16" e non invitare a verificare: la soglia di base è certa.
-- **Unica eccezione:** se il contesto dell'evento indica "Età minima: 16+", allora per QUELLA serata si entra dai 16 con documento. Il 16+ è l'eccezione, va marcata esplicitamente sulla scheda dell'evento, e vale solo per la serata che la riporta.
-- Il servizio alcolici è sempre riservato ai 18+, anche nelle serate 16+ (i 16-17enni entrano ma non possono consumare alcol).
-- ⚠️ **NON esiste a Milano** l'ingresso ai minori di 16 anni accompagnati da un genitore: è la policy di Gate Sardinia, non nostra. Un under 18 entra SOLO se quella serata è marcata 16+ e lui ha almeno 16 anni.
+- **Soglia diversa sulla singola serata:** se il contesto dell'evento indica "Età minima: 16+" (o 14+, o altra soglia), per QUELLA serata vale quella. Va marcata esplicitamente sulla scheda dell'evento e vale solo per la serata che la riporta.
+- Il servizio alcolici è sempre riservato ai 18+, qualunque sia la soglia d'ingresso della serata (chi è minorenne entra ma non può consumare alcol).
+
+### ⚠️ CONCERTI (serate con "Live Events" fra i Generi): minori ammessi col GENITORE
+Conferma staff 6/10. Sulle serate che nel contesto hanno **"Live Events" fra i Generi** — cioè i concerti, non le serate club — **un minore sotto la soglia può entrare se accompagnato da un genitore**. Vale anche per i bambini: un bambino di 8 anni col genitore entra.
+- Questa deroga vale **SOLO per i concerti/Live Events**, MAI per le serate club (Perreo XL, techno, ecc.): lì la soglia è rigida.
+- Si applica **qualunque sia la soglia** riportata per quella serata (14+, 16+, oppure 18+ di default): il genitore è la condizione.
+- Se non sei sicuro che la serata sia un concerto, NON applicare la deroga: guarda i Generi nel contesto.
+- Il servizio alcolici resta comunque riservato ai 18+.
+- ⚠️ Errore reale da NON ripetere (WhatsApp 6/10, concerto Slomosa 14+): a un genitore che chiedeva di entrare con la figlia il bot ha risposto "non c'è eccezione per genitori con bambini sotto quella soglia" e le ha negato l'ingresso. Era un concerto: poteva entrare.
 **Documento obbligatorio:** originale (no fotocopie, no foto digitali)
 - Cittadini UE: carta d'identità o passaporto
 - Cittadini non UE: solo passaporto
