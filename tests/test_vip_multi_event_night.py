@@ -168,3 +168,33 @@ async def test_evento_unico_nessun_riepilogo():
     _seed("solo", "Perreo XL", "2026-09-26")
     out = await cb._vip_lookup("gate_milano", "2026-09-26", "gate-milano", "tavoli")
     assert "ALTRE SERATE DELLA STESSA DATA" not in out
+
+
+async def test_data_esplicita_batte_il_nome_dell_evento():
+    """Una data scritta dal cliente vince su quella dedotta dal nome dell'evento.
+
+    Caso reale (WhatsApp 7/10): "un tavolo alla serata Perreo del 24 ottobre". Il
+    Perreo XL è settimanale, quindi il match sul NOME risolveva ai prossimi (10 e 17
+    ottobre) e quelle date finivano in testa a query_dates: il lookup tavoli andava a
+    prendere il 10. Il bot, vedendo tavoli di un'altra data, rispondeva di non avere
+    la mappa del 24 e mandava il cliente a scrivere un'email — con 30 tavoli liberi e
+    i link pronti per quella sera.
+    """
+    es._store.clear()
+    for d in ("2026-09-19", "2026-09-26", "2026-10-03"):
+        _seed("px" + d, "Perreo XL", d)
+    _, dates = await cb.build_rag_context(
+        "gate_milano", "vorrei un tavolo alla serata Perreo del 3 ottobre")
+    assert dates[0] == "2026-10-03"
+
+
+async def test_data_relativa_lascia_la_precedenza_al_nome():
+    """Sulle date RELATIVE la priorità al nome resta: è il caso per cui era nata.
+
+    Con "questo sabato" l'utente approssima, e l'evento può essere archiviato sul
+    giorno adiacente per via del rollover notturno.
+    """
+    es._store.clear()
+    _seed("px", "Perreo XL", "2026-09-19")
+    _, dates = await cb.build_rag_context("gate_milano", "tavolo per il perreo questo sabato")
+    assert "2026-09-19" in dates
