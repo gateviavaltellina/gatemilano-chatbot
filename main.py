@@ -130,6 +130,16 @@ async def _init_background():
             id="nightly_cleanup",
             replace_existing=True,
         )
+        # Risponditore email su info@ (no-op se MAIL_AUTORESPONDER_ENABLED è False).
+        # Ogni 5 minuti: una mail non è una chat, nessuno si aspetta la risposta al
+        # secondo, e un giro corto tiene bassa la coda senza martellare le API Gmail.
+        from mail.responder import run_once as _mail_run
+        scheduler.add_job(
+            _mail_run,
+            CronTrigger(minute="*/5"),
+            id="mail_autoresponder",
+            replace_existing=True,
+        )
         # Salvataggio periodico dello stato conversazioni (no-op se PERSIST_DIR vuoto)
         scheduler.add_job(
             persistence.save_state,
@@ -326,6 +336,26 @@ async def debug_prompt(venue: str = "gate_sardinia", text: str = "ciao"):
         "user_message_example": text,
         "system_prompt": "\n\n".join(b["text"] for b in blocks),
     }
+
+
+@app.get("/debug/mail", dependencies=[Depends(require_debug_key)])
+async def debug_mail(run: bool = False):
+    """Stato del risponditore email, e un giro a richiesta (?run=true).
+
+    Serve a vedere com'è configurato PRIMA di accenderlo, e poi a provarlo una volta
+    senza aspettare il cron."""
+    from mail import gmail_client, responder
+    out = {
+        "attivo": settings.mail_autoresponder_enabled,
+        "solo_bozze": settings.mail_draft_only,
+        "credenziali_gmail": gmail_client.configured(),
+        "casella": settings.mail_from_address,
+        "max_per_giro": settings.mail_max_per_run,
+        "categorie_auto": sorted(__import__("mail.triage", fromlist=["x"]).AUTOSEND_CATEGORIES),
+    }
+    if run:
+        out["giro"] = await responder.run_once()
+    return out
 
 
 @app.get("/debug/vip", dependencies=[Depends(require_debug_key)])
