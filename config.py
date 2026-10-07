@@ -116,6 +116,24 @@ class Settings(BaseSettings):
     # volume Railway montato a /data). Vuoto = persistenza disabilitata (in memoria).
     persist_dir: str = ""
 
+    # --- Risponditore automatico email (info@gatemilano.com) -------------------
+    # SPENTO di default: senza questo flag il job non parte nemmeno, qualunque
+    # credenziale sia configurata. Si accende solo deliberatamente.
+    mail_autoresponder_enabled: bool = False
+    # Credenziali Gmail API (OAuth refresh token della casella info@).
+    gmail_client_id: str = ""
+    gmail_client_secret: str = ""
+    gmail_refresh_token: str = ""
+    # Indirizzo da cui si risponde e firma.
+    mail_from_address: str = "info@gatemilano.com"
+    mail_from_name: str = "Gate Milano"
+    # Se True il risponditore prepara SEMPRE una bozza, anche sulle categorie
+    # considerate sicure: utile per le prime settimane, per leggere cosa avrebbe
+    # mandato prima di lasciarglielo mandare davvero.
+    mail_draft_only: bool = True
+    # Quante email processare per giro: tetto di sicurezza contro i loop.
+    mail_max_per_run: int = 10
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 settings = Settings()
