@@ -189,7 +189,23 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # archiviato, mentre una data relativa ("questo sabato") è solo l'approssimazione
     # dell'utente e può cadere su un giorno adiacente. query_dates[0] guida anche il
     # lookup tavoli VIP, che va fatto sul giorno giusto.
-    query_dates = list(dict.fromkeys(name_dates + explicit_dates))
+    # Se il cliente ha scritto una data PRECISA ("24 ottobre", "23/10"), quella vince
+    # su qualsiasi data dedotta dal nome dell'evento. Gli eventi settimanali rendevano
+    # la regola precedente dannosa: caso reale (WhatsApp 7/10) "un tavolo alla serata
+    # Perreo del 24 ottobre" → il nome "Perreo" risolveva ai PROSSIMI Perreo XL (10 e
+    # 17 ottobre), quelle date finivano in testa e il lookup tavoli andava a prendere
+    # il 10. Il bot, vedendo tavoli di un'altra data, rispondeva giustamente di non
+    # avere la mappa del 24 e mandava il cliente a scrivere un'email: 30 tavoli liberi
+    # con i link pronti, e una prenotazione persa.
+    #
+    # La priorità al nome resta dove serviva davvero: sulle date RELATIVE ("questo
+    # sabato"), dove l'utente approssima e l'evento può essere archiviato sul giorno
+    # adiacente per via del rollover notturno.
+    strict_dates = extract_query_dates(text, explicit_only=True)
+    if strict_dates:
+        query_dates = list(dict.fromkeys(strict_dates + name_dates + explicit_dates))
+    else:
+        query_dates = list(dict.fromkeys(name_dates + explicit_dates))
     # Follow-up che eredita dalla chat solo la DATA (nessun nome evento): es. "la
     # serata del 31/07/26" turni prima, poi "quindi è +16?". Caso reale: senza questo
     # l'evento di quella data non entrava nel contesto e il bot rispondeva "non ho il
