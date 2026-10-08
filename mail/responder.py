@@ -97,7 +97,7 @@ async def _notify(msg: dict, verdict: dict, action: str, reason: str) -> None:
 
 async def _can_send_as() -> bool:
     try:
-        return await gm.can_send_as(settings.mail_from_address)
+        return await gm.can_send_as(settings.mail_reply_as)
     except Exception as e:
         logger.warning("Verifica alias 'Invia come' fallita (→ bozza): %s", e)
         return False
@@ -142,7 +142,7 @@ async def process_one(message_id: str) -> str:
 
     ok, reason = triage.can_autosend(msg, verdict)
     if ok and not await _can_send_as():
-        ok, reason = False, (f"{settings.mail_from_address} non è un indirizzo "
+        ok, reason = False, (f"{settings.mail_reply_as} non è un indirizzo "
                              "'Invia come' verificato in Gmail")
     if ok:
         await gm.send_reply(msg, body + _FOOTER_AUTO)

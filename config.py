@@ -124,8 +124,12 @@ class Settings(BaseSettings):
     gmail_client_id: str = ""
     gmail_client_secret: str = ""
     gmail_refresh_token: str = ""
-    # Indirizzo da cui si risponde e firma.
+    # Casella che il bot sorveglia: info@ è su Aruba e arriva in Gmail per inoltro.
     mail_from_address: str = "info@gatemilano.com"
+    # Indirizzo da cui partono le risposte. Deve essere un alias "Invia come"
+    # verificato nella Gmail collegata, altrimenti si fanno solo bozze. Deciso con lo
+    # staff l'8/10: george@, che è già configurato e da cui lo staff risponde a mano.
+    mail_reply_as: str = "george@gatemilano.com"
     mail_from_name: str = "Gate Milano"
     # Se True il risponditore prepara SEMPRE una bozza, anche sulle categorie
     # considerate sicure: utile per le prime settimane, per leggere cosa avrebbe

@@ -257,3 +257,14 @@ async def test_senza_alias_invia_come_si_fa_bozza(monkeypatch):
     esito = await responder.process_one("m1")
     assert azioni == ["draft"]
     assert "Invia come" in esito
+
+
+def test_risposta_parte_da_george_non_da_info():
+    """Si legge info@, si risponde da george@ (alias già verificato in Gmail)."""
+    import base64
+    from mail import gmail_client as gm
+    raw = gm._build_raw("sofia@example.com", "Info", "ciao", "<abc@mail>", "")
+    headers = base64.urlsafe_b64decode(raw).decode()
+    assert f"From: Gate Milano <{settings.mail_reply_as}>" in headers
+    assert settings.mail_reply_as == "george@gatemilano.com"
+    assert settings.mail_from_address == "info@gatemilano.com"

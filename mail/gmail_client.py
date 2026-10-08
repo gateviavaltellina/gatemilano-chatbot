@@ -184,7 +184,7 @@ async def can_send_as(address: str) -> bool:
 def _build_raw(to: str, subject: str, body: str, in_reply_to: str, references: str) -> str:
     msg = EmailMessage()
     msg["To"] = to
-    msg["From"] = f"{settings.mail_from_name} <{settings.mail_from_address}>"
+    msg["From"] = f"{settings.mail_from_name} <{settings.mail_reply_as}>"
     msg["Subject"] = subject if subject.lower().startswith("re:") else f"Re: {subject}"
     if in_reply_to:
         msg["In-Reply-To"] = in_reply_to
