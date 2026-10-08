@@ -77,6 +77,11 @@ def _header(payload: dict, name: str) -> str:
     return ""
 
 
+def _all_headers(payload: dict, name: str) -> list[str]:
+    return [h.get("value", "") for h in payload.get("headers", [])
+            if h.get("name", "").lower() == name.lower()]
+
+
 def _walk_parts(payload: dict):
     yield payload
     for part in payload.get("parts", []) or []:
@@ -121,6 +126,10 @@ async def get_message(message_id: str) -> dict:
         "from": sender,
         "from_email": parseaddr(sender)[1].lower(),
         "to": _header(payload, "To"),
+        "cc": _header(payload, "Cc"),
+        # info@ è su Aruba e arriva in Gmail per inoltro: il Delivered-To è l'unico
+        # segno affidabile che il messaggio è passato da quella casella.
+        "delivered_to": [v.lower() for v in _all_headers(payload, "Delivered-To")],
         "subject": _header(payload, "Subject"),
         "message_id_header": _header(payload, "Message-ID"),
         "references": _header(payload, "References"),
@@ -143,6 +152,31 @@ async def thread_has_our_reply(thread_id: str) -> bool:
         if "SENT" in (msg.get("labelIds") or []):
             return True
     return False
+
+
+# --- mittente ----------------------------------------------------------------
+
+_send_as_cache: dict[str, tuple[bool, float]] = {}
+
+
+async def can_send_as(address: str) -> bool:
+    """True se l'account Gmail può spedire come `address` (alias "Invia come" verificato).
+
+    La casella collegata è una Gmail personale: senza l'alias, Gmail riscriverebbe il
+    mittente con l'indirizzo personale e il cliente vedrebbe quello. Meglio non inviare.
+    """
+    cached = _send_as_cache.get(address)
+    if cached and time.time() < cached[1]:
+        return cached[0]
+    try:
+        data = await _request("GET", f"/settings/sendAs/{address}")
+        ok = data.get("verificationStatus", "accepted") == "accepted"
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code != 404:
+            raise
+        ok = False
+    _send_as_cache[address] = (ok, time.time() + 3600)
+    return ok
 
 
 # --- scrittura ---------------------------------------------------------------

@@ -30,11 +30,18 @@ LABEL_DONE = "Bot/Risposto"
 LABEL_REVIEW = "Bot/Da rivedere"
 LABEL_SKIPPED = "Bot/Ignorato"
 
-# Solo posta in arrivo non letta e non ancora toccata dal bot.
-_QUERY = (
-    "in:inbox is:unread "
-    f'-label:"{LABEL_DONE}" -label:"{LABEL_REVIEW}" -label:"{LABEL_SKIPPED}"'
-)
+
+
+def _query() -> str:
+    """Solo posta arrivata a info@, non letta e non ancora toccata dal bot.
+
+    info@ è una casella Aruba inoltrata su una Gmail PERSONALE: senza il filtro
+    `deliveredto:` il bot leggerebbe e risponderebbe a tutta la posta dell'account.
+    """
+    return (
+        f"deliveredto:{settings.mail_from_address} in:inbox is:unread "
+        f'-label:"{LABEL_DONE}" -label:"{LABEL_REVIEW}" -label:"{LABEL_SKIPPED}"'
+    )
 
 _FOOTER_AUTO = (
     "\n\n—\n"
@@ -88,6 +95,14 @@ async def _notify(msg: dict, verdict: dict, action: str, reason: str) -> None:
         logger.debug("Notifica Discord non riuscita (non blocca il flusso)", exc_info=True)
 
 
+async def _can_send_as() -> bool:
+    try:
+        return await gm.can_send_as(settings.mail_from_address)
+    except Exception as e:
+        logger.warning("Verifica alias 'Invia come' fallita (→ bozza): %s", e)
+        return False
+
+
 async def process_one(message_id: str) -> str:
     """Gestisce una email. Ritorna l'esito, per i log. Non solleva mai."""
     try:
@@ -126,6 +141,9 @@ async def process_one(message_id: str) -> str:
         return "revisione (nessuna risposta utile)"
 
     ok, reason = triage.can_autosend(msg, verdict)
+    if ok and not await _can_send_as():
+        ok, reason = False, (f"{settings.mail_from_address} non è un indirizzo "
+                             "'Invia come' verificato in Gmail")
     if ok:
         await gm.send_reply(msg, body + _FOOTER_AUTO)
         await gm.add_label(message_id, LABEL_DONE)
@@ -147,7 +165,7 @@ async def run_once() -> dict:
         return {"skipped": "credenziali mancanti"}
 
     try:
-        ids = await gm.list_unprocessed(_QUERY, settings.mail_max_per_run)
+        ids = await gm.list_unprocessed(_query(), settings.mail_max_per_run)
     except Exception as e:
         logger.error("Lettura casella fallita: %s", e)
         return {"error": str(e)[:200]}

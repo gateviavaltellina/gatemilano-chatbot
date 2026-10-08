@@ -104,6 +104,13 @@ _TOOL = {
 
 def hard_skip(msg: dict) -> str:
     """Motivo per cui questa email non va proprio toccata, o "" se si può procedere."""
+    # La casella Gmail collegata è personale e riceve anche altro: si tocca solo ciò
+    # che è arrivato a info@. La query Gmail filtra già, questo è il secondo lucchetto.
+    box = settings.mail_from_address.lower()
+    addressed = " ".join([*msg.get("delivered_to", []), msg.get("to", ""),
+                          msg.get("cc", "")]).lower()
+    if box not in addressed:
+        return "non indirizzata alla casella del bot"
     sender = msg.get("from_email", "")
     if not sender:
         return "mittente assente"

@@ -182,3 +182,78 @@ async def test_mittente_automatico_etichettato_e_basta(monkeypatch):
     esito = await responder.process_one("m1")
     assert "ignorata" in esito
     assert etichette == [responder.LABEL_SKIPPED]
+
+
+# --- casella Gmail personale: si tocca solo la posta di info@ -------------------
+#
+# info@gatemilano.com è su Aruba e viene inoltrata su una Gmail PERSONALE, che
+# riceve anche altro. Il bot deve vedere solo ciò che è passato da info@.
+
+def test_posta_personale_mai():
+    personale = _msg(to="gateviavaltellina@gmail.com", cc="",
+                     delivered_to=["gateviavaltellina@gmail.com"])
+    assert triage.hard_skip(personale) == "non indirizzata alla casella del bot"
+
+
+def test_posta_inoltrata_da_info_passa():
+    # Come arriva davvero: To può essere info@, il Delivered-To lo conferma.
+    inoltrata = _msg(to="info@gatemilano.com",
+                     delivered_to=["gateviavaltellina@gmail.com", "info@gatemilano.com"])
+    assert triage.hard_skip(inoltrata) == ""
+
+
+def test_info_in_ccn_riconosciuta_dal_delivered_to():
+    # In Ccn info@ non compare in To/Cc: resta il Delivered-To.
+    ccn = _msg(to="altro@example.com", cc="",
+               delivered_to=["gateviavaltellina@gmail.com", "info@gatemilano.com"])
+    assert triage.hard_skip(ccn) == ""
+
+
+def test_query_filtra_sulla_casella():
+    from mail import responder
+    q = responder._query()
+    assert f"deliveredto:{settings.mail_from_address}" in q
+    assert "is:unread" in q
+
+
+async def test_senza_alias_invia_come_si_fa_bozza(monkeypatch):
+    """Senza l'alias "Invia come" Gmail spedirebbe dall'indirizzo personale."""
+    from mail import responder
+    azioni = []
+
+    async def _get(_id):
+        return _msg()
+
+    async def _no(*a, **k):
+        return False
+
+    async def _verdict(_m):
+        return {"categoria": "orari", "confidenza": "alta", "domanda": "orari sabato"}
+
+    async def _compose(_m, _v):
+        return "Apriamo alle 23:00."
+
+    async def _send(*a, **k):
+        azioni.append("send")
+
+    async def _draft(*a, **k):
+        azioni.append("draft")
+
+    async def _label(*a, **k):
+        pass
+
+    async def _notify(*a, **k):
+        pass
+
+    monkeypatch.setattr("mail.gmail_client.get_message", _get)
+    monkeypatch.setattr("mail.gmail_client.thread_has_our_reply", _no)
+    monkeypatch.setattr("mail.gmail_client.can_send_as", _no)
+    monkeypatch.setattr("mail.gmail_client.send_reply", _send)
+    monkeypatch.setattr("mail.gmail_client.create_draft", _draft)
+    monkeypatch.setattr("mail.gmail_client.add_label", _label)
+    monkeypatch.setattr(triage, "classify", _verdict)
+    monkeypatch.setattr(responder, "_compose", _compose)
+    monkeypatch.setattr(responder, "_notify", _notify)
+    esito = await responder.process_one("m1")
+    assert azioni == ["draft"]
+    assert "Invia come" in esito
