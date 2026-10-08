@@ -182,6 +182,7 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # l'evento dai messaggi recenti (caso reale: turno prima "stasera Perreo XL a Gate
     # Sardinia", poi "quanto costa l'ingresso?" — senza questo il bot perde l'evento e
     # risponde "non ho i dettagli sui prezzi" pur avendoli in contesto un attimo prima).
+    name_from_text = bool(name_dates)
     if not name_dates and history_text_wide:
         name_dates = (find_event_dates_by_name(venue, history_text_wide)
                       or find_event_dates_by_name(other_venue, history_text_wide))
@@ -202,6 +203,15 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # sabato"), dove l'utente approssima e l'evento può essere archiviato sul giorno
     # adiacente per via del rollover notturno.
     strict_dates = extract_query_dates(text, explicit_only=True)
+    # Follow-up che non ripete la data: "Sì farei zona balcony" dopo che la serata è
+    # già stata nominata turni prima. Caso reale (WhatsApp 8/10, Perreo XL del 31/10):
+    # il nome "Perreo" ripescato dalla chat risolveva ai PROSSIMI Perreo (settimanali)
+    # e il lookup tavoli finiva sulla serata sbagliata — il bot rispondeva di non avere
+    # la mappa del 31, con 5 tavoli Balcony liberi da €600 e i link pronti.
+    # La data della chat vale SOLO se il messaggio attuale non porta né una data propria
+    # né il nome di un evento: se il cliente cambia serata, comanda quello che scrive ora.
+    if not strict_dates and not name_from_text and history_text_wide:
+        strict_dates = extract_query_dates(history_text_wide, explicit_only=True)
     if strict_dates:
         query_dates = list(dict.fromkeys(strict_dates + name_dates + explicit_dates))
     else:
