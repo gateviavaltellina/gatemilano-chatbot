@@ -198,3 +198,41 @@ async def test_data_relativa_lascia_la_precedenza_al_nome():
     _seed("px", "Perreo XL", "2026-09-19")
     _, dates = await cb.build_rag_context("gate_milano", "tavolo per il perreo questo sabato")
     assert "2026-09-19" in dates
+
+
+async def test_follow_up_senza_data_eredita_quella_della_chat():
+    """"Sì farei zona balcony" dopo che la serata è stata nominata turni prima.
+
+    Caso reale (WhatsApp 8/10, Perreo XL del 31/10): il messaggio di follow-up non
+    ripete la data, il nome "Perreo" ripescato dalla chat risolveva ai PROSSIMI Perreo
+    (sono settimanali) e il lookup finiva sulla serata sbagliata. Il bot rispondeva di
+    non avere la mappa del 31 — con 5 Balcony liberi da €600 e i link pronti.
+    """
+    es._store.clear()
+    for d in ("2026-09-19", "2026-09-26", "2026-10-03"):
+        _seed("px" + d, "Perreo XL", d)
+    hist = [
+        {"role": "user", "content": "vorrei un tavolo per il perreo xl del 3 ottobre"},
+        {"role": "assistant", "content": "Preferisci Balcony o Floor?"},
+    ]
+    _, dates = await cb.build_rag_context(
+        "gate_milano", "sì farei zona balcony", history=hist)
+    assert dates[0] == "2026-10-03"
+
+
+async def test_se_il_cliente_cambia_serata_comanda_il_messaggio_nuovo():
+    """La data della chat non deve incollarsi addosso al cliente.
+
+    Se il messaggio attuale nomina un ALTRO evento, quello vince sulla data vecchia:
+    altrimenti chi passa da una serata all'altra riceve i dati di quella precedente.
+    """
+    es._store.clear()
+    _seed("px", "Perreo XL", "2026-09-19")
+    _seed("kb", "Kobosil", "2026-09-25")
+    hist = [
+        {"role": "user", "content": "tavolo per il perreo xl del 19 settembre"},
+        {"role": "assistant", "content": "Certo, ecco i tavoli."},
+    ]
+    _, dates = await cb.build_rag_context(
+        "gate_milano", "e per kobosil invece?", history=hist)
+    assert dates[0] == "2026-09-25"
