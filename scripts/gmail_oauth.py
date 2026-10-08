@@ -7,10 +7,13 @@ un refresh token, che poi va messo nelle variabili di Railway.
 
 Solo libreria standard: non serve installare nulla.
 
-    python scripts/gmail_oauth.py --client-id XXXX.apps.googleusercontent.com
+    python3 gmail_oauth.py client_secret.json
 
-Il client secret viene chiesto a parte (non resta nella cronologia della shell).
-Il client OAuth deve essere di tipo "App desktop".
+dove client_secret.json è il file scaricato da Google Cloud (client "App desktop").
+Alla fine stampa le righe da incollare nel Raw Editor delle variabili di Railway.
+
+In alternativa, senza file: `python3 gmail_oauth.py --client-id XXXX` e il secret
+viene chiesto a parte (non resta nella cronologia della shell).
 """
 from __future__ import annotations
 
@@ -56,9 +59,22 @@ def _wait_for_code(state: str) -> tuple[str, int, http.server.HTTPServer]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--client-id", required=True)
+    ap.add_argument("credentials", nargs="?", help="client_secret.json scaricato da Google")
+    ap.add_argument("--client-id")
     args = ap.parse_args()
-    client_secret = getpass.getpass("Client secret (non viene mostrato): ").strip()
+    if args.credentials:
+        with open(args.credentials) as f:
+            data = json.load(f)
+        client = data.get("installed") or data.get("web") or {}
+        args.client_id = client.get("client_id", "")
+        client_secret = client.get("client_secret", "")
+        if not (args.client_id and client_secret):
+            print("Il file non contiene client_id e client_secret.")
+            return 1
+    elif args.client_id:
+        client_secret = getpass.getpass("Client secret (non viene mostrato): ").strip()
+    else:
+        ap.error("passa il file client_secret.json oppure --client-id")
 
     state = secrets.token_urlsafe(16)
     result, port, server = _wait_for_code(state)
@@ -97,8 +113,13 @@ def main() -> int:
         print("Google non ha restituito un refresh token. Revoca l'accesso all'app su "
               "https://myaccount.google.com/permissions e riprova.")
         return 1
-    print("\nGMAIL_REFRESH_TOKEN (mettilo su Railway, non condividerlo in chat):\n")
-    print(refresh)
+    print("\nFatto. Su Railway: servizio del bot → Variables → Raw Editor, incolla queste")
+    print("righe in fondo e salva. Non condividerle in chat.\n")
+    print(f"GMAIL_CLIENT_ID={args.client_id}")
+    print(f"GMAIL_CLIENT_SECRET={client_secret}")
+    print(f"GMAIL_REFRESH_TOKEN={refresh}")
+    print("MAIL_AUTORESPONDER_ENABLED=true")
+    print("MAIL_DRAFT_ONLY=true")
     return 0
 
 
