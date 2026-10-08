@@ -350,12 +350,13 @@ async def debug_mail(run: bool = False):
         "solo_bozze": settings.mail_draft_only,
         "credenziali_gmail": gmail_client.configured(),
         "casella": settings.mail_from_address,
+        "risponde_come": settings.mail_reply_as,
         "max_per_giro": settings.mail_max_per_run,
         "categorie_auto": sorted(__import__("mail.triage", fromlist=["x"]).AUTOSEND_CATEGORIES),
     }
     if gmail_client.configured():
         try:
-            out["invia_come_ok"] = await gmail_client.can_send_as(settings.mail_from_address)
+            out["invia_come_ok"] = await gmail_client.can_send_as(settings.mail_reply_as)
         except Exception as e:
             out["invia_come_ok"] = f"errore: {str(e)[:120]}"
     if run:
