@@ -268,3 +268,17 @@ def test_risposta_parte_da_george_non_da_info():
     assert f"From: Gate Milano <{settings.mail_reply_as}>" in headers
     assert settings.mail_reply_as == "george@gatemilano.com"
     assert settings.mail_from_address == "info@gatemilano.com"
+
+
+@pytest.mark.parametrize("categoria", [
+    "CATEGORY_UPDATES", "CATEGORY_PROMOTIONS", "CATEGORY_SOCIAL", "CATEGORY_FORUMS",
+])
+def test_schede_automatiche_gmail_mai(categoria):
+    """Caso reale: Aruba scrive ogni giorno a info@ "casella quasi piena" (Aggiornamenti)."""
+    avviso = _msg(from_email="comunicazioni@staff.aruba.it",
+                  label_ids=["UNREAD", "IMPORTANT", categoria, "INBOX"])
+    assert triage.hard_skip(avviso).startswith("scheda Gmail")
+
+
+def test_scheda_principale_passa():
+    assert triage.hard_skip(_msg(label_ids=["UNREAD", "IMPORTANT", "INBOX"])) == ""
