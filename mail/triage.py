@@ -60,6 +60,8 @@ _NEVER_REPLY = re.compile(
     re.IGNORECASE,
 )
 _OWN_DOMAINS = ("gatemilano.com", "gatesardinia.it", "gatemilano.it")
+_AUTO_CATEGORIES = {"CATEGORY_UPDATES", "CATEGORY_PROMOTIONS",
+                    "CATEGORY_SOCIAL", "CATEGORY_FORUMS"}
 
 _CLASSIFIER_SYSTEM = """Classifichi le email in arrivo alla casella di un locale notturno.
 Rispondi SOLO chiamando lo strumento, senza testo.
@@ -122,6 +124,13 @@ def hard_skip(msg: dict) -> str:
         return "newsletter/lista"
     if msg.get("auto_submitted", "").lower() not in ("", "no"):
         return "messaggio auto-generato"
+    # Gmail mette avvisi di servizio, promo e social nelle sue schede: i clienti che
+    # scrivono a info@ finiscono in "Principale". Caso reale: Aruba manda ogni giorno
+    # "casella quasi piena" a info@, e senza questo filtro il bot avrebbe preparato
+    # una bozza di risposta ad Aruba ogni mattina.
+    auto_cat = _AUTO_CATEGORIES.intersection(msg.get("label_ids") or [])
+    if auto_cat:
+        return f"scheda Gmail {sorted(auto_cat)[0]}"
     if not (msg.get("body") or "").strip():
         return "corpo vuoto"
     return ""
