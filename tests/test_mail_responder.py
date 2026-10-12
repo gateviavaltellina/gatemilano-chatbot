@@ -214,6 +214,9 @@ def test_query_filtra_sulla_casella():
     q = responder._query()
     assert f"deliveredto:{settings.mail_from_address}" in q
     assert "is:unread" in q
+    # Niente arretrato: le non lette vecchie restano allo staff.
+    assert f"newer_than:{settings.mail_max_age_days}d" in q
+    assert settings.mail_max_age_days <= 3
 
 
 async def test_senza_alias_invia_come_si_fa_bozza(monkeypatch):

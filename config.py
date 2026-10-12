@@ -137,6 +137,10 @@ class Settings(BaseSettings):
     mail_draft_only: bool = True
     # Quante email processare per giro: tetto di sicurezza contro i loop.
     mail_max_per_run: int = 10
+    # Si guardano solo le email arrivate negli ultimi N giorni. Le più vecchie sono
+    # arretrato dello staff: all'accensione a info@ c'erano ~200 non lette, alcune
+    # da agosto, e rispondere oggi a quelle farebbe più danni che altro.
+    mail_max_age_days: int = 2
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

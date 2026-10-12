@@ -40,6 +40,7 @@ def _query() -> str:
     """
     return (
         f"deliveredto:{settings.mail_from_address} in:inbox is:unread "
+        f"newer_than:{settings.mail_max_age_days}d "
         f'-label:"{LABEL_DONE}" -label:"{LABEL_REVIEW}" -label:"{LABEL_SKIPPED}"'
     )
 
