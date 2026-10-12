@@ -352,6 +352,7 @@ async def debug_mail(run: bool = False):
         "casella": settings.mail_from_address,
         "risponde_come": settings.mail_reply_as,
         "max_per_giro": settings.mail_max_per_run,
+        "solo_ultimi_giorni": settings.mail_max_age_days,
         "categorie_auto": sorted(__import__("mail.triage", fromlist=["x"]).AUTOSEND_CATEGORIES),
     }
     if gmail_client.configured():
