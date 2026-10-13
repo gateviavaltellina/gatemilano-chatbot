@@ -290,9 +290,19 @@ def _forward_body(sender: str, a: dict, found: dict, note: str = "") -> str:
     return "\n".join(lines)
 
 
+async def already_forwarded(sender: str) -> bool:
+    """Lo staff l'ha già inoltrato a mano a Xceed? (caso reale: thezuberi, 6/10, da info@)"""
+    q = f'in:sent to:{settings.refund_xceed_contact} "{sender}" newer_than:60d'
+    return bool(await gm.list_unprocessed(q, 1))
+
+
 async def forward_to_xceed(sender: str, msgs: list[dict], a: dict, found: dict,
                            note: str = "") -> None:
     """Inoltro al contatto Xceed + risposta al cliente: il procedimento manuale dello staff."""
+    if await already_forwarded(sender):
+        # Già passato a Xceed a mano: niente doppio inoltro né doppio messaggio al cliente.
+        await _label_all(msgs, LABEL_FORWARDED)
+        return
     attachments: list[tuple[str, str, bytes]] = []
     total = 0
     originals = []

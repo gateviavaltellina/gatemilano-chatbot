@@ -622,6 +622,10 @@ async def test_oltre_finestra_si_inoltra_a_bianca(flow, monkeypatch):
     monkeypatch.setattr(xt, "find_request_tickets", _find)
     monkeypatch.setattr(refunds, "past_xceed_cutoff", lambda found, now=None: True)
     monkeypatch.setattr(gm, "send_new", _new)
+
+    async def _no(sender):
+        return False
+    monkeypatch.setattr(refunds, "already_forwarded", _no)
     esito = await refunds.process_sender("cliente@example.com", [_msg()])
     assert esito == "inoltrata"
     to, subject, body = inviate[0]
@@ -666,3 +670,21 @@ async def test_rimborsa_rifiutato_suggerisce_inoltra(staff_gmail, monkeypatch):
     monkeypatch.setattr(xceed_mcp, "call_tool", _call)
     out = await staff.refund_action("!rimborsa", _ctx(), "George")
     assert "!inoltra" in out
+
+
+
+async def test_gia_inoltrato_a_mano_non_si_reinoltra(flow, monkeypatch):
+    """Caso reale: thezuberi inoltrato a mano a Bianca il 6/10 da un thread di info@."""
+    inviate = []
+
+    async def _new(*a, **k):
+        inviate.append(a)
+
+    async def _yes(sender):
+        return True
+
+    monkeypatch.setattr(gm, "send_new", _new)
+    monkeypatch.setattr(refunds, "already_forwarded", _yes)
+    await refunds.forward_to_xceed("cliente@example.com", [_msg()], _a(), _found(_ticket()))
+    assert inviate == [] and flow["replies"] == []
+    assert refunds.LABEL_FORWARDED in flow["labels"]
