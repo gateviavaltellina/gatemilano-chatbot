@@ -2,7 +2,8 @@
 
 Proposte B2B (13/10): "lavoriamo costantemente alla programmazione del Gate, se siamo
 interessati ti scriviamo" — in maniera carina, professionale ma fredda, nella lingua di
-chi scrive. Niente promesse, niente richieste di altro materiale.
+chi scrive. Niente promesse, niente richieste di altro materiale. La firma non è qui:
+la aggiunge gmail_client, ed è quella impostata in Gmail per l'indirizzo mittente.
 """
 from __future__ import annotations
 
@@ -15,14 +16,14 @@ _PROPOSAL = {
         "Lavoriamo costantemente alla programmazione del Gate e valutiamo con attenzione "
         "tutte le proposte che riceviamo. Se dovesse esserci interesse, sarà nostra cura "
         "ricontattarvi.\n\n"
-        "Cordiali saluti,\nGate Milano"
+        "Cordiali saluti"
     ),
     "inglese": (
         "Hello,\n\n"
         "thank you for reaching out and for your proposal.\n\n"
         "We are constantly working on Gate's programming and we carefully review every "
         "proposal we receive. Should there be any interest, we will get back to you.\n\n"
-        "Kind regards,\nGate Milano"
+        "Kind regards"
     ),
     "spagnolo": (
         "Hola,\n\n"
@@ -30,7 +31,7 @@ _PROPOSAL = {
         "Trabajamos constantemente en la programación del Gate y valoramos con atención "
         "todas las propuestas que recibimos. Si hubiera interés, nos pondremos en "
         "contacto con vosotros.\n\n"
-        "Un saludo,\nGate Milano"
+        "Un saludo"
     ),
     "francese": (
         "Bonjour,\n\n"
@@ -38,7 +39,7 @@ _PROPOSAL = {
         "Nous travaillons en permanence sur la programmation du Gate et nous étudions avec "
         "attention toutes les propositions que nous recevons. En cas d'intérêt, nous "
         "reviendrons vers vous.\n\n"
-        "Cordialement,\nGate Milano"
+        "Cordialement"
     ),
     "tedesco": (
         "Hallo,\n\n"
@@ -46,7 +47,7 @@ _PROPOSAL = {
         "Wir arbeiten laufend an der Programmgestaltung des Gate und prüfen alle "
         "Vorschläge, die wir erhalten, sorgfältig. Bei Interesse melden wir uns bei "
         "Ihnen.\n\n"
-        "Mit freundlichen Grüßen\nGate Milano"
+        "Mit freundlichen Grüßen"
     ),
 }
 

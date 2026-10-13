@@ -56,11 +56,6 @@ _FOOTER_AUTO_EN = (
 )
 
 
-def _signature(msg: dict) -> str:
-    name = "Gate Sardinia" if _venue_for(msg) == "gate_sardinia" else settings.mail_from_name
-    return f"\n\n{name}"
-
-
 def _email_text(msg: dict) -> str:
     return f"{msg.get('subject','')}\n{msg.get('body','')}"
 
@@ -95,8 +90,8 @@ async def _compose(msg: dict, verdict: dict) -> str:
         f"Oggetto: {msg.get('subject','')}\n\n"
         f"{msg.get('body','')}\n\n"
         "Scrivi la RISPOSTA EMAIL: saluto iniziale, risposta puntuale a ogni domanda "
-        "posta, chiusura cordiale. Niente oggetto, niente firma finale (le aggiungiamo "
-        "noi). Se un dato non ce l'hai, dillo e indica il canale giusto invece di "
+        "posta, chiusura cordiale. Niente oggetto e niente firma né nome in fondo: "
+        "la firma dello staff la aggiunge Gmail. Se un dato non ce l'hai, dillo e indica il canale giusto invece di "
         "inventarlo.\n"
         "LINGUA: rispondi nella STESSA lingua in cui è scritta l'email del cliente, "
         "qualunque sia. Queste istruzioni sono in italiano solo per uso interno.\n"
@@ -201,12 +196,12 @@ async def process_one(message_id: str) -> str:
         ok, reason = False, (f"{settings.mail_reply_as} non è un indirizzo "
                              "'Invia come' verificato in Gmail")
     if ok:
-        await gm.send_reply(msg, body + _signature(msg) + _footer(msg))
+        await gm.send_reply(msg, body + _footer(msg))
         await gm.add_label(message_id, LABEL_DONE)
         await _notify(msg, verdict, "inviata", reply=body)
         return "inviata"
 
-    draft_id = await gm.create_draft(msg, body + _signature(msg))
+    draft_id = await gm.create_draft(msg, body)
     await gm.add_label(message_id, LABEL_REVIEW)
     await _notify(msg, verdict, "bozza", reply=body, reason=reason, draft_id=draft_id)
     return f"bozza ({reason})"

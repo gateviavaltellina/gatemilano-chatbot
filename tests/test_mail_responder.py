@@ -478,9 +478,40 @@ async def test_proposta_inviata_con_testo_fisso(monkeypatch):
     assert azioni[0][0] == "send" and "programming" in azioni[0][1]
 
 
-async def test_risposte_generate_hanno_la_firma(monkeypatch):
-    monkeypatch.setattr(settings, "mail_draft_only", True)
-    _, azioni = await _run_process(
-        monkeypatch, {"categoria": "orari", "confidenza": "alta", "domanda": "orari"})
-    assert azioni[0][0] == "draft"
-    assert azioni[0][1].rstrip().endswith("Gate Milano")
+def _decode(raw):
+    import base64
+    import email
+    from email import policy
+    return email.message_from_bytes(base64.urlsafe_b64decode(raw), policy=policy.default)
+
+
+def test_firma_gmail_in_fondo_alla_risposta():
+    """La firma è quella impostata in Gmail per george@: le API non la mettono da sole."""
+    from mail import gmail_client as gm
+    sig = '<div><b>George</b><br>Gate Milano<br><a href="https://gatemilano.it">gatemilano.it</a></div>'
+    m = _decode(gm._build_raw("a@b.c", "Orari", "Ciao,\napriamo alle 23.", "<x@y>", "", sig))
+    html_part = m.get_body(preferencelist=("html",)).get_content()
+    text_part = m.get_body(preferencelist=("plain",)).get_content()
+    assert sig in html_part                      # firma intatta, con link
+    assert "apriamo alle 23." in html_part
+    assert "George" in text_part and "<b>" not in text_part
+    assert text_part.index("apriamo") < text_part.index("George")
+
+
+def test_senza_firma_gmail_chiude_col_nome():
+    from mail import gmail_client as gm
+    m = _decode(gm._build_raw("a@b.c", "Orari", "Ciao", "<x@y>", ""))
+    assert m.get_content().rstrip().endswith("Gate Milano")
+
+
+def test_testo_del_cliente_non_diventa_html():
+    from mail import gmail_client as gm
+    m = _decode(gm._build_raw("a@b.c", "x", "<script>x</script>", "", "", "<p>Sig</p>"))
+    assert "<script>" not in m.get_body(preferencelist=("html",)).get_content()
+
+
+def test_template_senza_firma_propria():
+    # Niente "Gate Milano" nel testo fisso: la firma arriva da Gmail, non va doppia.
+    from mail.templates import _PROPOSAL
+    for t in _PROPOSAL.values():
+        assert "Gate Milano" not in t
