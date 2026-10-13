@@ -516,3 +516,34 @@ def test_template_senza_firma_propria():
     for t in _PROPOSAL.values():
         assert "Gate Milano" not in t
         assert not t.rstrip().endswith(("saluti", "regards", "saludo", "Cordialement", "Grüßen"))
+
+
+# --- proposte commerciali (caso reale 13/10: FESTAMI) ----------------------------
+
+def test_proposta_commerciale_non_parla_di_programmazione():
+    from mail.templates import proposal_reply
+    festami = ("Ciao, siamo FESTAMI, il portale che mette in contatto chi cerca una sala per "
+               "feste ed eventi con chi la gestisce. Vorremmo proporti di inserire la tua sala "
+               "sul nostro portale, gratuitamente e senza commissioni.")
+    t = proposal_reply(festami, commercial=True)
+    assert "programmazione" not in t
+    assert "proposte di collaborazione" in t
+
+
+def test_proposta_artistica_resta_sulla_programmazione():
+    from mail.templates import proposal_reply
+    t = proposal_reply("Ciao, siamo una band e vorremmo suonare da voi a gennaio, avete date?")
+    assert "programmazione del Gate" in t
+
+
+def test_commerciali_partono_come_le_proposte():
+    ok, _ = triage.can_send_proposal_reply(
+        _msg(body="vi proponiamo il nostro portale"), {"categoria": "commerciali", "confidenza": "alta"})
+    assert ok
+
+
+async def test_commerciale_inviata_col_testo_giusto(monkeypatch):
+    esito, azioni = await _run_process(
+        monkeypatch, {"categoria": "commerciali", "confidenza": "alta", "domanda": "portale"})
+    assert esito == "inviata (proposta)"
+    assert "programming" not in azioni[0][1] and "collaboration proposals" in azioni[0][1]

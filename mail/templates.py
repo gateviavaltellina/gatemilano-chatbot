@@ -48,12 +48,54 @@ _PROPOSAL = {
 }
 
 
-def proposal_reply(text: str) -> str:
-    """Risposta alle proposte nella lingua del testo. Lingua incerta: italiano + inglese."""
+# Proposte commerciali (portali, servizi, pubblicità): stesso tono, ma senza parlare di
+# programmazione — caso reale 13/10, un portale per sale da feste ha ricevuto la
+# risposta pensata per i DJ.
+_COMMERCIAL = {
+    "italiano": (
+        "Buongiorno,\n\n"
+        "grazie per averci contattato e per la proposta.\n\n"
+        "Valutiamo con attenzione le proposte di collaborazione che riceviamo. Se dovesse "
+        "esserci interesse, sarà nostra cura ricontattarvi."
+    ),
+    "inglese": (
+        "Hello,\n\n"
+        "thank you for reaching out and for your proposal.\n\n"
+        "We carefully review the collaboration proposals we receive. Should there be any "
+        "interest, we will get back to you."
+    ),
+    "spagnolo": (
+        "Hola,\n\n"
+        "gracias por contactarnos y por la propuesta.\n\n"
+        "Valoramos con atención las propuestas de colaboración que recibimos. Si hubiera "
+        "interés, nos pondremos en contacto con vosotros."
+    ),
+    "francese": (
+        "Bonjour,\n\n"
+        "merci de nous avoir contactés et pour votre proposition.\n\n"
+        "Nous étudions avec attention les propositions de collaboration que nous recevons. "
+        "En cas d'intérêt, nous reviendrons vers vous."
+    ),
+    "tedesco": (
+        "Hallo,\n\n"
+        "vielen Dank für Ihre Nachricht und Ihr Angebot.\n\n"
+        "Wir prüfen alle Kooperationsvorschläge, die wir erhalten, sorgfältig. Bei "
+        "Interesse melden wir uns bei Ihnen."
+    ),
+}
+
+
+def proposal_reply(text: str, commercial: bool = False) -> str:
+    """Risposta alle proposte nella lingua del testo. Lingua incerta: italiano + inglese.
+
+    commercial=True per portali, servizi e pubblicità: niente riferimenti alla
+    programmazione, che vale solo per artisti e agenzie di booking.
+    """
+    table = _COMMERCIAL if commercial else _PROPOSAL
     lang = detect_language(text)
-    if lang in _PROPOSAL:
-        return _PROPOSAL[lang]
-    return _PROPOSAL["italiano"] + "\n\n— — —\n\n" + _PROPOSAL["inglese"]
+    if lang in table:
+        return table[lang]
+    return table["italiano"] + "\n\n— — —\n\n" + table["inglese"]
 
 
 # --- rimborsi (rimborsi@) -----------------------------------------------------

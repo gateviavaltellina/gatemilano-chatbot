@@ -158,9 +158,10 @@ async def process_one(message_id: str) -> str:
     verdict = await triage.classify(msg)
 
     # Proposte B2B: risposta fissa approvata dallo staff, niente generazione.
-    if verdict.get("categoria") == triage.PROPOSAL_CATEGORY:
+    if verdict.get("categoria") in triage.PROPOSAL_CATEGORIES:
         from mail.templates import proposal_reply
-        reply = proposal_reply(_email_text(msg))
+        reply = proposal_reply(_email_text(msg),
+                               commercial=verdict.get("categoria") == triage.COMMERCIAL_CATEGORY)
         ok, reason = triage.can_send_proposal_reply(msg, verdict)
         if ok and not await _can_send_as():
             ok, reason = False, (f"{settings.mail_reply_as} non è un indirizzo "

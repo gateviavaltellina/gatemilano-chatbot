@@ -45,7 +45,9 @@ REVIEW_CATEGORIES = {
 
 # Proposte B2B (artisti, agenzie, piattaforme): risposta di cortesia fissa, decisa con
 # lo staff il 13/10. Testo approvato, non generato: per questo può partire da sola.
-PROPOSAL_CATEGORY = "proposte"
+PROPOSAL_CATEGORY = "proposte"            # artisti, DJ, band, agenzie di booking
+COMMERCIAL_CATEGORY = "commerciali"        # portali, servizi, pubblicità, partnership
+PROPOSAL_CATEGORIES = {PROPOSAL_CATEGORY, COMMERCIAL_CATEGORY}
 
 # Parole che da sole bastano a mandare in revisione, qualunque sia la categoria.
 # Non è una classificazione, è una rete di sicurezza.
@@ -84,7 +86,9 @@ Categorie:
 - reclami: lamentele, disservizi
 - lavoro: candidature, CV, "cerco lavoro"
 - fornitori: fatture, amministrazione, pagamenti
-- proposte: artisti, DJ, band o agenzie di booking che propongono un artista o una data; aziende, agenzie o piattaforme che propongono servizi, partnership o collaborazioni commerciali. NON include chi vuole organizzare un evento privato o aziendale da noi (quello è "privati")
+- proposte: artisti, DJ, band o agenzie di booking che propongono un artista, un live o una data
+- commerciali: aziende, agenzie, portali o piattaforme che vendono o propongono un servizio, pubblicità, inserzioni, software, partnership o collaborazioni commerciali
+  (né "proposte" né "commerciali" include chi vuole organizzare un evento privato o aziendale da noi: quello è "privati")
 - privati: eventi privati, compleanni organizzati, affitto spazio
 - altro: tutto ciò che non rientra sopra, o se non sei sicuro
 
@@ -170,7 +174,7 @@ async def classify(msg: dict) -> dict:
 
 def can_send_proposal_reply(msg: dict, verdict: dict) -> tuple[bool, str]:
     """La risposta fissa alle proposte B2B può partire? (mai su dubbi o parole sensibili)"""
-    if verdict.get("categoria") != PROPOSAL_CATEGORY:
+    if verdict.get("categoria") not in PROPOSAL_CATEGORIES:
         return False, "non è una proposta"
     if not settings.mail_auto_reply_proposals:
         return False, "risposta automatica alle proposte disattivata"
