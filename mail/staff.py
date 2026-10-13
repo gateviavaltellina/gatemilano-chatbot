@@ -89,7 +89,7 @@ async def refund_action(content: str, ctx: dict, author: str) -> str | None:
     from config import settings
 
     cmd = content.split(" ", 1)[0]
-    if cmd not in ("!rimborsa", "!fatto", "!rifiuta", "!r"):
+    if cmd not in ("!rimborsa", "!fatto", "!rifiuta", "!r", "!verifica"):
         return None
     if cmd == "!r" and not content[3:].strip():
         return None
@@ -98,6 +98,12 @@ async def refund_action(content: str, ctx: dict, author: str) -> str | None:
     mail = ctx.get("mail") or {}
     if not mail.get("from_email"):
         return "❌ Dati di questa richiesta non più disponibili: rispondi da Gmail."
+    if cmd == "!verifica":
+        try:
+            esito = await refunds.recheck(mail["from_email"])
+        except Exception as e:
+            return f"❌ Verifica non riuscita: {str(e)[:150]}"
+        return f"🔎 Verifica rifatta ({esito}): trovi la scheda aggiornata qui sotto."
     if ctx.get("sent_by") and cmd != "!r":
         return f"⚠️ Richiesta già chiusa da {ctx['sent_by']}: nessuna nuova azione."
     lang = ctx.get("lingua", "it")
