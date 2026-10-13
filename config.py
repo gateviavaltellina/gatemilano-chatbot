@@ -164,7 +164,7 @@ class Settings(BaseSettings):
     # MCP di Xceed (scripts/xceed_mcp_oauth.py)
     xceed_mcp_client_id: str = ""
     xceed_mcp_refresh_token: str = ""
-    xceed_mcp_refund_tool: str = ""
+    xceed_mcp_refund_tool: str = "booking_refund"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

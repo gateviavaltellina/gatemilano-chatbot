@@ -115,3 +115,28 @@ async def list_tools() -> list[dict]:
 
 async def call_tool(name: str, arguments: dict) -> dict:
     return await _rpc("tools/call", {"name": name, "arguments": arguments})
+
+
+_REFUND_MESSAGE = {
+    "it": "Rimborso per ingresso non consentito all'ingresso — Gate Milano",
+    "en": "Refund for denied entry at the door — Gate Milano",
+}
+
+
+async def refund_booking(booking_id: str | int, lang: str = "it") -> dict:
+    """Rimborso TOTALE di una prenotazione (strumento `booking_refund` dell'MCP).
+
+    Vuole l'ID numerico "legacy" della prenotazione: è il `bookingId` che la Partner
+    API restituisce per ogni biglietto. Policy: importo pieno, commissioni incluse.
+    È un'operazione irreversibile: la si chiama solo dopo un `!rimborsa` dello staff
+    (o con REFUND_AUTO_EXECUTE acceso).
+    """
+    result = await call_tool(settings.xceed_mcp_refund_tool, {
+        "legacyId": int(booking_id),
+        "isFullRefund": True,
+        "message": _REFUND_MESSAGE["en" if lang not in ("it", "", None) else "it"],
+    })
+    if result.get("isError"):
+        text = " ".join(c.get("text", "") for c in result.get("content", []) if isinstance(c, dict))
+        raise RuntimeError(f"Xceed ha rifiutato il rimborso di {booking_id}: {text[:200]}")
+    return result
