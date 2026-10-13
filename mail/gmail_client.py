@@ -232,7 +232,7 @@ async def get_signature(address: str) -> str:
 
 
 def _html_to_text(fragment: str) -> str:
-    text = re.sub(r"(?i)<br\s*/?>|</(div|p|tr|li)>", "\n", fragment)
+    text = re.sub(r"(?i)<br\s*/?>|</?(div|p|tr|li|table)\b[^>]*>", "\n", fragment)
     text = html.unescape(re.sub(r"(?s)<[^>]+>", "", text))
     return re.sub(r"\n{3,}", "\n\n", text).strip()
 

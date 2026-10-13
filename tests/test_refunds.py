@@ -182,15 +182,20 @@ def _msg(i="m1", body="rimborso", ms=None):
 
 @pytest.fixture
 def flow(monkeypatch):
-    st = {"replies": [], "labels": [], "notes": [], "existing": set(), "staff": False}
+    st = {"replies": [], "labels": [], "notes": [], "existing": set(), "staff": False,
+          "bot_sent": []}
 
     async def _list(q, n):
+        if q.startswith("in:sent"):
+            return list(st["bot_sent"])
         for lab in list(st["existing"]):
             if f'label:"{lab}"' in q:
                 return ["x"]
         return [] if "label:" in q.replace("-label:", "") else ["m1"]
 
     async def _get(i):
+        if i.startswith("sent"):
+            return {**_msg(i), "date_ms": int(i.split(":")[1])}
         return _msg(i)
 
     async def _staff(tid, lab):
@@ -434,3 +439,45 @@ def test_mask_oscura_i_dati_personali():
     m = xt.mask({"buyer": {"email": "g@x.it", "firstName": "Geraldo"}, "legacyId": 5, "note": "a@b.c"})
     assert m["buyer"]["email"] == "***" and m["buyer"]["firstName"] == "***"
     assert m["legacyId"] == 5 and m["note"] == "***"
+
+
+async def test_nessun_doppio_messaggio_senza_nuove_mail(flow, monkeypatch):
+    """Caso reale 13/10: stessa richiesta della motivazione mandata due volte in 3 minuti."""
+    async def _an(msgs):
+        return _a(motivazione="", respinto_alla_porta=False)
+    monkeypatch.setattr(refunds, "analyze", _an)
+    # Il bot ha già scritto DOPO l'ultima mail del cliente.
+    flow["bot_sent"] = [f"sent:{int(_IN_TIME.timestamp() * 1000) + 60_000}"]
+    esito = await refunds.process_sender("cliente@example.com", [_msg()])
+    assert esito == "già risposto" and flow["replies"] == []
+
+
+async def test_nuova_mail_dopo_la_nostra_si_rivaluta(flow, monkeypatch):
+    async def _an(msgs):
+        return _a(biglietti=False)
+    monkeypatch.setattr(refunds, "analyze", _an)
+    flow["bot_sent"] = [f"sent:{int(_IN_TIME.timestamp() * 1000) - 60_000}"]
+    assert await refunds.process_sender("cliente@example.com", [_msg()]) == "incompleta"
+    assert flow["replies"]
+
+
+def test_tutte_le_mail_del_cliente_segnate_come_lette():
+    import inspect
+    src = inspect.getsource(refunds.process_sender)
+    assert "new_msgs = msgs" in src
+
+
+@pytest.mark.parametrize("testo", [
+    templates.refund_ack("it"), templates.refund_ack("en"),
+    templates.refund_missing("it", ["biglietti"]), templates.refund_done("it", "X"),
+    templates.refund_refused("it"), templates.refund_refused("en", "nota"),
+])
+def test_niente_formula_di_chiusura(testo):
+    """La firma Gmail di george@ apre già con "Best,": "Un saluto" sarebbe doppio."""
+    for chiusura in ("Un saluto", "Kind regards", "Cordiali saluti"):
+        assert chiusura not in testo
+
+
+def test_firma_testo_con_a_capo():
+    sig = '<div dir="ltr"><div>Best,</div><div>George<div>Gate Milano | Gate Sardinia</div></div></div>'
+    assert "George\nGate Milano" in gm._html_to_text(sig).replace("\n\n", "\n")

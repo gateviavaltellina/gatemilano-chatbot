@@ -162,6 +162,19 @@ async def _has_label(sender: str, label: str) -> bool:
     return bool(await gm.list_unprocessed(_query_sender(sender, label), 1))
 
 
+async def _last_bot_reply_ms(sender: str) -> int:
+    """Quando il bot ha scritto l'ultima volta a questo cliente (0 = mai)."""
+    ids = await gm.list_unprocessed(
+        f'in:sent label:"{LABEL_BOT_SENT}" to:{sender} newer_than:{settings.refund_window_days + 7}d', 5)
+    latest = 0
+    for i in ids:
+        try:
+            latest = max(latest, (await gm.get_message(i)).get("date_ms", 0))
+        except Exception:
+            logger.debug("Risposta del bot non leggibile", exc_info=True)
+    return latest
+
+
 async def _content_blocks(msgs: list[dict]) -> list[dict]:
     lines = []
     blocks: list[dict] = []
@@ -251,6 +264,15 @@ async def process_sender(sender: str, new_msgs: list[dict]) -> str:
     msgs = [await gm.get_message(i) for i in ids] or new_msgs
     msgs.sort(key=lambda m: m.get("date_ms", 0))
     latest = msgs[-1]
+    # Tutte le mail del cliente si considerano lette ora, non solo quelle del giro:
+    # altrimenti una sua mail rimasta fuori dal tetto per giro viene ripresa dopo
+    # e il cliente riceve due volte lo stesso messaggio (caso reale 13/10).
+    new_msgs = msgs
+
+    # Già risposto dopo il suo ultimo messaggio: niente da aggiungere.
+    if await _last_bot_reply_ms(sender) >= latest.get("date_ms", 0):
+        await _label_all(msgs, LABEL_SEEN)
+        return "già risposto"
 
     # Già chiusa (rimborsata o rifiutata) o seguita a mano dallo staff: il bot non
     # risponde più, segnala solo il nuovo messaggio.
