@@ -90,18 +90,19 @@ async def _compose(msg: dict, verdict: dict) -> str:
         f"Oggetto: {msg.get('subject','')}\n\n"
         f"{msg.get('body','')}\n\n"
         "Scrivi la RISPOSTA EMAIL: saluto iniziale, risposta puntuale a ogni domanda "
-        "posta, chiusura cordiale. Niente oggetto, niente firma finale (le aggiungiamo "
-        "noi). Se un dato non ce l'hai, dillo e indica il canale giusto invece di "
+        "posta, chiusura cordiale. Niente oggetto e niente firma né nome in fondo: "
+        "la firma dello staff la aggiunge Gmail. Se un dato non ce l'hai, dillo e indica il canale giusto invece di "
         "inventarlo.\n"
         "LINGUA: rispondi nella STESSA lingua in cui è scritta l'email del cliente, "
         "qualunque sia. Queste istruzioni sono in italiano solo per uso interno.\n"
         f"CANALE: il cliente ci ha GIÀ scritto a {settings.mail_from_address} e questa è "
         f"la risposta da lì. NON dire MAI di scrivere a {settings.mail_from_address}: "
         "dove le regole dicono di scrivere a quell'indirizzo, in email vuol dire "
-        "rispondere a QUESTA email (es. rimborso: \"rispondi a questa email allegando "
-        "i 4 documenti\"). Se serve una verifica dello staff, scrivi che lo staff "
+        "rispondere a QUESTA email (es. accrediti: \"rispondi a questa email con i "
+        "dettagli\"). Se serve una verifica dello staff, scrivi che lo staff "
         "verifica e ricontatta il cliente in questa conversazione. Gli ALTRI recapiti "
-        "(es. marketing@ per i biglietti non ricevuti) restano validi."
+        "restano validi: rimborsi@gatemilano.com per i rimborsi, marketing@ per i "
+        "biglietti non ricevuti."
     )
     # La lingua si rileva sull'email del cliente, non su user_message: le istruzioni
     # qui sopra sono in italiano e falserebbero il rilevamento.
@@ -154,6 +155,25 @@ async def process_one(message_id: str) -> str:
         return "errore-thread"
 
     verdict = await triage.classify(msg)
+
+    # Proposte B2B: risposta fissa approvata dallo staff, niente generazione.
+    if verdict.get("categoria") == triage.PROPOSAL_CATEGORY:
+        from mail.templates import proposal_reply
+        reply = proposal_reply(_email_text(msg))
+        ok, reason = triage.can_send_proposal_reply(msg, verdict)
+        if ok and not await _can_send_as():
+            ok, reason = False, (f"{settings.mail_reply_as} non è un indirizzo "
+                                 "'Invia come' verificato in Gmail")
+        if ok:
+            await gm.send_reply(msg, reply)
+            await gm.add_label(message_id, LABEL_DONE)
+            await _notify(msg, verdict, "inviata", reply=reply)
+            return "inviata (proposta)"
+        draft_id = await gm.create_draft(msg, reply)
+        await gm.add_label(message_id, LABEL_REVIEW)
+        await _notify(msg, verdict, "bozza", reply=reply, reason=reason, draft_id=draft_id)
+        return f"bozza ({reason})"
+
     try:
         body = await _compose(msg, verdict)
     except Exception as e:

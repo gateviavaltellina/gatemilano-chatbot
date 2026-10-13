@@ -387,3 +387,131 @@ async def test_risposta_che_rimanda_a_info_va_in_bozza(monkeypatch):
     esito = await responder.process_one("m1")
     assert azioni == ["draft"]
     assert "rimanda a info@" in esito
+
+
+# --- proposte B2B: risposta fissa approvata (13/10) ---------------------------
+
+def test_template_proposte_nella_lingua_del_mittente():
+    from mail.templates import proposal_reply
+    en = proposal_reply("Hi guys, Timo Maas is available for bookings on October 30 "
+                        "and 31, with some flexibility on the fee for these two dates.")
+    it = proposal_reply("Ciao, siamo una band e ci piacerebbe venire a suonare da voi "
+                        "da gennaio in poi, quando avete date libere?")
+    assert "programming" in en and "programmazione" not in en
+    assert "programmazione del Gate" in it
+    # Professionale ma fredda: nessuna promessa, nessuna richiesta di materiale.
+    for t in (en, it):
+        assert "!" not in t
+
+
+def test_template_lingua_incerta_doppio():
+    from mail.templates import proposal_reply
+    t = proposal_reply("Techno set 2027")
+    assert "programmazione" in t and "programming" in t
+
+
+@pytest.mark.parametrize("confidenza,body,parte", [
+    ("alta", "Vi propongo il mio artista per una data", True),
+    ("bassa", "Vi propongo il mio artista per una data", False),
+    ("alta", "Vi propongo il mio artista, allego fattura", False),
+])
+def test_proposte_quando_parte_da_sola(confidenza, body, parte):
+    ok, _ = triage.can_send_proposal_reply(
+        _msg(body=body), {"categoria": "proposte", "confidenza": confidenza})
+    assert ok is parte
+
+
+def test_proposte_partono_anche_in_solo_bozze(monkeypatch):
+    # Il testo è fisso e approvato: solo-bozze riguarda le risposte generate.
+    monkeypatch.setattr(settings, "mail_draft_only", True)
+    ok, _ = triage.can_send_proposal_reply(
+        _msg(body="booking proposal for our DJ"), {"categoria": "proposte", "confidenza": "alta"})
+    assert ok
+
+
+async def _run_process(monkeypatch, verdict, body="Apriamo alle 23."):
+    from mail import responder
+    azioni = []
+
+    async def _get(_id):
+        return _msg(body="Hi, our DJ is available for bookings in 2027, are you interested?")
+
+    async def _no(*a, **k):
+        return False
+
+    async def _yes(*a, **k):
+        return True
+
+    async def _verdict(_m):
+        return verdict
+
+    async def _compose(_m, _v):
+        return body
+
+    async def _send(msg, text):
+        azioni.append(("send", text))
+
+    async def _draft(msg, text):
+        azioni.append(("draft", text))
+        return "d1"
+
+    async def _nop(*a, **k):
+        pass
+
+    monkeypatch.setattr("mail.gmail_client.get_message", _get)
+    monkeypatch.setattr("mail.gmail_client.thread_has_our_reply", _no)
+    monkeypatch.setattr("mail.gmail_client.can_send_as", _yes)
+    monkeypatch.setattr("mail.gmail_client.send_reply", _send)
+    monkeypatch.setattr("mail.gmail_client.create_draft", _draft)
+    monkeypatch.setattr("mail.gmail_client.add_label", _nop)
+    monkeypatch.setattr(triage, "classify", _verdict)
+    monkeypatch.setattr(responder, "_compose", _compose)
+    monkeypatch.setattr(responder, "_notify", _nop)
+    esito = await responder.process_one("m1")
+    return esito, azioni
+
+
+async def test_proposta_inviata_con_testo_fisso(monkeypatch):
+    esito, azioni = await _run_process(
+        monkeypatch, {"categoria": "proposte", "confidenza": "alta", "domanda": "booking"})
+    assert esito == "inviata (proposta)"
+    assert azioni[0][0] == "send" and "programming" in azioni[0][1]
+
+
+def _decode(raw):
+    import base64
+    import email
+    from email import policy
+    return email.message_from_bytes(base64.urlsafe_b64decode(raw), policy=policy.default)
+
+
+def test_firma_gmail_in_fondo_alla_risposta():
+    """La firma è quella impostata in Gmail per george@: le API non la mettono da sole."""
+    from mail import gmail_client as gm
+    sig = '<div><b>George</b><br>Gate Milano<br><a href="https://gatemilano.it">gatemilano.it</a></div>'
+    m = _decode(gm._build_raw("a@b.c", "Orari", "Ciao,\napriamo alle 23.", "<x@y>", "", sig))
+    html_part = m.get_body(preferencelist=("html",)).get_content()
+    text_part = m.get_body(preferencelist=("plain",)).get_content()
+    assert sig in html_part                      # firma intatta, con link
+    assert "apriamo alle 23." in html_part
+    assert "George" in text_part and "<b>" not in text_part
+    assert text_part.index("apriamo") < text_part.index("George")
+
+
+def test_senza_firma_gmail_chiude_col_nome():
+    from mail import gmail_client as gm
+    m = _decode(gm._build_raw("a@b.c", "Orari", "Ciao", "<x@y>", ""))
+    assert m.get_content().rstrip().endswith("Gate Milano")
+
+
+def test_testo_del_cliente_non_diventa_html():
+    from mail import gmail_client as gm
+    m = _decode(gm._build_raw("a@b.c", "x", "<script>x</script>", "", "", "<p>Sig</p>"))
+    assert "<script>" not in m.get_body(preferencelist=("html",)).get_content()
+
+
+def test_template_senza_firma_propria():
+    # Niente "Gate Milano" nel testo fisso: la firma arriva da Gmail, non va doppia.
+    from mail.templates import _PROPOSAL
+    for t in _PROPOSAL.values():
+        assert "Gate Milano" not in t

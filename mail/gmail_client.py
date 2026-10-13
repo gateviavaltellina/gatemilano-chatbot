@@ -10,6 +10,7 @@ aziendale è una capacità in più che può sbagliare.
 from __future__ import annotations
 
 import base64
+import html
 import logging
 import re
 import time
@@ -179,9 +180,39 @@ async def can_send_as(address: str) -> bool:
     return ok
 
 
+# --- firma -------------------------------------------------------------------
+
+_signature_cache: dict[str, tuple[str, float]] = {}
+
+
+async def get_signature(address: str) -> str:
+    """Firma HTML impostata in Gmail per l'alias. Le API non la aggiungono da sole:
+    senza questo, le risposte del bot partirebbero senza la firma dello staff."""
+    cached = _signature_cache.get(address)
+    if cached and time.time() < cached[1]:
+        return cached[0]
+    try:
+        data = await _request("GET", f"/settings/sendAs/{address}")
+        sig = data.get("signature", "") or ""
+    except Exception as e:
+        logger.warning("Firma Gmail non leggibile (%s): %s", address, e)
+        sig = ""
+    _signature_cache[address] = (sig, time.time() + 3600)
+    return sig
+
+
+def _html_to_text(fragment: str) -> str:
+    text = re.sub(r"(?i)<br\s*/?>|</(div|p|tr|li)>", "\n", fragment)
+    text = html.unescape(re.sub(r"(?s)<[^>]+>", "", text))
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
+
+
 # --- scrittura ---------------------------------------------------------------
 
-def _build_raw(to: str, subject: str, body: str, in_reply_to: str, references: str) -> str:
+def _build_raw(to: str, subject: str, body: str, in_reply_to: str, references: str,
+               signature_html: str = "") -> str:
+    """Messaggio di risposta. Con la firma Gmail: testo + HTML (la firma resta com'è,
+    con logo e link); senza: solo testo, chiuso dal nome del mittente."""
     msg = EmailMessage()
     msg["To"] = to
     msg["From"] = f"{settings.mail_from_name} <{settings.mail_reply_as}>"
@@ -189,13 +220,24 @@ def _build_raw(to: str, subject: str, body: str, in_reply_to: str, references: s
     if in_reply_to:
         msg["In-Reply-To"] = in_reply_to
         msg["References"] = (references + " " + in_reply_to).strip()
-    msg.set_content(body)
+    body = body.rstrip()
+    if signature_html.strip():
+        msg.set_content(f"{body}\n\n{_html_to_text(signature_html)}")
+        body_html = html.escape(body).replace("\n", "<br>")
+        msg.add_alternative(
+            f'<div dir="ltr">{body_html}<br><br>'
+            f'<div class="gmail_signature">{signature_html}</div></div>',
+            subtype="html",
+        )
+    else:
+        msg.set_content(f"{body}\n\n{settings.mail_from_name}")
     return base64.urlsafe_b64encode(msg.as_bytes()).decode()
 
 
 async def send_reply(msg: dict, body: str) -> str:
     raw = _build_raw(msg["from_email"], msg["subject"], body,
-                     msg["message_id_header"], msg["references"])
+                     msg["message_id_header"], msg["references"],
+                     await get_signature(settings.mail_reply_as))
     out = await _request("POST", "/messages/send",
                          json={"raw": raw, "threadId": msg["thread_id"]})
     return out.get("id", "")
@@ -203,7 +245,8 @@ async def send_reply(msg: dict, body: str) -> str:
 
 async def create_draft(msg: dict, body: str) -> str:
     raw = _build_raw(msg["from_email"], msg["subject"], body,
-                     msg["message_id_header"], msg["references"])
+                     msg["message_id_header"], msg["references"],
+                     await get_signature(settings.mail_reply_as))
     out = await _request("POST", "/drafts",
                          json={"message": {"raw": raw, "threadId": msg["thread_id"]}})
     return out.get("id", "")

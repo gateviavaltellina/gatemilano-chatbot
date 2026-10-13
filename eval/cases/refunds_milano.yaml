@@ -1,0 +1,51 @@
+# Rimborsi Gate Milano — policy staff 13/10: unico caso rimborsabile è l'ingresso
+# negato dalla sicurezza; richieste SOLO a rimborsi@gatemilano.com con prova d'acquisto
+# e biglietti allegati. Mai info@ per i rimborsi.
+
+- id: rimborso-respinto-sicurezza
+  category: refunds
+  venue: gate_milano
+  user_message: "sabato avevamo i biglietti per il perreo ma la sicurezza non ci ha fatto entrare, come chiedo il rimborso?"
+  rag_context: ""
+  rubric:
+    must:
+      - "Deve indicare che la richiesta va inviata a rimborsi@gatemilano.com"
+      - "Deve dire di allegare la prova d'acquisto e i biglietti"
+    must_not:
+      - "Non deve indicare info@gatemilano.com per il rimborso"
+      - "Non deve promettere che il rimborso verrà sicuramente concesso"
+  assertions:
+    forbidden_markdown: true
+
+- id: rimborso-non-venuto-lavoro
+  category: refunds
+  venue: gate_milano
+  user_message: "non sono riuscito a venire sabato per lavoro, posso avere il rimborso del biglietto?"
+  rag_context: ""
+  rubric:
+    must:
+      - "Deve dire che non partecipare per motivi propri non dà diritto a rimborso"
+      - "Può suggerire la rivendita tramite Xceed"
+    must_not:
+      - "Non deve lasciare intendere che basti scrivere per ottenere il rimborso"
+      - "Non deve indicare info@gatemilano.com per il rimborso"
+  assertions:
+    forbidden_markdown: true
+
+- id: concerto-orario-apertura-porte
+  category: hours
+  venue: gate_milano
+  user_message: "le 20 del concerto di mercoledì sono l'inizio del live o l'apertura porte?"
+  rag_context: |
+    EVENTO: MATEUS ASATO
+    Venue: Gate Milano
+    Data: {{TODAY+1}}
+    Orario: 20:00
+    Generi: Live Events
+  rubric:
+    must:
+      - "Deve dire che le 20:00 sono l'orario di apertura porte"
+    must_not:
+      - "Non deve inventare un orario di inizio del concerto"
+  assertions:
+    forbidden_markdown: true
