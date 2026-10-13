@@ -94,7 +94,14 @@ async def _compose(msg: dict, verdict: dict) -> str:
         "noi). Se un dato non ce l'hai, dillo e indica il canale giusto invece di "
         "inventarlo.\n"
         "LINGUA: rispondi nella STESSA lingua in cui è scritta l'email del cliente, "
-        "qualunque sia. Queste istruzioni sono in italiano solo per uso interno."
+        "qualunque sia. Queste istruzioni sono in italiano solo per uso interno.\n"
+        f"CANALE: il cliente ci ha GIÀ scritto a {settings.mail_from_address} e questa è "
+        f"la risposta da lì. NON dire MAI di scrivere a {settings.mail_from_address}: "
+        "dove le regole dicono di scrivere a quell'indirizzo, in email vuol dire "
+        "rispondere a QUESTA email (es. rimborso: \"rispondi a questa email allegando "
+        "i 4 documenti\"). Se serve una verifica dello staff, scrivi che lo staff "
+        "verifica e ricontatta il cliente in questa conversazione. Gli ALTRI recapiti "
+        "(es. marketing@ per i biglietti non ricevuti) restano validi."
     )
     # La lingua si rileva sull'email del cliente, non su user_message: le istruzioni
     # qui sopra sono in italiano e falserebbero il rilevamento.
@@ -161,6 +168,10 @@ async def process_one(message_id: str) -> str:
         return "revisione (nessuna risposta utile)"
 
     ok, reason = triage.can_autosend(msg, verdict)
+    # Rete di sicurezza: rimandare a info@ chi ha appena scritto a info@ è una
+    # risposta inutile. Se il modello lo fa comunque, la si fa rileggere.
+    if ok and settings.mail_from_address.lower() in body.lower():
+        ok, reason = False, f"la risposta rimanda a {settings.mail_from_address}"
     if ok and not await _can_send_as():
         ok, reason = False, (f"{settings.mail_reply_as} non è un indirizzo "
                              "'Invia come' verificato in Gmail")

@@ -322,3 +322,68 @@ def test_nota_automatica_nella_lingua_del_cliente():
     it = _msg(subject="Tavoli", body="Ciao, quanto costa un tavolo per 6 persone venerdì?")
     assert "sent automatically" in responder._footer(en)
     assert "inviata automaticamente" in responder._footer(it)
+
+
+# --- non rimandare a info@ chi ha scritto a info@ ------------------------------
+
+async def test_istruzione_niente_rimando_a_info(monkeypatch):
+    from mail import responder
+    import ai.claude_client as cc
+    import rag.context_builder as cb
+    preso = {}
+
+    async def _ctx(*a, **k):
+        return "", []
+
+    async def _gen(**kw):
+        preso.update(kw)
+        return "ok"
+
+    monkeypatch.setattr(cb, "build_rag_context", _ctx)
+    monkeypatch.setattr(cc, "generate_response", _gen)
+    await responder._compose(_msg(), {"domanda": "rimborso"})
+    assert "NON dire MAI di scrivere a info@gatemilano.com" in preso["user_message"]
+    assert "rispondi a questa email" in preso["user_message"]
+
+
+async def test_risposta_che_rimanda_a_info_va_in_bozza(monkeypatch):
+    from mail import responder
+    azioni = []
+
+    async def _get(_id):
+        return _msg()
+
+    async def _no(*a, **k):
+        return False
+
+    async def _yes(*a, **k):
+        return True
+
+    async def _verdict(_m):
+        return {"categoria": "orari", "confidenza": "alta", "domanda": "orari"}
+
+    async def _compose(_m, _v):
+        return "Per questo scrivi a info@gatemilano.com, ti rispondiamo lì."
+
+    async def _send(*a, **k):
+        azioni.append("send")
+
+    async def _draft(*a, **k):
+        azioni.append("draft")
+        return "d1"
+
+    async def _nop(*a, **k):
+        pass
+
+    monkeypatch.setattr("mail.gmail_client.get_message", _get)
+    monkeypatch.setattr("mail.gmail_client.thread_has_our_reply", _no)
+    monkeypatch.setattr("mail.gmail_client.can_send_as", _yes)
+    monkeypatch.setattr("mail.gmail_client.send_reply", _send)
+    monkeypatch.setattr("mail.gmail_client.create_draft", _draft)
+    monkeypatch.setattr("mail.gmail_client.add_label", _nop)
+    monkeypatch.setattr(triage, "classify", _verdict)
+    monkeypatch.setattr(responder, "_compose", _compose)
+    monkeypatch.setattr(responder, "_notify", _nop)
+    esito = await responder.process_one("m1")
+    assert azioni == ["draft"]
+    assert "rimanda a info@" in esito
