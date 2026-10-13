@@ -350,6 +350,45 @@ async def recheck(sender: str) -> str:
     return verdict["status"]
 
 
+async def open_senders() -> list[str]:
+    """Mittenti con una richiesta a rimborsi@ ancora aperta (né rimborsata né rifiutata)."""
+    days = settings.refund_window_days + 7
+    ids = await gm.list_unprocessed(
+        f"deliveredto:{settings.refund_inbox} newer_than:{days}d -in:sent "
+        f'-label:"{LABEL_DONE}" -label:"{LABEL_REFUSED}"', 200)
+    senders: list[str] = []
+    for i in ids:
+        try:
+            m = await gm.get_message(i)
+        except Exception:
+            continue
+        s = m.get("from_email", "")
+        if s and s not in senders and not triage.hard_skip(m, box=settings.refund_inbox):
+            senders.append(s)
+    return senders
+
+
+async def recheck_all() -> dict:
+    """Rifà la verifica di tutte le richieste aperte e ripubblica le schede su Discord.
+
+    Nessuna mail ai clienti: serve dopo una correzione della verifica (13/10, ricerca
+    Xceed che non trovava le serate recenti) per riportare le schede vecchie al vero.
+    """
+    esiti: dict[str, int] = {}
+    senders = await open_senders()
+    for s in senders:
+        try:
+            if await _has_label(s, LABEL_DONE) or await _has_label(s, LABEL_REFUSED):
+                continue
+            esito = await recheck(s)
+        except Exception as e:
+            logger.exception("Riverifica di %s fallita: %s", s, e)
+            esito = "errore"
+        esiti[esito] = esiti.get(esito, 0) + 1
+    logger.info("Riverifica rimborsi: %d richieste — %s", len(senders), esiti)
+    return {"richieste": len(senders), "esiti": esiti}
+
+
 async def run_once() -> dict:
     if not settings.refunds_enabled:
         return {"skipped": "disattivato"}

@@ -553,3 +553,28 @@ async def test_verifica_funziona_anche_su_scheda_chiusa(staff_gmail, monkeypatch
     monkeypatch.setattr(refunds, "recheck", _recheck)
     out = await staff.refund_action("!verifica", _ctx(sent_by="George"), "Marco")
     assert "rifatta" in out
+
+
+async def test_riverifica_tutte_le_aperte_senza_scrivere(monkeypatch):
+    rifatti, scritte = [], []
+
+    async def _senders():
+        return ["a@x.it", "b@x.it", "c@x.it"]
+
+    async def _has(sender, label):
+        return sender == "b@x.it" and label == refunds.LABEL_DONE   # b già rimborsato
+
+    async def _recheck(s):
+        rifatti.append(s)
+        return "ok"
+
+    async def _send(*a, **k):
+        scritte.append(a)
+
+    monkeypatch.setattr(refunds, "open_senders", _senders)
+    monkeypatch.setattr(refunds, "_has_label", _has)
+    monkeypatch.setattr(refunds, "recheck", _recheck)
+    monkeypatch.setattr(gm, "send_reply", _send)
+    out = await refunds.recheck_all()
+    assert rifatti == ["a@x.it", "c@x.it"] and out["esiti"] == {"ok": 2}
+    assert scritte == []
