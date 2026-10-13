@@ -157,11 +157,12 @@ async def process_one(message_id: str) -> str:
 
     verdict = await triage.classify(msg)
 
-    # Proposte B2B: risposta fissa approvata dallo staff, niente generazione.
+    # Proposte (artisti, agenzie, portali, servizi): risposta su misura scritta dal
+    # modello e controllata; se il controllo non passa, il testo fisso approvato.
     if verdict.get("categoria") in triage.PROPOSAL_CATEGORIES:
-        from mail.templates import proposal_reply
-        reply = proposal_reply(_email_text(msg),
-                               commercial=verdict.get("categoria") == triage.COMMERCIAL_CATEGORY)
+        from mail.proposals import write_reply
+        reply, origin = await write_reply(
+            msg, commercial=verdict.get("categoria") == triage.COMMERCIAL_CATEGORY)
         ok, reason = triage.can_send_proposal_reply(msg, verdict)
         if ok and not await _can_send_as():
             ok, reason = False, (f"{settings.mail_reply_as} non è un indirizzo "
@@ -169,7 +170,8 @@ async def process_one(message_id: str) -> str:
         if ok:
             await gm.send_reply(msg, reply)
             await gm.add_label(message_id, LABEL_DONE)
-            await _notify(msg, verdict, "inviata", reply=reply)
+            await _notify(msg, verdict, "inviata", reply=reply,
+                          reason="" if origin == "generata" else origin)
             return "inviata (proposta)"
         draft_id = await gm.create_draft(msg, reply)
         await gm.add_label(message_id, LABEL_REVIEW)

@@ -467,6 +467,12 @@ async def _run_process(monkeypatch, verdict, body="Apriamo alle 23."):
     monkeypatch.setattr(triage, "classify", _verdict)
     monkeypatch.setattr(responder, "_compose", _compose)
     monkeypatch.setattr(responder, "_notify", _nop)
+    # Niente chiamate vere al modello nei test: la proposta ricade sul testo fisso.
+    import mail.proposals as mp
+
+    async def _no_model(**kw):
+        raise RuntimeError("modello non disponibile nei test")
+    monkeypatch.setattr(mp._client.messages, "create", _no_model)
     esito = await responder.process_one("m1")
     return esito, azioni
 
@@ -547,3 +553,55 @@ async def test_commerciale_inviata_col_testo_giusto(monkeypatch):
         monkeypatch, {"categoria": "commerciali", "confidenza": "alta", "domanda": "portale"})
     assert esito == "inviata (proposta)"
     assert "programming" not in azioni[0][1] and "collaboration proposals" in azioni[0][1]
+
+
+
+# --- risposte su misura alle proposte (staff 13/10: "deve sapersi comportare") ----
+
+class _FakeResp:
+    def __init__(self, text):
+        self.content = [type("B", (), {"type": "text", "text": text})()]
+
+
+def _fake_model(monkeypatch, text):
+    import mail.proposals as mp
+
+    async def _create(**kw):
+        return _FakeResp(text)
+    monkeypatch.setattr(mp._client.messages, "create", _create)
+
+
+async def test_risposta_su_misura_al_portale(monkeypatch):
+    from mail.proposals import write_reply
+    testo = ("Buongiorno,\n\ngrazie per averci presentato FESTAMI e la possibilità di inserire "
+             "il Gate sul vostro portale. Valutiamo con attenzione le proposte di collaborazione "
+             "che riceviamo: se dovesse esserci interesse, saremo noi a ricontattarvi.")
+    _fake_model(monkeypatch, testo)
+    out, origin = await write_reply(_msg(subject="La tua sala su FESTAMI"), commercial=True)
+    assert origin == "generata" and "FESTAMI" in out
+
+
+@pytest.mark.parametrize("cattiva", [
+    "Buongiorno, siamo interessati alla vostra proposta: fissiamo una call la prossima settimana?",
+    "Ciao, grazie! Mandaci pure il listino e il press kit, li valutiamo con attenzione.",
+    "Ciao, grazie per la proposta, scrivici a booking@gatemilano.com per i dettagli del caso.",
+    "Hello, thanks! Our budget for this kind of booking is around 2000 EUR, let us know.",
+    "Ok",
+])
+async def test_risposta_che_si_impegna_ricade_sul_testo_fisso(monkeypatch, cattiva):
+    from mail.proposals import write_reply
+    _fake_model(monkeypatch, cattiva)
+    out, origin = await write_reply(_msg(body="Vi proponiamo il nostro DJ per il 2027"), commercial=False)
+    assert origin.startswith("fissa")
+    assert "programmazione del Gate" in out or "programming" in out
+
+
+async def test_modello_non_disponibile_testo_fisso(monkeypatch):
+    import mail.proposals as mp
+    from mail.proposals import write_reply
+
+    async def _boom(**kw):
+        raise RuntimeError("down")
+    monkeypatch.setattr(mp._client.messages, "create", _boom)
+    out, origin = await write_reply(_msg(body="nostro portale per eventi"), commercial=True)
+    assert origin == "fissa: generazione non riuscita" and "collaborazione" in out
