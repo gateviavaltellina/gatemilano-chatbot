@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import httpx
 import logging
+import re
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -225,7 +226,10 @@ def _mail_key(msg: dict) -> str:
 
 
 def _cut(text: str, limit: int = 1024, tail: str = "…") -> str:
-    text = (text or "").strip()
+    # Le email HTML convertite in testo hanno spesso decine di righe vuote: su
+    # Discord diventano un muro bianco (caso reale SYN*K 13/10).
+    text = re.sub(r"[ \t\u00a0\u200b\u034f]+\n", "\n", text or "")
+    text = re.sub(r"\n{3,}", "\n\n", text).strip()
     return text if len(text) <= limit else text[: limit - len(tail)] + tail
 
 

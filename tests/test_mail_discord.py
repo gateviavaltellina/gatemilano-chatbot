@@ -146,3 +146,10 @@ async def test_inviata_in_automatico_segnata_come_gia_risposta(monkeypatch):
     await nd.notify_email(msg, {}, "gate_milano", "ok", "inviata")
     # Un !ok o !r su un'email già partita in automatico non deve fare un secondo invio.
     assert preso["context"]["sent_by"] == "bot"
+
+
+def test_righe_vuote_compattate():
+    testo = "Hey Gate Milano Team\n\n\n\n \n\n\n\n\nI can imagine things are busy.\n\n\n\nBest,"
+    out = nd._cut(testo)
+    assert "\n\n\n" not in out
+    assert out.startswith("Hey Gate Milano Team\n\nI can imagine")
