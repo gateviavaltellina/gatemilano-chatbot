@@ -278,14 +278,16 @@ _REFUND_STATUS = {
     # stato: (colore, titolo, comandi)
     "ok": (0x16A34A, "✅ Requisiti OK — da rimborsare",
            "`!rimborsa` rimborsa su Xceed · `!fatto` se l'hai già rimborsato da Xceed · "
-           "`!rifiuta <nota>` · `!r <testo>` · `!verifica` rifà i controlli"),
+           "`!rifiuta <nota>` · `!inoltra` (dopo lunedì mattina) · `!r <testo>` · `!verifica`"),
     "da_verificare": (0xF59E0B, "⚠️ Richiesta completa, ma qualcosa non torna",
-                      "`!rimborsa` · `!fatto` · `!rifiuta <nota>` · `!r <testo>` · "
-                      "`!verifica` rifà i controlli"),
+                      "`!rimborsa` · `!inoltra` · `!fatto` · `!rifiuta <nota>` · `!r <testo>` · "
+                      "`!verifica`"),
     "incompleta": (0x64748B, "📎 Incompleta — al cliente è stato scritto cosa manca",
                    "Aspetta la sua risposta, oppure `!r <testo>`."),
     "non_rimborsabile": (0xDC2626, "❌ Fuori policy — non è venuto per motivi propri",
                          "`!rifiuta` invia la risposta standard · `!r <testo>`"),
+    "inoltrata": (0x2563EB, "📨 Inoltrata a Xceed — cliente avvisato (14 giorni)",
+                  "`!r <testo>` se serve scrivere ancora al cliente."),
     "nota": (0x64748B, "ℹ️ Aggiornamento", "`!r <testo>` se serve rispondere."),
     "errore": (0xDC2626, "⚠️ Da guardare a mano",
                "`!verifica` riprova · `!r <testo>` · `!rifiuta` · `!fatto`"),

@@ -216,6 +216,8 @@ def flow(monkeypatch):
     monkeypatch.setattr(gm, "send_reply", _send)
     monkeypatch.setattr(gm, "add_label", _label)
     monkeypatch.setattr(refunds, "_notify", _notify)
+    # Di default dentro la finestra Xceed (la serata di prova è del 10/10/2026).
+    monkeypatch.setattr(refunds, "past_xceed_cutoff", lambda found, now=None: False)
     return st
 
 
@@ -564,7 +566,7 @@ async def test_riverifica_tutte_le_aperte_senza_scrivere(monkeypatch):
     async def _has(sender, label):
         return sender == "b@x.it" and label == refunds.LABEL_DONE   # b già rimborsato
 
-    async def _recheck(s):
+    async def _recheck(s, forward_old=False):
         rifatti.append(s)
         return "ok"
 
@@ -585,3 +587,82 @@ def test_prezzo_in_formato_mcp_leggibile():
          "offer": {"name": "Men General Admission",
                    "price": {"amount": {"onlinePrice": 15, "offlinePrice": 0, "currency": "EUR"}}}}
     assert xt.summarize([t])["price"] == "€15"
+
+
+
+# --- finestra Xceed e inoltro a Bianca (staff 13/10) -----------------------------------------
+
+def test_finestra_xceed_lunedi_mattina():
+    c = refunds.xceed_cutoff("2026-10-10")
+    assert c.strftime("%Y-%m-%d %H:%M") == f"2026-10-12 {settings.refund_xceed_cutoff_hour:02d}:00"
+    found = _found(_ticket())
+    assert not refunds.past_xceed_cutoff(found, now=datetime(2026, 10, 11, 20, tzinfo=ROME))
+    assert refunds.past_xceed_cutoff(found, now=datetime(2026, 10, 12, 15, tzinfo=ROME))
+
+
+def test_scheda_dice_fino_a_quando_si_rimborsa():
+    v = refunds.assess(_a(), _found(_ticket()), _IN_TIME)
+    assert v["status"] == "ok"                      # l'informazione non cambia l'esito
+    assert any("fino a lunedì 12/10" in t for _, t in v["checks"])
+
+
+async def test_oltre_finestra_si_inoltra_a_bianca(flow, monkeypatch):
+    inviate = []
+
+    async def _an(msgs):
+        return _a()
+
+    async def _find(*a, **k):
+        return _found(_ticket())
+
+    async def _new(to, subject, body, attachments=None):
+        inviate.append((to, subject, body))
+
+    monkeypatch.setattr(refunds, "analyze", _an)
+    monkeypatch.setattr(xt, "find_request_tickets", _find)
+    monkeypatch.setattr(refunds, "past_xceed_cutoff", lambda found, now=None: True)
+    monkeypatch.setattr(gm, "send_new", _new)
+    esito = await refunds.process_sender("cliente@example.com", [_msg()])
+    assert esito == "inoltrata"
+    to, subject, body = inviate[0]
+    assert to == "bianca@xceed.me"
+    assert "24556189" in body and "PERREO XL" in body and "commissioni incluse" in body
+    # Il cliente riceve il messaggio dei 14 giorni, una volta sola.
+    assert len(flow["replies"]) == 1 and "14 giorni" in flow["replies"][0][0]
+    assert refunds.LABEL_FORWARDED in flow["labels"]
+
+
+async def test_richiesta_inoltrata_non_riceve_altri_messaggi(flow, monkeypatch):
+    flow["existing"].add(refunds.LABEL_FORWARDED)
+
+    async def _boom(msgs):
+        raise AssertionError("non deve rianalizzare")
+    monkeypatch.setattr(refunds, "analyze", _boom)
+    esito = await refunds.process_sender("cliente@example.com", [_msg()])
+    assert esito.startswith("nota") and flow["replies"] == []
+
+
+async def test_comando_inoltra(staff_gmail, monkeypatch):
+    chiamato = []
+
+    async def _fwd(sender, note=""):
+        chiamato.append((sender, note))
+        return "Inoltrata a bianca@xceed.me, cliente avvisato (14 giorni)"
+
+    monkeypatch.setattr(refunds, "forward_by_staff", _fwd)
+    ctx = _ctx()
+    out = await staff.refund_action("!inoltra serata del 3/10", ctx, "George")
+    assert chiamato == [("cliente@example.com", "serata del 3/10")]
+    assert "Inoltrata" in out and ctx["sent_by"] == "George"
+
+
+async def test_rimborsa_rifiutato_suggerisce_inoltra(staff_gmail, monkeypatch):
+    from mail import xceed_mcp
+
+    async def _call(name, args):
+        return {"isError": True, "content": [{"type": "text", "text": "Participant can not be refunded"}]}
+
+    monkeypatch.setattr(xceed_mcp, "configured", lambda: True)
+    monkeypatch.setattr(xceed_mcp, "call_tool", _call)
+    out = await staff.refund_action("!rimborsa", _ctx(), "George")
+    assert "!inoltra" in out
