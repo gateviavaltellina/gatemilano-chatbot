@@ -127,8 +127,12 @@ async def refund_action(content: str, ctx: dict, author: str) -> str | None:
                         "dalla dashboard Xceed, poi scrivi `!fatto` qui: il cliente riceve la conferma.")
             if not ctx.get("booking_ids"):
                 return "❌ Nessuna prenotazione Xceed associata: rimborsa da Xceed e poi `!fatto`."
+            done = ctx.setdefault("refunded_ids", [])
             for bid in ctx["booking_ids"]:
-                await xceed_mcp.call_tool(settings.xceed_mcp_refund_tool, {"bookingId": bid})
+                if bid in done:          # già rimborsata in un tentativo precedente
+                    continue
+                await xceed_mcp.refund_booking(bid, lang)
+                done.append(bid)
         await _send(templates.refund_done(lang, ctx.get("evento", "")))
         await _close(refunds.LABEL_DONE)
         return f"✅ Rimborso segnato come fatto e cliente avvisato ({author})."

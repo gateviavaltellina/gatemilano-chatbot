@@ -235,9 +235,8 @@ async def _auto_refund(latest: dict, msgs: list[dict], found: dict, lang: str) -
     if not (xceed_mcp.configured() and settings.xceed_mcp_refund_tool and booking_ids):
         return False
     try:
-        # Argomenti dello strumento da confermare sullo schema reale (/debug/refunds?mcp_tools=true).
         for bid in booking_ids:
-            await xceed_mcp.call_tool(settings.xceed_mcp_refund_tool, {"bookingId": bid})
+            await xceed_mcp.refund_booking(bid, lang)
     except Exception as e:
         logger.error("Rimborso automatico fallito: %s", e)
         return False

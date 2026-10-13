@@ -338,3 +338,57 @@ async def test_rifiuta_con_nota(staff_gmail):
 
 async def test_altri_comandi_ignorati(staff_gmail):
     assert await staff.refund_action("!ok", _ctx(), "George") is None
+
+
+# --- rimborso su Xceed (MCP booking_refund) -----------------------------------------------
+
+async def test_rimborsa_chiama_booking_refund_e_avvisa(staff_gmail, monkeypatch):
+    from mail import xceed_mcp
+    chiamate = []
+
+    async def _call(name, args):
+        chiamate.append((name, args))
+        return {"content": [{"type": "text", "text": "ok"}]}
+
+    monkeypatch.setattr(xceed_mcp, "configured", lambda: True)
+    monkeypatch.setattr(xceed_mcp, "call_tool", _call)
+    ctx = _ctx(booking_ids=["24556189"])
+    out = await staff.refund_action("!rimborsa", ctx, "George")
+    assert out.startswith("✅")
+    name, args = chiamate[0]
+    assert name == "booking_refund"
+    assert args["legacyId"] == 24556189 and args["isFullRefund"] is True
+    assert any(c[0] == "send" and "commissioni comprese" in c[1] for c in staff_gmail)
+
+
+async def test_rimborso_rifiutato_da_xceed_non_avvisa_il_cliente(staff_gmail, monkeypatch):
+    from mail import xceed_mcp
+
+    async def _call(name, args):
+        return {"isError": True, "content": [{"type": "text", "text": "already refunded"}]}
+
+    monkeypatch.setattr(xceed_mcp, "configured", lambda: True)
+    monkeypatch.setattr(xceed_mcp, "call_tool", _call)
+    ctx = _ctx()
+    out = await staff.refund_action("!rimborsa", ctx, "George")
+    assert out.startswith("❌") and "already refunded" in out
+    assert staff_gmail == [] and ctx["sent_by"] == ""
+
+
+async def test_riprova_non_rimborsa_due_volte(staff_gmail, monkeypatch):
+    """Due prenotazioni, la seconda fallisce: al nuovo !rimborsa la prima non si ripete."""
+    from mail import xceed_mcp
+    chiamate = []
+
+    async def _call(name, args):
+        chiamate.append(args["legacyId"])
+        if args["legacyId"] == 2 and chiamate.count(2) == 1:
+            return {"isError": True, "content": [{"type": "text", "text": "timeout"}]}
+        return {"content": []}
+
+    monkeypatch.setattr(xceed_mcp, "configured", lambda: True)
+    monkeypatch.setattr(xceed_mcp, "call_tool", _call)
+    ctx = _ctx(booking_ids=["1", "2"])
+    await staff.refund_action("!rimborsa", ctx, "George")
+    await staff.refund_action("!rimborsa", ctx, "George")
+    assert chiamate == [1, 2, 2]
