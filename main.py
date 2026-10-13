@@ -374,7 +374,8 @@ async def debug_mail(run: bool = False):
 
 
 @app.get("/debug/refunds", dependencies=[Depends(require_debug_key)])
-async def debug_refunds(run: bool = False, mcp_tools: bool = False, probe: str = ""):
+async def debug_refunds(run: bool = False, mcp_tools: bool = False, probe: str = "",
+                        recheck_all: bool = False):
     """Stato dei rimborsi automatici; ?run=true fa un giro, ?mcp_tools=true elenca gli
     strumenti dell'MCP di Xceed (per collegare il rimborso vero e proprio)."""
     from mail import refunds, xceed_mcp
@@ -395,6 +396,12 @@ async def debug_refunds(run: bool = False, mcp_tools: bool = False, probe: str =
                 for t in await xceed_mcp.list_tools()]
         except Exception as e:
             out["mcp_tools"] = f"errore: {str(e)[:200]}"
+    if recheck_all:
+        # In background: una decina di analisi con allegati richiede qualche minuto.
+        # Le schede aggiornate arrivano su Discord man mano.
+        import asyncio
+        asyncio.create_task(refunds.recheck_all())
+        out["riverifica"] = "avviata: le schede aggiornate arrivano su Discord nei prossimi minuti"
     if probe:
         from mail.xceed_tickets import probe as _probe
         out["probe"] = await _probe(probe)
