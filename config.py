@@ -148,6 +148,24 @@ class Settings(BaseSettings):
     # perché il testo non è generato.
     mail_auto_reply_proposals: bool = True
 
+    # --- Rimborsi (rimborsi@gatemilano.com) ------------------------------------
+    # Policy staff 13/10: si rimborsa SOLO chi, con biglietto valido, è stato respinto
+    # all'ingresso dalla sicurezza; servono prova d'acquisto, biglietti e la
+    # motivazione. Importo pieno, commissioni incluse. La selezione avviene PRIMA
+    # della scansione: il biglietto di chi è stato respinto risulta non usato.
+    refunds_enabled: bool = False
+    refund_inbox: str = "rimborsi@gatemilano.com"
+    refund_window_days: int = 10
+    # Esegue il rimborso su Xceed da solo quando tutti i controlli passano. Spento
+    # finché il rimborso via MCP non è stato provato su casi reali: fino ad allora
+    # lo staff conferma con !rimborsa.
+    refund_auto_execute: bool = False
+    discord_refund_webhook_url: str = ""
+    # MCP di Xceed (scripts/xceed_mcp_oauth.py)
+    xceed_mcp_client_id: str = ""
+    xceed_mcp_refresh_token: str = ""
+    xceed_mcp_refund_tool: str = ""
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 settings = Settings()

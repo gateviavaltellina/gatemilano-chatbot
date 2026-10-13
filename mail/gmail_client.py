@@ -115,6 +115,17 @@ def _has_attachments(payload: dict) -> bool:
     return any(p.get("filename") for p in _walk_parts(payload))
 
 
+def _attachments(payload: dict) -> list[dict]:
+    """Allegati scaricabili (foto del biglietto, PDF, screenshot del pagamento)."""
+    out = []
+    for p in _walk_parts(payload):
+        body = p.get("body") or {}
+        if p.get("filename") and body.get("attachmentId"):
+            out.append({"filename": p["filename"], "mime": p.get("mimeType", ""),
+                        "attachment_id": body["attachmentId"], "size": body.get("size", 0)})
+    return out
+
+
 async def get_message(message_id: str) -> dict:
     """Campi che servono al triage, già estratti."""
     raw = await _request("GET", f"/messages/{message_id}", params={"format": "full"})
@@ -139,7 +150,26 @@ async def get_message(message_id: str) -> dict:
         "auto_submitted": _header(payload, "Auto-Submitted"),
         "body": _plain_body(payload)[:8000],
         "has_attachments": _has_attachments(payload),
+        "attachments": _attachments(payload),
+        "date_ms": int(raw.get("internalDate") or 0),
     }
+
+
+async def get_attachment(message_id: str, attachment_id: str) -> bytes:
+    data = await _request("GET", f"/messages/{message_id}/attachments/{attachment_id}")
+    return base64.urlsafe_b64decode((data.get("data") or "") + "==")
+
+
+async def thread_staff_replied(thread_id: str, bot_label: str) -> bool:
+    """True se nel thread c'è una risposta inviata da una PERSONA (SENT senza l'etichetta
+    del bot): in quel caso il bot si fa da parte."""
+    data = await _request("GET", f"/threads/{thread_id}", params={"format": "metadata"})
+    bot_id = await ensure_label(bot_label)
+    for m in data.get("messages", []):
+        labels = m.get("labelIds") or []
+        if "SENT" in labels and bot_id not in labels:
+            return True
+    return False
 
 
 async def thread_has_our_reply(thread_id: str) -> bool:
@@ -210,13 +240,15 @@ def _html_to_text(fragment: str) -> str:
 # --- scrittura ---------------------------------------------------------------
 
 def _build_raw(to: str, subject: str, body: str, in_reply_to: str, references: str,
-               signature_html: str = "") -> str:
+               signature_html: str = "", reply_to: str = "") -> str:
     """Messaggio di risposta. Con la firma Gmail: testo + HTML (la firma resta com'è,
     con logo e link); senza: solo testo, chiuso dal nome del mittente."""
     msg = EmailMessage()
     msg["To"] = to
     msg["From"] = f"{settings.mail_from_name} <{settings.mail_reply_as}>"
     msg["Subject"] = subject if subject.lower().startswith("re:") else f"Re: {subject}"
+    if reply_to:
+        msg["Reply-To"] = reply_to
     if in_reply_to:
         msg["In-Reply-To"] = in_reply_to
         msg["References"] = (references + " " + in_reply_to).strip()
@@ -234,13 +266,20 @@ def _build_raw(to: str, subject: str, body: str, in_reply_to: str, references: s
     return base64.urlsafe_b64encode(msg.as_bytes()).decode()
 
 
-async def send_reply(msg: dict, body: str) -> str:
+async def send_reply(msg: dict, body: str, label: str = "", reply_to: str = "") -> str:
     raw = _build_raw(msg["from_email"], msg["subject"], body,
                      msg["message_id_header"], msg["references"],
-                     await get_signature(settings.mail_reply_as))
+                     await get_signature(settings.mail_reply_as), reply_to=reply_to)
     out = await _request("POST", "/messages/send",
                          json={"raw": raw, "threadId": msg["thread_id"]})
-    return out.get("id", "")
+    sent_id = out.get("id", "")
+    if label and sent_id:
+        # Marca le risposte del bot: così si distinguono da quelle scritte dallo staff.
+        try:
+            await add_label(sent_id, label)
+        except Exception:
+            logger.debug("Etichetta sulla risposta inviata non applicata", exc_info=True)
+    return sent_id
 
 
 async def create_draft(msg: dict, body: str) -> str:

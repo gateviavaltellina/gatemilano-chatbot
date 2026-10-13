@@ -79,3 +79,59 @@ async def staff_action(content: str, ctx: dict, author: str) -> str | None:
     except Exception as e:
         logger.error("Comando email %r fallito: %s", content[:20], e)
         return f"❌ Invio non riuscito: {str(e)[:150]}"
+
+
+# --- rimborsi -----------------------------------------------------------------------
+
+async def refund_action(content: str, ctx: dict, author: str) -> str | None:
+    """Comandi sulle schede rimborso: !rimborsa, !fatto, !rifiuta [nota], !r <testo>."""
+    from mail import refunds, templates, xceed_mcp
+    from config import settings
+
+    cmd = content.split(" ", 1)[0]
+    if cmd not in ("!rimborsa", "!fatto", "!rifiuta", "!r"):
+        return None
+    if cmd == "!r" and not content[3:].strip():
+        return None
+    if not gm.configured():
+        return "❌ Gmail non configurato sul server."
+    mail = ctx.get("mail") or {}
+    if not mail.get("from_email"):
+        return "❌ Dati di questa richiesta non più disponibili: rispondi da Gmail."
+    if ctx.get("sent_by") and cmd != "!r":
+        return f"⚠️ Richiesta già chiusa da {ctx['sent_by']}: nessuna nuova azione."
+    lang = ctx.get("lingua", "it")
+
+    async def _send(text: str) -> None:
+        await gm.send_reply(mail, text, label=refunds.LABEL_BOT_SENT, reply_to=settings.refund_inbox)
+
+    async def _close(label: str) -> None:
+        ctx["sent_by"] = author
+        for mid in ctx.get("gmail_ids", []):
+            try:
+                await gm.add_label(mid, label)
+            except Exception:
+                logger.debug("Etichetta %s non applicata", label, exc_info=True)
+
+    try:
+        if cmd == "!r":
+            await _send(content[3:].strip())
+            return f"✅ Risposta di {author} inviata a {mail['from_email']}."
+        if cmd == "!rifiuta":
+            await _send(templates.refund_refused(lang, content[len("!rifiuta"):].strip()))
+            await _close(refunds.LABEL_REFUSED)
+            return f"✅ Rifiuto inviato a {mail['from_email']} ({author})."
+        if cmd == "!rimborsa":
+            if not (xceed_mcp.configured() and settings.xceed_mcp_refund_tool):
+                return ("ℹ️ Il rimborso automatico su Xceed non è ancora collegato. Rimborsa "
+                        "dalla dashboard Xceed, poi scrivi `!fatto` qui: il cliente riceve la conferma.")
+            if not ctx.get("booking_ids"):
+                return "❌ Nessuna prenotazione Xceed associata: rimborsa da Xceed e poi `!fatto`."
+            for bid in ctx["booking_ids"]:
+                await xceed_mcp.call_tool(settings.xceed_mcp_refund_tool, {"bookingId": bid})
+        await _send(templates.refund_done(lang, ctx.get("evento", "")))
+        await _close(refunds.LABEL_DONE)
+        return f"✅ Rimborso segnato come fatto e cliente avvisato ({author})."
+    except Exception as e:
+        logger.error("Comando rimborso %r fallito: %s", cmd, e)
+        return f"❌ Non riuscito: {str(e)[:150]}"

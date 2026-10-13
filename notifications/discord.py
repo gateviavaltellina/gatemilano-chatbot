@@ -270,3 +270,76 @@ async def notify_email(msg: dict, verdict: dict, venue: str, reply: str, status:
                  ("from_email", "subject", "message_id_header", "references", "thread_id")},
     }
     await _post_and_register(url.split("?")[0] + "?wait=true", payload, _mail_key(msg), context)
+
+
+# --- rimborsi (rimborsi@) ---------------------------------------------------------
+
+_REFUND_STATUS = {
+    # stato: (colore, titolo, comandi)
+    "ok": (0x16A34A, "✅ Requisiti OK — da rimborsare",
+           "`!rimborsa` rimborsa su Xceed · `!fatto` se l'hai già rimborsato da Xceed · "
+           "`!rifiuta <nota>` · `!r <testo>`"),
+    "da_verificare": (0xF59E0B, "⚠️ Richiesta completa, ma qualcosa non torna",
+                      "`!rimborsa` · `!fatto` · `!rifiuta <nota>` · `!r <testo>`"),
+    "incompleta": (0x64748B, "📎 Incompleta — al cliente è stato scritto cosa manca",
+                   "Aspetta la sua risposta, oppure `!r <testo>`."),
+    "non_rimborsabile": (0xDC2626, "❌ Fuori policy — non è venuto per motivi propri",
+                         "`!rifiuta` invia la risposta standard · `!r <testo>`"),
+    "nota": (0x64748B, "ℹ️ Aggiornamento", "`!r <testo>` se serve rispondere."),
+    "errore": (0xDC2626, "⚠️ Da guardare a mano", "`!r <testo>` · `!rifiuta` · `!fatto`"),
+}
+
+_MISSING_LABEL = {"prova_acquisto": "prova d'acquisto", "biglietti": "biglietti",
+                  "motivazione": "motivazione del respingimento"}
+
+
+async def notify_refund(sender: str, msgs: list[dict], analysis: dict, verdict: dict,
+                        found: dict, note: str = "") -> None:
+    url = (settings.discord_refund_webhook_url or settings.discord_mail_webhook_url
+           or settings.discord_webhook_url)
+    if not url:
+        return
+    status = verdict.get("status", "errore")
+    color, title, commands = _REFUND_STATUS.get(status, _REFUND_STATUS["errore"])
+    fields = []
+    if note:
+        fields.append({"name": "ℹ️ Nota", "value": _cut(note, 512), "inline": False})
+    text = "\n\n".join(_cut(m.get("body") or "(solo allegati)", 400) for m in msgs[-3:])
+    n_att = sum(len(m.get("attachments", [])) for m in msgs)
+    fields.append({"name": f"👤 Cliente · {len(msgs)} email · {n_att} allegati",
+                   "value": _cut(text) or "​", "inline": False})
+    if verdict.get("missing"):
+        fields.append({"name": "📎 Mancano",
+                       "value": ", ".join(_MISSING_LABEL.get(m, m) for m in verdict["missing"]),
+                       "inline": False})
+    if verdict.get("checks"):
+        fields.append({"name": "🔎 Verifica",
+                       "value": _cut("\n".join(f"{i} {t}" for i, t in verdict["checks"])),
+                       "inline": False})
+    fields.append({"name": "⌨️ Comandi (in reply)", "value": commands, "inline": False})
+    payload = {"embeds": [{"color": color, "description": f"💸 Rimborso · {sender} — {title}",
+                           "fields": fields}]}
+    latest = msgs[-1] if msgs else {}
+    summary = xt_summary(found)
+    context = {
+        "channel": "refund",
+        "venue": "gate_milano",
+        "status": status,
+        "lingua": analysis.get("lingua", "it"),
+        "evento": (found.get("event") or {}).get("name", "") or analysis.get("evento", ""),
+        "booking_ids": summary.get("booking_ids", []),
+        "gmail_ids": [m.get("id") for m in msgs if m.get("id")],
+        "user_msg": _cut(text),
+        "bot_reply": "",
+        "sent_by": "",
+        "mail": {k: latest.get(k, "") for k in
+                 ("from_email", "subject", "message_id_header", "references", "thread_id")},
+    }
+    await _post_and_register(url.split("?")[0] + "?wait=true", payload, f"refund:{sender}", context)
+
+
+def xt_summary(found: dict) -> dict:
+    if not found or not found.get("tickets"):
+        return {}
+    from mail.xceed_tickets import summarize
+    return summarize(found["tickets"])

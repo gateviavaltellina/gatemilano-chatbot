@@ -140,6 +140,14 @@ async def _init_background():
             id="mail_autoresponder",
             replace_existing=True,
         )
+        # Rimborsi (rimborsi@): verifica le richieste e le porta su Discord istruite.
+        from mail.refunds import run_once as _refunds_run
+        scheduler.add_job(
+            _refunds_run,
+            CronTrigger(minute="2-59/5"),
+            id="refunds",
+            replace_existing=True,
+        )
         # Salvataggio periodico dello stato conversazioni (no-op se PERSIST_DIR vuoto)
         scheduler.add_job(
             persistence.save_state,
@@ -362,6 +370,33 @@ async def debug_mail(run: bool = False):
             out["invia_come_ok"] = f"errore: {str(e)[:120]}"
     if run:
         out["giro"] = await responder.run_once()
+    return out
+
+
+@app.get("/debug/refunds", dependencies=[Depends(require_debug_key)])
+async def debug_refunds(run: bool = False, mcp_tools: bool = False):
+    """Stato dei rimborsi automatici; ?run=true fa un giro, ?mcp_tools=true elenca gli
+    strumenti dell'MCP di Xceed (per collegare il rimborso vero e proprio)."""
+    from mail import refunds, xceed_mcp
+    out = {
+        "attivo": settings.refunds_enabled,
+        "casella": settings.refund_inbox,
+        "finestra_giorni": settings.refund_window_days,
+        "rimborso_automatico": settings.refund_auto_execute,
+        "xceed_api_key": bool(settings.xceed_api_key),
+        "xceed_mcp": xceed_mcp.configured(),
+        "xceed_mcp_strumento_rimborso": settings.xceed_mcp_refund_tool or None,
+    }
+    if mcp_tools and xceed_mcp.configured():
+        try:
+            out["mcp_tools"] = [
+                {"name": t.get("name"), "description": (t.get("description") or "")[:300],
+                 "params": list(((t.get("inputSchema") or {}).get("properties") or {}).keys())}
+                for t in await xceed_mcp.list_tools()]
+        except Exception as e:
+            out["mcp_tools"] = f"errore: {str(e)[:200]}"
+    if run:
+        out["giro"] = await refunds.run_once()
     return out
 
 

@@ -354,9 +354,11 @@ async def on_message(message: discord.Message):
         return
 
     # Email (info@): !ok invia la bozza del bot, !r <testo> invia un testo dello staff.
-    if phone and phone.startswith("mail:"):
-        from mail.staff import staff_action
-        reply = await staff_action(content, ctx if ctx is not None else {}, message.author.display_name)
+    # Rimborsi (rimborsi@): !rimborsa, !fatto, !rifiuta, !r.
+    if phone and phone.startswith(("mail:", "refund:")):
+        from mail.staff import refund_action, staff_action
+        action = refund_action if phone.startswith("refund:") else staff_action
+        reply = await action(content, ctx if ctx is not None else {}, message.author.display_name)
         if reply:
             await message.reply(reply, mention_author=False)
         return
