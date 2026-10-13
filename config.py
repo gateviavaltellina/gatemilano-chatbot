@@ -67,6 +67,8 @@ class Settings(BaseSettings):
     # Preferito: webhook URL (robusto). In alternativa: channel id (post via bot).
     discord_group_webhook_url: str = ""
     discord_group_channel_id: int = 0
+    # Canale Discord delle email (info@). Vuoto = canale principale (webhook WA).
+    discord_mail_webhook_url: str = ""
 
     # Bot loop prevention — numeri WhatsApp (E.164, es. "393331234567") da ignorare
     wa_ignored_phones: str = ""

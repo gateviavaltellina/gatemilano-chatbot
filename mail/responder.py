@@ -104,15 +104,13 @@ async def _compose(msg: dict, verdict: dict) -> str:
     )
 
 
-async def _notify(msg: dict, verdict: dict, action: str, reason: str) -> None:
+async def _notify(msg: dict, verdict: dict, status: str, reply: str = "",
+                  reason: str = "", draft_id: str = "") -> None:
+    """Email su Discord, come le chat IG/WA: lo staff la vede e la invia da lì."""
     try:
-        from notifications.token_health import _alert
-        await _alert(
-            f"📧 **{action}** — {msg.get('from_email','?')}\n"
-            f"Oggetto: {msg.get('subject','(senza oggetto)')}\n"
-            f"Categoria: {verdict.get('categoria')} ({verdict.get('confidenza')})"
-            + (f"\nMotivo: {reason}" if reason else "")
-        )
+        from notifications.discord import notify_email
+        await notify_email(msg, verdict, _venue_for(msg), reply, status,
+                           reason=reason, draft_id=draft_id)
     except Exception:
         logger.debug("Notifica Discord non riuscita (non blocca il flusso)", exc_info=True)
 
@@ -154,12 +152,12 @@ async def process_one(message_id: str) -> str:
     except Exception as e:
         logger.error("Generazione risposta fallita per %s: %s", message_id, e)
         await gm.add_label(message_id, LABEL_REVIEW)
-        await _notify(msg, verdict, "Da rivedere", "generazione fallita")
+        await _notify(msg, verdict, "revisione", reason="generazione della risposta fallita")
         return "errore-generazione"
 
     if not body or "non riesco a rispondere" in body.lower():
         await gm.add_label(message_id, LABEL_REVIEW)
-        await _notify(msg, verdict, "Da rivedere", "il bot non ha saputo rispondere")
+        await _notify(msg, verdict, "revisione", reason="il bot non ha saputo rispondere")
         return "revisione (nessuna risposta utile)"
 
     ok, reason = triage.can_autosend(msg, verdict)
@@ -169,12 +167,12 @@ async def process_one(message_id: str) -> str:
     if ok:
         await gm.send_reply(msg, body + _footer(msg))
         await gm.add_label(message_id, LABEL_DONE)
-        await _notify(msg, verdict, "Risposto in automatico", "")
+        await _notify(msg, verdict, "inviata", reply=body)
         return "inviata"
 
-    await gm.create_draft(msg, body)
+    draft_id = await gm.create_draft(msg, body)
     await gm.add_label(message_id, LABEL_REVIEW)
-    await _notify(msg, verdict, "Bozza pronta", reason)
+    await _notify(msg, verdict, "bozza", reply=body, reason=reason, draft_id=draft_id)
     return f"bozza ({reason})"
 
 
