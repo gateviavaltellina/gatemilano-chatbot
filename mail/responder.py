@@ -56,6 +56,11 @@ _FOOTER_AUTO_EN = (
 )
 
 
+def _signature(msg: dict) -> str:
+    name = "Gate Sardinia" if _venue_for(msg) == "gate_sardinia" else settings.mail_from_name
+    return f"\n\n{name}"
+
+
 def _email_text(msg: dict) -> str:
     return f"{msg.get('subject','')}\n{msg.get('body','')}"
 
@@ -98,10 +103,11 @@ async def _compose(msg: dict, verdict: dict) -> str:
         f"CANALE: il cliente ci ha GIÀ scritto a {settings.mail_from_address} e questa è "
         f"la risposta da lì. NON dire MAI di scrivere a {settings.mail_from_address}: "
         "dove le regole dicono di scrivere a quell'indirizzo, in email vuol dire "
-        "rispondere a QUESTA email (es. rimborso: \"rispondi a questa email allegando "
-        "i 4 documenti\"). Se serve una verifica dello staff, scrivi che lo staff "
+        "rispondere a QUESTA email (es. accrediti: \"rispondi a questa email con i "
+        "dettagli\"). Se serve una verifica dello staff, scrivi che lo staff "
         "verifica e ricontatta il cliente in questa conversazione. Gli ALTRI recapiti "
-        "(es. marketing@ per i biglietti non ricevuti) restano validi."
+        "restano validi: rimborsi@gatemilano.com per i rimborsi, marketing@ per i "
+        "biglietti non ricevuti."
     )
     # La lingua si rileva sull'email del cliente, non su user_message: le istruzioni
     # qui sopra sono in italiano e falserebbero il rilevamento.
@@ -154,6 +160,25 @@ async def process_one(message_id: str) -> str:
         return "errore-thread"
 
     verdict = await triage.classify(msg)
+
+    # Proposte B2B: risposta fissa approvata dallo staff, niente generazione.
+    if verdict.get("categoria") == triage.PROPOSAL_CATEGORY:
+        from mail.templates import proposal_reply
+        reply = proposal_reply(_email_text(msg))
+        ok, reason = triage.can_send_proposal_reply(msg, verdict)
+        if ok and not await _can_send_as():
+            ok, reason = False, (f"{settings.mail_reply_as} non è un indirizzo "
+                                 "'Invia come' verificato in Gmail")
+        if ok:
+            await gm.send_reply(msg, reply)
+            await gm.add_label(message_id, LABEL_DONE)
+            await _notify(msg, verdict, "inviata", reply=reply)
+            return "inviata (proposta)"
+        draft_id = await gm.create_draft(msg, reply)
+        await gm.add_label(message_id, LABEL_REVIEW)
+        await _notify(msg, verdict, "bozza", reply=reply, reason=reason, draft_id=draft_id)
+        return f"bozza ({reason})"
+
     try:
         body = await _compose(msg, verdict)
     except Exception as e:
@@ -176,12 +201,12 @@ async def process_one(message_id: str) -> str:
         ok, reason = False, (f"{settings.mail_reply_as} non è un indirizzo "
                              "'Invia come' verificato in Gmail")
     if ok:
-        await gm.send_reply(msg, body + _footer(msg))
+        await gm.send_reply(msg, body + _signature(msg) + _footer(msg))
         await gm.add_label(message_id, LABEL_DONE)
         await _notify(msg, verdict, "inviata", reply=body)
         return "inviata"
 
-    draft_id = await gm.create_draft(msg, body)
+    draft_id = await gm.create_draft(msg, body + _signature(msg))
     await gm.add_label(message_id, LABEL_REVIEW)
     await _notify(msg, verdict, "bozza", reply=body, reason=reason, draft_id=draft_id)
     return f"bozza ({reason})"

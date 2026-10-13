@@ -143,6 +143,10 @@ class Settings(BaseSettings):
     # arretrato dello staff: all'accensione a info@ c'erano ~200 non lette, alcune
     # da agosto, e rispondere oggi a quelle farebbe più danni che altro.
     mail_max_age_days: int = 2
+    # Proposte B2B (artisti, agenzie, partnership): risposta di cortesia fissa e
+    # approvata dallo staff, nella lingua del mittente. Parte anche in solo-bozze,
+    # perché il testo non è generato.
+    mail_auto_reply_proposals: bool = True
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

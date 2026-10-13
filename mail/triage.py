@@ -38,10 +38,14 @@ REVIEW_CATEGORIES = {
     "reclami",          # un cliente arrabbiato non lo gestisce un automatismo
     "lavoro",           # candidature, CV
     "fornitori",        # fatture, amministrazione
-    "collaborazioni",   # partnership, uffici stampa, agenzie
+    "collaborazioni",   # (storica: ora confluisce in "proposte")
     "privati",          # eventi privati, affitto sala: si tratta
     "altro",
 }
+
+# Proposte B2B (artisti, agenzie, piattaforme): risposta di cortesia fissa, decisa con
+# lo staff il 13/10. Testo approvato, non generato: per questo può partire da sola.
+PROPOSAL_CATEGORY = "proposte"
 
 # Parole che da sole bastano a mandare in revisione, qualunque sia la categoria.
 # Non è una classificazione, è una rete di sicurezza.
@@ -80,7 +84,7 @@ Categorie:
 - reclami: lamentele, disservizi
 - lavoro: candidature, CV, "cerco lavoro"
 - fornitori: fatture, amministrazione, pagamenti
-- collaborazioni: partnership, agenzie, uffici stampa, proposte commerciali
+- proposte: artisti, DJ, band o agenzie di booking che propongono un artista o una data; aziende, agenzie o piattaforme che propongono servizi, partnership o collaborazioni commerciali. NON include chi vuole organizzare un evento privato o aziendale da noi (quello è "privati")
 - privati: eventi privati, compleanni organizzati, affitto spazio
 - altro: tutto ciò che non rientra sopra, o se non sei sicuro
 
@@ -161,6 +165,20 @@ async def classify(msg: dict) -> dict:
         logger.warning("Classificazione email fallita (→ revisione): %s", e)
     return {"categoria": "altro", "confidenza": "bassa",
             "domanda": msg.get("subject", "")}
+
+
+def can_send_proposal_reply(msg: dict, verdict: dict) -> tuple[bool, str]:
+    """La risposta fissa alle proposte B2B può partire? (mai su dubbi o parole sensibili)"""
+    if verdict.get("categoria") != PROPOSAL_CATEGORY:
+        return False, "non è una proposta"
+    if not settings.mail_auto_reply_proposals:
+        return False, "risposta automatica alle proposte disattivata"
+    if verdict.get("confidenza") != "alta":
+        return False, "classificazione incerta"
+    found = _RED_FLAGS.search(f"{msg.get('subject','')} {msg.get('body','')}")
+    if found:
+        return False, f"contiene '{found.group(0)}'"
+    return True, ""
 
 
 def can_autosend(msg: dict, verdict: dict) -> tuple[bool, str]:

@@ -67,7 +67,7 @@ Il calendario eventi è sincronizzato: quando nel contesto compare un blocco "PR
 - Il biglietto è valido per la sala specifica (Main Room o Club Room) — ogni sala ha il suo ingresso dedicato
 - Problemi tecnici di pagamento/checkout durante l'acquisto su Xceed: support@xceed.me. NB: biglietti regolarmente acquistati ma NON ricevuti → marketing@gatemilano.com (Andrea Esposito), MAI support@xceed.me né info@gatemilano.com per questo caso.
 - I biglietti non sono rimborsabili. È possibile rivenderli tramite i canali di rivendita Xceed.
-- Rimborsi post-evento: ammessi solo in casi eccezionali, con richiesta entro e non oltre il lunedì successivo all'evento a info@gatemilano.com. Documentazione obbligatoria: nome e cognome intestatario del biglietto, email usata per l'acquisto, screenshot del biglietto, screenshot della prova di pagamento. In assenza di anche uno solo di questi elementi la richiesta non verrà presa in carico.
+- **Rimborsi (policy staff 13/10):** l'UNICO caso rimborsabile è il cliente con biglietto valido **respinto all'ingresso dalla sicurezza**. La richiesta va inviata **esclusivamente a rimborsi@gatemilano.com**, entro il lunedì successivo all'evento, **allegando la prova d'acquisto e i biglietti**. Senza questi allegati la richiesta non viene presa in carico. Non partecipare per motivi propri (lavoro, malattia, imprevisti) non dà diritto a rimborso: c'è la rivendita su Xceed. Mai promettere l'esito: verifica lo staff.
 - **Nessun rientro** dopo l'uscita: serve un nuovo biglietto
 
 ## Accrediti
@@ -80,6 +80,9 @@ Il calendario eventi è sincronizzato: quando nel contesto compare un blocco "PR
 - **Se non è indicato nulla, la risposta è 18+.** Non dire mai "dipende dalla serata" come ripiego, non dire "di norma dai 16" e non invitare a verificare: la soglia di base è certa.
 - **Soglia diversa sulla singola serata:** se il contesto dell'evento indica "Età minima: 16+" (o 14+, o altra soglia), per QUELLA serata vale quella. Va marcata esplicitamente sulla scheda dell'evento e vale solo per la serata che la riporta.
 - Il servizio alcolici è sempre riservato ai 18+, qualunque sia la soglia d'ingresso della serata (chi è minorenne entra ma non può consumare alcol).
+
+### 🕗 CONCERTI: l'orario indicato è l'APERTURA PORTE
+Conferma staff 13/10. Per le serate con **"Live Events" fra i Generi** l'orario che trovi nel contesto è **l'apertura porte**, NON l'inizio del live. Dillo esplicitamente ("le porte aprono alle 20:00"). Se chiedono a che ora inizia il concerto, chiarisci che quello è l'orario di apertura porte e NON inventare un orario d'inizio che non hai.
 
 ### ⚠️ CONCERTI (serate con "Live Events" fra i Generi): minori ammessi col GENITORE
 Conferma staff 6/10. Sulle serate che nel contesto hanno **"Live Events" fra i Generi** — cioè i concerti, non le serate club — **un minore sotto la soglia può entrare se accompagnato da un genitore**. Vale anche per i bambini: un bambino di 8 anni col genitore entra.
