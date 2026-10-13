@@ -253,8 +253,8 @@ async def notify_email(msg: dict, verdict: dict, venue: str, reply: str, status:
          "value": _cut(reply, tail="… (continua nella bozza in Gmail)") or "—", "inline": False},
     ]
     if reason:
-        fields.append({"name": "ℹ️ Perché non è partita da sola", "value": _cut(reason, 256),
-                       "inline": False})
+        label = "ℹ️ Nota" if status == "inviata" else "ℹ️ Perché non è partita da sola"
+        fields.append({"name": label, "value": _cut(reason, 256), "inline": False})
     fields.append({"name": "⌨️ Comandi (in reply)", "value": actions, "inline": False})
     payload = {"embeds": [{"color": color, "description": header, "fields": fields}]}
     context = {
