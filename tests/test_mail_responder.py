@@ -515,3 +515,4 @@ def test_template_senza_firma_propria():
     from mail.templates import _PROPOSAL
     for t in _PROPOSAL.values():
         assert "Gate Milano" not in t
+        assert not t.rstrip().endswith(("saluti", "regards", "saludo", "Cordialement", "Grüßen"))
