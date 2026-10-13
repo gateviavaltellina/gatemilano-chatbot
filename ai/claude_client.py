@@ -496,7 +496,10 @@ async def generate_response(
     temperature: float | None = None,
     image_block: dict | None = None,
     image_note: str | None = None,
+    language_text: str | None = None,
 ) -> str:
+    # language_text: testo su cui rilevare la lingua, se diverso da user_message. Serve
+    # al risponditore email, il cui user_message contiene anche istruzioni in italiano.
     # temperature: None = default API (produzione). L'eval passa 0 per risposte
     # deterministiche e riproducibili (gate affidabile, niente flakiness).
     global _last_api_error
@@ -508,7 +511,8 @@ async def generate_response(
     # reale IG 5/9, domande in inglese sul set di Kobosil con risposte in italiano). Una
     # riga esplicita in CODA al blocco dinamico — cioè subito prima del messaggio — la
     # fa rispettare. Il blocco dinamico non e' cacheato, quindi non tocca la cache.
-    directive = language_directive(user_message)
+    directive = language_directive(
+        language_text if language_text is not None else user_message)
     if directive:
         system[-1]["text"] = system[-1]["text"] + directive
     history = _sanitize_history(history)

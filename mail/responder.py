@@ -49,6 +49,22 @@ _FOOTER_AUTO = (
     "Risposta inviata automaticamente dall'assistente di Gate Milano. "
     "Se ti serve altro rispondi pure a questa email: ti legge una persona."
 )
+_FOOTER_AUTO_EN = (
+    "\n\n—\n"
+    "This reply was sent automatically by Gate Milano's assistant. "
+    "If you need anything else, just reply to this email: a person will read it."
+)
+
+
+def _email_text(msg: dict) -> str:
+    return f"{msg.get('subject','')}\n{msg.get('body','')}"
+
+
+def _footer(msg: dict) -> str:
+    """Nota di risposta automatica nella lingua del cliente (italiano o inglese)."""
+    from ai.language import detect_language
+    lang = detect_language(_email_text(msg))
+    return _FOOTER_AUTO if lang in (None, "italiano") else _FOOTER_AUTO_EN
 
 
 def _venue_for(msg: dict) -> str:
@@ -76,10 +92,15 @@ async def _compose(msg: dict, verdict: dict) -> str:
         "Scrivi la RISPOSTA EMAIL: saluto iniziale, risposta puntuale a ogni domanda "
         "posta, chiusura cordiale. Niente oggetto, niente firma finale (le aggiungiamo "
         "noi). Se un dato non ce l'hai, dillo e indica il canale giusto invece di "
-        "inventarlo."
+        "inventarlo.\n"
+        "LINGUA: rispondi nella STESSA lingua in cui è scritta l'email del cliente, "
+        "qualunque sia. Queste istruzioni sono in italiano solo per uso interno."
     )
+    # La lingua si rileva sull'email del cliente, non su user_message: le istruzioni
+    # qui sopra sono in italiano e falserebbero il rilevamento.
     return await generate_response(
-        venue=venue, user_message=user_message, rag_context=rag_context, history=[]
+        venue=venue, user_message=user_message, rag_context=rag_context, history=[],
+        language_text=_email_text(msg),
     )
 
 
@@ -146,7 +167,7 @@ async def process_one(message_id: str) -> str:
         ok, reason = False, (f"{settings.mail_reply_as} non è un indirizzo "
                              "'Invia come' verificato in Gmail")
     if ok:
-        await gm.send_reply(msg, body + _FOOTER_AUTO)
+        await gm.send_reply(msg, body + _footer(msg))
         await gm.add_label(message_id, LABEL_DONE)
         await _notify(msg, verdict, "Risposto in automatico", "")
         return "inviata"

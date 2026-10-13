@@ -285,3 +285,40 @@ def test_schede_automatiche_gmail_mai(categoria):
 
 def test_scheda_principale_passa():
     assert triage.hard_skip(_msg(label_ids=["UNREAD", "IMPORTANT", "INBOX"])) == ""
+
+
+# --- lingua -------------------------------------------------------------------
+#
+# Il prompt dell'email contiene istruzioni in italiano: la lingua va rilevata sulla
+# mail del cliente, altrimenti chi scrive in inglese rischia una risposta in italiano.
+
+async def test_lingua_rilevata_sulla_mail_del_cliente(monkeypatch):
+    from mail import responder
+    import ai.claude_client as cc
+    import rag.context_builder as cb
+    preso = {}
+
+    async def _ctx(*a, **k):
+        return "", []
+
+    async def _gen(**kw):
+        preso.update(kw)
+        return "ok"
+
+    monkeypatch.setattr(cb, "build_rag_context", _ctx)
+    monkeypatch.setattr(cc, "generate_response", _gen)
+    msg = _msg(subject="Opening hours",
+               body="Hi, what time do you open on Saturday and can I buy tickets at the door?")
+    await responder._compose(msg, {"domanda": "opening hours"})
+    assert "what time do you open" in preso["language_text"]
+    assert "STESSA lingua" in preso["user_message"]
+    from ai.language import language_directive
+    assert "INGLESE" in language_directive(preso["language_text"])
+
+
+def test_nota_automatica_nella_lingua_del_cliente():
+    from mail import responder
+    en = _msg(subject="Tables", body="Hello, how much is a table for 6 people on Friday?")
+    it = _msg(subject="Tavoli", body="Ciao, quanto costa un tavolo per 6 persone venerdì?")
+    assert "sent automatically" in responder._footer(en)
+    assert "inviata automaticamente" in responder._footer(it)
