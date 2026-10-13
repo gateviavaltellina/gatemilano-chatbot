@@ -374,7 +374,7 @@ async def debug_mail(run: bool = False):
 
 
 @app.get("/debug/refunds", dependencies=[Depends(require_debug_key)])
-async def debug_refunds(run: bool = False, mcp_tools: bool = False):
+async def debug_refunds(run: bool = False, mcp_tools: bool = False, probe: str = ""):
     """Stato dei rimborsi automatici; ?run=true fa un giro, ?mcp_tools=true elenca gli
     strumenti dell'MCP di Xceed (per collegare il rimborso vero e proprio)."""
     from mail import refunds, xceed_mcp
@@ -395,6 +395,9 @@ async def debug_refunds(run: bool = False, mcp_tools: bool = False):
                 for t in await xceed_mcp.list_tools()]
         except Exception as e:
             out["mcp_tools"] = f"errore: {str(e)[:200]}"
+    if probe:
+        from mail.xceed_tickets import probe as _probe
+        out["probe"] = await _probe(probe)
     if run:
         out["giro"] = await refunds.run_once()
     return out

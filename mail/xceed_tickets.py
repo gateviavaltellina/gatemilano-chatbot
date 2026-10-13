@@ -122,6 +122,97 @@ def _whole_bookings(tickets: list[dict], found: list[dict]) -> list[dict]:
     return [t for t in tickets if (t.get("booking") or {}).get("bookingId") in ids]
 
 
+# --- ricerca tramite MCP (Xceed Pro: accesso completo a tutte le vendite) -----------
+#
+# La Partner API può vedere solo una parte delle vendite (caso reale 13/10: ordine
+# 24698564 del Perreo del 10/10, acquistato in app, non trovato). L'MCP di Xceed ha
+# lo strumento `bookings_search`, che cerca per nome, email o codice e restituisce lo
+# stato di rimborso e check-in: è la fonte più affidabile quando è collegato.
+
+_LIST_KEYS = ("data", "items", "bookings", "results", "rows", "content", "result")
+_mcp_event_id_form: dict[str, str] = {}   # "uuid" o "id": quale forma accetta bookings_search
+
+
+def _as_list(data) -> list[dict]:
+    if isinstance(data, list):
+        return [d for d in data if isinstance(d, dict)]
+    if isinstance(data, dict):
+        for k in _LIST_KEYS:
+            if isinstance(data.get(k), list):
+                return [d for d in data[k] if isinstance(d, dict)]
+            if isinstance(data.get(k), dict):
+                inner = _as_list(data[k])
+                if inner:
+                    return inner
+    return []
+
+
+def _first(d: dict, *keys):
+    for k in keys:
+        cur = d
+        for part in k.split("."):
+            cur = cur.get(part) if isinstance(cur, dict) else None
+        if cur not in (None, ""):
+            return cur
+    return None
+
+
+def booking_to_ticket(b: dict) -> dict:
+    """Prenotazione MCP → stesso formato dei biglietti Partner API (per summarize/assess)."""
+    legacy = _first(b, "legacyId", "bookingLegacyId", "booking.legacyId")
+    if legacy is None and str(_first(b, "id") or "").isdigit():
+        legacy = _first(b, "id")
+    refunded = bool(_first(b, "isRefunded", "refunded", "refund.isRefunded")) or \
+        "refund" in str(_first(b, "status", "refundStatus") or "").lower()
+    checked = _first(b, "hasCheckedIn", "checkedIn", "isCheckedIn")
+    if checked is None:
+        checked = (_first(b, "checkedInCount", "checkins", "checkedInTickets") or 0) > 0
+    return {
+        "firstName": _first(b, "buyer.firstName", "firstName", "buyerFirstName") or "",
+        "lastName": _first(b, "buyer.lastName", "lastName", "buyerLastName") or "",
+        "email": _first(b, "buyer.email", "email", "buyerEmail") or "",
+        "hasCheckedIn": bool(checked),
+        "isActive": not refunded,
+        "offer": {"name": _first(b, "offer.name", "offerName") or "",
+                  "price": {"amount": _first(b, "price.amount", "totalPrice", "price", "amount") or "",
+                            "currency": _first(b, "price.currency", "currency") or ""}},
+        "booking": {"bookingId": legacy, "email": _first(b, "buyer.email", "email") or ""},
+    }
+
+
+async def _mcp_bookings(event: dict, term: str) -> list[dict]:
+    from mail import xceed_mcp
+    forms = [("uuid", event.get("uuid")), ("id", event.get("id"))]
+    known = _mcp_event_id_form.get("form")
+    forms.sort(key=lambda f: f[0] != known)
+    for form, ev_id in forms:
+        if not ev_id:
+            continue
+        try:
+            data = await xceed_mcp.tool_json("bookings_search", {
+                "eventId": str(ev_id), "search": term, "limit": 10})
+        except Exception as e:
+            logger.debug("bookings_search %s=%s fallita: %s", form, ev_id, e)
+            continue
+        _mcp_event_id_form["form"] = form
+        return _as_list(data)
+    return []
+
+
+async def find_via_mcp(events: list[dict], emails: set[str], codes: set[str],
+                       names: set[str]) -> dict:
+    terms = [("codice", c) for c in sorted(codes) if len(str(c)) >= 5] + \
+            [("email", e) for e in sorted(emails) if "@" in e] + \
+            [("nome", n) for n in sorted(names) if len(n) >= 5]
+    for ev in events:
+        for how, term in terms:
+            found = await _mcp_bookings(ev, term)
+            if found:
+                return {"event": ev, "tickets": [booking_to_ticket(b) for b in found],
+                        "match": how, "source": "mcp"}
+    return {}
+
+
 async def find_request_tickets(emails: set[str], codes: set[str], names: set[str],
                                date_hint: str = "") -> dict:
     """Cerca i biglietti della richiesta negli eventi recenti.
@@ -141,7 +232,20 @@ async def find_request_tickets(emails: set[str], codes: set[str], names: set[str
         return event_day(e)
 
     events.sort(key=lambda e: (_day(e) != date_hint, -int(e.get("startingTime") or 0)))
-    weak: dict = {}
+
+    from mail import xceed_mcp
+    if xceed_mcp.configured():
+        try:
+            via_mcp = await find_via_mcp(events, emails, codes, names)
+            if via_mcp and via_mcp["match"] != "nome":
+                return via_mcp
+        except Exception as e:
+            logger.warning("Ricerca prenotazioni via MCP fallita: %s", e)
+            via_mcp = {}
+    else:
+        via_mcp = {}
+
+    weak: dict = via_mcp
     for ev in events:
         try:
             tickets = await event_tickets(ev)
@@ -177,3 +281,58 @@ def summarize(tickets: list[dict]) -> dict:
     return {"count": len(tickets), "used": len(used), "inactive": len(inactive),
             "holders": holders, "booking_ids": booking_ids, "price": price,
             "offer": (tickets[0].get("offer") or {}).get("name", "") if tickets else ""}
+
+
+# --- diagnosi (/debug/refunds?probe=...) -------------------------------------------
+
+_PII = ("email", "name", "phone", "firstname", "lastname", "fullname", "address")
+
+
+def mask(obj, depth: int = 0):
+    """Struttura della risposta con i dati personali oscurati: serve a capire il formato."""
+    if depth > 6:
+        return "…"
+    if isinstance(obj, dict):
+        return {k: ("***" if any(p in k.lower() for p in _PII) and isinstance(v, str)
+                    else mask(v, depth + 1)) for k, v in list(obj.items())[:40]}
+    if isinstance(obj, list):
+        return [mask(v, depth + 1) for v in obj[:3]] + ([f"... +{len(obj) - 3}"] if len(obj) > 3 else [])
+    if isinstance(obj, str) and "@" in obj:
+        return "***"
+    return obj
+
+
+async def probe(term: str) -> dict:
+    """Cosa vedono Partner API e MCP per una ricerca (email, ordine o nome)."""
+    from mail import xceed_mcp
+    out: dict = {"term": "***" if "@" in term else term}
+    try:
+        events = await recent_events(settings.refund_window_days + 4)
+        out["partner_events"] = [{"name": e.get("name"), "day": event_day(e), "id": e.get("id"),
+                                  "uuid": e.get("uuid")} for e in events[:10]]
+    except Exception as e:
+        out["partner_events"] = f"errore: {str(e)[:200]}"
+        events = []
+    if events:
+        try:
+            out["partner_tickets_primo_evento"] = len(await event_tickets(events[0]))
+        except Exception as e:
+            out["partner_tickets_primo_evento"] = f"errore: {str(e)[:200]}"
+    if xceed_mcp.configured():
+        out["mcp"] = []
+        for ev in events[:4]:
+            row = {"event": ev.get("name"), "day": event_day(ev)}
+            for form in ("uuid", "id"):
+                if not ev.get(form):
+                    continue
+                try:
+                    data = await xceed_mcp.tool_json("bookings_search", {
+                        "eventId": str(ev[form]), "search": term, "limit": 3})
+                    row[form] = mask(data)
+                    row[f"{form}_estratti"] = [mask(booking_to_ticket(b)) for b in _as_list(data)]
+                except Exception as e:
+                    row[form] = f"errore: {str(e)[:200]}"
+            out["mcp"].append(row)
+    else:
+        out["mcp"] = "non configurato"
+    return out

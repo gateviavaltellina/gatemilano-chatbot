@@ -392,3 +392,45 @@ async def test_riprova_non_rimborsa_due_volte(staff_gmail, monkeypatch):
     await staff.refund_action("!rimborsa", ctx, "George")
     await staff.refund_action("!rimborsa", ctx, "George")
     assert chiamate == [1, 2, 2]
+
+
+# --- ricerca via MCP (bookings_search) -----------------------------------------------------
+
+@pytest.mark.parametrize("data", [
+    {"data": [{"legacyId": 24698564, "buyer": {"email": "g@x.it", "firstName": "Geraldo"},
+               "isRefunded": False, "hasCheckedIn": False, "offer": {"name": "Men General Admission"},
+               "price": {"amount": "17.60", "currency": "EUR"}}]},
+    [{"id": 24698564, "email": "g@x.it", "refunded": False, "checkedIn": False}],
+    {"result": {"items": [{"legacyId": 24698564, "status": "paid", "checkedInCount": 0}]}},
+])
+def test_formati_prenotazione_mcp(data):
+    t = xt.booking_to_ticket(xt._as_list(data)[0])
+    assert t["booking"]["bookingId"] == 24698564
+    assert t["hasCheckedIn"] is False and t["isActive"] is True
+
+
+def test_prenotazione_rimborsata_o_entrata():
+    t = xt.booking_to_ticket({"legacyId": 1, "isRefunded": True, "hasCheckedIn": True})
+    assert t["isActive"] is False and t["hasCheckedIn"] is True
+    t = xt.booking_to_ticket({"legacyId": 1, "status": "REFUNDED"})
+    assert t["isActive"] is False
+
+
+async def test_mcp_cerca_per_ordine_prima_che_per_email(monkeypatch):
+    from mail import xceed_mcp
+    cercati = []
+
+    async def _tool(name, args):
+        cercati.append(args["search"])
+        return {"data": [{"legacyId": 24698564, "hasCheckedIn": False}]} if args["search"] == "24698564" else {"data": []}
+
+    monkeypatch.setattr(xceed_mcp, "tool_json", _tool)
+    out = await xt.find_via_mcp([_EVENT], {"g@x.it"}, {"24698564"}, set())
+    assert out["match"] == "codice" and cercati[0] == "24698564"
+    assert out["tickets"][0]["booking"]["bookingId"] == 24698564
+
+
+def test_mask_oscura_i_dati_personali():
+    m = xt.mask({"buyer": {"email": "g@x.it", "firstName": "Geraldo"}, "legacyId": 5, "note": "a@b.c"})
+    assert m["buyer"]["email"] == "***" and m["buyer"]["firstName"] == "***"
+    assert m["legacyId"] == 5 and m["note"] == "***"

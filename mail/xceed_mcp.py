@@ -140,3 +140,19 @@ async def refund_booking(booking_id: str | int, lang: str = "it") -> dict:
         text = " ".join(c.get("text", "") for c in result.get("content", []) if isinstance(c, dict))
         raise RuntimeError(f"Xceed ha rifiutato il rimborso di {booking_id}: {text[:200]}")
     return result
+
+
+async def tool_json(name: str, arguments: dict):
+    """Risultato di uno strumento come JSON (o testo, se non è JSON)."""
+    result = await call_tool(name, arguments)
+    texts = [c.get("text", "") for c in result.get("content", [])
+             if isinstance(c, dict) and c.get("type") == "text"]
+    if result.get("isError"):
+        raise RuntimeError(f"{name}: {' '.join(texts)[:200]}")
+    if result.get("structuredContent") is not None:
+        return result["structuredContent"]
+    joined = "\n".join(texts).strip()
+    try:
+        return json.loads(joined)
+    except ValueError:
+        return joined
