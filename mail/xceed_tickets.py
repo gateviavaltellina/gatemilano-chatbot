@@ -35,15 +35,39 @@ def _headers() -> dict:
     return {"X-API-Key": settings.xceed_api_key, "Accept": "application/json"}
 
 
+_events_cache: dict = {"events": [], "exp": 0.0}
+
+
+async def _all_events() -> list[dict]:
+    """Tutti gli eventi visibili alla chiave, letti a pagine e tenuti in cache 6 ore.
+
+    La Partner API ignora il filtro `startingTime` e restituisce gli eventi dal più
+    vecchio (2018…): leggendo solo la prima pagina non si arrivava mai alle serate
+    recenti, e ogni richiesta di rimborso risultava "biglietti non trovati" (13/10).
+    """
+    if _events_cache["events"] and time.time() < _events_cache["exp"]:
+        return _events_cache["events"]
+    events: list[dict] = []
+    async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
+        for _ in range(_MAX_PAGES * 2):
+            r = await client.get(f"{_PARTNER}/v1/events", headers=_headers(),
+                                 params={"offset": len(events), "limit": _PAGE})
+            r.raise_for_status()
+            batch = r.json().get("data", []) or []
+            if not batch:
+                break
+            events.extend(batch)
+    _events_cache.update(events=events, exp=time.time() + 6 * 3600)
+    return events
+
+
 async def recent_events(days: int) -> list[dict]:
-    """Eventi Xceed iniziati negli ultimi `days` giorni (già passati)."""
+    """Eventi Xceed iniziati negli ultimi `days` giorni (già passati), dal più recente."""
     now = int(time.time())
-    async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
-        r = await client.get(f"{_PARTNER}/v1/events", headers=_headers(),
-                             params={"startingTime": now - days * 86400, "limit": 200})
-        r.raise_for_status()
-        events = r.json().get("data", []) or []
-    return [e for e in events if int(e.get("startingTime") or 0) <= now]
+    since = now - days * 86400
+    events = [e for e in await _all_events()
+              if since <= int(e.get("startingTime") or 0) <= now]
+    return sorted(events, key=lambda e: -int(e.get("startingTime") or 0))
 
 
 async def event_tickets(event: dict) -> list[dict]:
@@ -213,8 +237,19 @@ async def find_via_mcp(events: list[dict], emails: set[str], codes: set[str],
     return {}
 
 
+def _event_rank(e: dict, date_hint: str, event_id_hint: str, name_hint: str) -> tuple:
+    """Prima la serata indicata sul biglietto: numero evento, poi data, poi nome."""
+    name = _norm(e.get("name", ""))
+    hint = _norm(name_hint)
+    return (str(e.get("id")) != str(event_id_hint).strip(),
+            event_day(e) != date_hint,
+            not (hint and (hint in name or name in hint)),
+            -int(e.get("startingTime") or 0))
+
+
 async def find_request_tickets(emails: set[str], codes: set[str], names: set[str],
-                               date_hint: str = "") -> dict:
+                               date_hint: str = "", event_id_hint: str = "",
+                               name_hint: str = "") -> dict:
     """Cerca i biglietti della richiesta negli eventi recenti.
 
     Ritorna {"event": {...}, "tickets": [...], "match": "..."} oppure {} se non trovati.
@@ -231,7 +266,7 @@ async def find_request_tickets(emails: set[str], codes: set[str], names: set[str
     def _day(e):
         return event_day(e)
 
-    events.sort(key=lambda e: (_day(e) != date_hint, -int(e.get("startingTime") or 0)))
+    events.sort(key=lambda e: _event_rank(e, date_hint, event_id_hint, name_hint))
 
     from mail import xceed_mcp
     if xceed_mcp.configured():

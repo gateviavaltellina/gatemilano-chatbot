@@ -481,3 +481,75 @@ def test_niente_formula_di_chiusura(testo):
 def test_firma_testo_con_a_capo():
     sig = '<div dir="ltr"><div>Best,</div><div>George<div>Gate Milano | Gate Sardinia</div></div></div>'
     assert "George\nGate Milano" in gm._html_to_text(sig).replace("\n\n", "\n")
+
+
+async def test_eventi_recenti_anche_se_l_api_parte_dal_2018(monkeypatch):
+    """Caso reale 13/10: la Partner API ignora il filtro data e parte dal 2018."""
+    import time as _t
+    now = int(_t.time())
+    pagine = [
+        [{"id": i, "uuid": f"old{i}", "name": "vecchio", "startingTime": 1519400000 + i} for i in range(200)],
+        [{"id": 999, "uuid": "perreo", "name": "PERREO XL", "startingTime": now - 3 * 86400},
+         {"id": 1000, "uuid": "futuro", "name": "futuro", "startingTime": now + 5 * 86400}],
+        [],
+    ]
+    chiamate = []
+
+    class _R:
+        def __init__(self, data):
+            self._d = data
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"data": self._d}
+
+    class _C:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def get(self, url, headers=None, params=None):
+            chiamate.append(params["offset"])
+            return _R(pagine[len(chiamate) - 1])
+
+    monkeypatch.setattr(xt, "_events_cache", {"events": [], "exp": 0.0})
+    monkeypatch.setattr(xt.httpx, "AsyncClient", lambda *a, **k: _C())
+    eventi = await xt.recent_events(14)
+    assert [e["name"] for e in eventi] == ["PERREO XL"]
+    assert chiamate == [0, 200, 202]
+
+
+def test_serata_del_biglietto_cercata_per_prima():
+    """Data, nome e numero evento sono scritti sul biglietto: si parte da lì."""
+    ev_a = {"id": 1, "name": "RAW", "startingTime": _EVENT["startingTime"] - 86400}
+    ev_b = {**_EVENT, "id": 240981}
+    ev_c = {"id": 3, "name": "PERREO XL", "startingTime": _EVENT["startingTime"] - 7 * 86400}
+    evs = [ev_a, ev_c, ev_b]
+    assert sorted(evs, key=lambda e: xt._event_rank(e, "", "240981", ""))[0] is ev_b
+    assert sorted(evs, key=lambda e: xt._event_rank(e, "2026-10-10", "", ""))[0] is ev_b
+    assert sorted(evs, key=lambda e: xt._event_rank(e, "", "", "Raw"))[0] is ev_a
+
+
+async def test_verifica_rifa_i_controlli_senza_scrivere(staff_gmail, monkeypatch):
+    chiamato = []
+
+    async def _recheck(sender):
+        chiamato.append(sender)
+        return "ok"
+
+    monkeypatch.setattr(refunds, "recheck", _recheck)
+    out = await staff.refund_action("!verifica", _ctx(), "George")
+    assert chiamato == ["cliente@example.com"] and "rifatta" in out
+    assert staff_gmail == []           # nessuna mail al cliente
+
+
+async def test_verifica_funziona_anche_su_scheda_chiusa(staff_gmail, monkeypatch):
+    async def _recheck(sender):
+        return "ok"
+    monkeypatch.setattr(refunds, "recheck", _recheck)
+    out = await staff.refund_action("!verifica", _ctx(sent_by="George"), "Marco")
+    assert "rifatta" in out

@@ -63,7 +63,10 @@ imprevisti, ha cambiato idea) NON rientra.
   nel testo. Non inventarne.
 - nomi: nomi e cognomi degli intestatari visibili.
 - email_acquisto: email usate per l'acquisto, se visibili.
-- data_evento: YYYY-MM-DD della serata se deducibile, altrimenti vuoto.
+- evento / data_evento: nome e data (YYYY-MM-DD) della serata come scritti sul
+  biglietto o sulla conferma Xceed.
+- id_evento_xceed: il numero dell'evento se compare in un link Xceed
+  (es. xceed.me/milano/event/perreo-xl-16/240981 → "240981"), altrimenti vuoto.
 - lingua: "it" se scrive in italiano, altrimenti "en"."""
 
 _TOOL = {
@@ -82,6 +85,7 @@ _TOOL = {
             "email_acquisto": {"type": "array", "items": {"type": "string"}},
             "evento": {"type": "string"},
             "data_evento": {"type": "string"},
+            "id_evento_xceed": {"type": "string"},
             "importo": {"type": "string"},
             "lingua": {"type": "string"},
         },
@@ -300,7 +304,8 @@ async def process_sender(sender: str, new_msgs: list[dict]) -> str:
     if not missing_from_customer(a):
         found = await xt.find_request_tickets(
             {sender, *a.get("email_acquisto", [])}, set(a.get("codici", [])),
-            set(a.get("nomi", [])), a.get("data_evento", ""))
+            set(a.get("nomi", [])), a.get("data_evento", ""),
+            event_id_hint=a.get("id_evento_xceed", ""), name_hint=a.get("evento", ""))
     first = datetime.fromtimestamp(msgs[0].get("date_ms", 0) / 1000, _ROME)
     verdict = assess(a, found, first)
     lang = a.get("lingua", "it")
@@ -317,6 +322,31 @@ async def process_sender(sender: str, new_msgs: list[dict]) -> str:
         await _label_all(msgs, LABEL_ACK)
     await _label_all(new_msgs, LABEL_SEEN)
     await _notify(sender, msgs, a, verdict, found)
+    return verdict["status"]
+
+
+async def recheck(sender: str) -> str:
+    """Rifà analisi e verifica Xceed di una richiesta e ripubblica la scheda su Discord.
+
+    Non scrive al cliente e non cambia etichette: serve allo staff (`!verifica`) per
+    aggiornare una scheda nata con dati incompleti o con la ricerca Xceed fallita.
+    """
+    ids = await gm.list_unprocessed(_query_sender(sender), 20)
+    msgs = sorted([await gm.get_message(i) for i in ids], key=lambda m: m.get("date_ms", 0))
+    if not msgs:
+        return "nessuna mail trovata"
+    a = await analyze(msgs)
+    if not a:
+        return "analisi non riuscita"
+    found: dict = {}
+    if not missing_from_customer(a):
+        found = await xt.find_request_tickets(
+            {sender, *a.get("email_acquisto", [])}, set(a.get("codici", [])),
+            set(a.get("nomi", [])), a.get("data_evento", ""),
+            event_id_hint=a.get("id_evento_xceed", ""), name_hint=a.get("evento", ""))
+    first = datetime.fromtimestamp(msgs[0].get("date_ms", 0) / 1000, _ROME)
+    verdict = assess(a, found, first)
+    await _notify(sender, msgs, a, verdict, found, note="Verifica rifatta su richiesta dello staff.")
     return verdict["status"]
 
 
