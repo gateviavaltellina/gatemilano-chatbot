@@ -209,6 +209,16 @@ async def create_draft(msg: dict, body: str) -> str:
     return out.get("id", "")
 
 
+async def send_draft(draft_id: str) -> str:
+    """Invia una bozza così com'è in Gmail (con le eventuali modifiche fatte lì)."""
+    out = await _request("POST", "/drafts/send", json={"id": draft_id})
+    return out.get("id", "")
+
+
+async def delete_draft(draft_id: str) -> None:
+    await _request("DELETE", f"/drafts/{draft_id}")
+
+
 # --- etichette ---------------------------------------------------------------
 
 _label_cache: dict[str, str] = {}

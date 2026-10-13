@@ -203,3 +203,66 @@ async def _post_webhook(url: str, payload: dict) -> bool:
         except Exception as e:
             logger.warning("Discord webhook post failed: %s", e)
             return False
+
+
+# --- email (info@) -------------------------------------------------------------
+
+_MAIL_STATUS = {
+    # stato: (colore, intestazione risposta, riga azioni)
+    "bozza": (0xF59E0B, "🤖 Bot — bozza da approvare",
+              "`!ok` invia questa risposta · `!r <testo>` invia un testo tuo · "
+              "`!regola …` correggi il bot. Puoi anche modificare la bozza in Gmail "
+              "e poi dare `!ok`: parte la versione modificata."),
+    "inviata": (0x16A34A, "🤖 Bot — ✅ inviata in automatico",
+                "`!regola …` se la risposta non andava bene."),
+    "revisione": (0xDC2626, "🤖 Bot — ⚠️ nessuna risposta proposta",
+                  "`!r <testo>` per rispondere da qui, oppure rispondi da Gmail."),
+}
+
+
+def _mail_key(msg: dict) -> str:
+    return f"mail:{msg.get('thread_id') or msg.get('id')}"
+
+
+def _cut(text: str, limit: int = 1024, tail: str = "…") -> str:
+    text = (text or "").strip()
+    return text if len(text) <= limit else text[: limit - len(tail)] + tail
+
+
+async def notify_email(msg: dict, verdict: dict, venue: str, reply: str, status: str,
+                       reason: str = "", draft_id: str = "") -> None:
+    """Email su Discord come le chat IG/WA: cosa ha scritto il cliente, cosa propone
+    il bot, e i comandi per inviarla senza aprire Gmail (in reply a questo messaggio).
+    """
+    url = settings.discord_mail_webhook_url or settings.discord_webhook_url
+    if not url:
+        return
+    color, reply_header, actions = _MAIL_STATUS.get(status, _MAIL_STATUS["revisione"])
+    venue_label = {"gate_milano": "Gate Milano", "gate_sardinia": "Gate Sardinia"}.get(venue, venue)
+    header = (f"📧 Email · {VENUE_EMOJI.get(venue, '')} {venue_label} · "
+              f"{msg.get('from_email', '?')} · {verdict.get('categoria', '?')}")
+    fields = [
+        {"name": "✉️ Oggetto", "value": _cut(msg.get("subject") or "(senza oggetto)", 256),
+         "inline": False},
+        {"name": "👤 Cliente", "value": _cut(msg.get("body")) or "​", "inline": False},
+        {"name": reply_header,
+         "value": _cut(reply, tail="… (continua nella bozza in Gmail)") or "—", "inline": False},
+    ]
+    if reason:
+        fields.append({"name": "ℹ️ Perché non è partita da sola", "value": _cut(reason, 256),
+                       "inline": False})
+    fields.append({"name": "⌨️ Comandi (in reply)", "value": actions, "inline": False})
+    payload = {"embeds": [{"color": color, "description": header, "fields": fields}]}
+    context = {
+        "channel": "email",
+        "venue": venue,
+        "user_msg": _cut(msg.get("body")),
+        "bot_reply": _cut(reply),
+        "draft_id": draft_id,
+        "gmail_id": msg.get("id", ""),
+        "sent_by": "bot" if status == "inviata" else "",
+        # Quanto serve per rispondere nel thread giusto con !r.
+        "mail": {k: msg.get(k, "") for k in
+                 ("from_email", "subject", "message_id_header", "references", "thread_id")},
+    }
+    await _post_and_register(url.split("?")[0] + "?wait=true", payload, _mail_key(msg), context)

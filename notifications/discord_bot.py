@@ -353,6 +353,14 @@ async def on_message(message: discord.Message):
             await message.reply(reply, mention_author=False)
         return
 
+    # Email (info@): !ok invia la bozza del bot, !r <testo> invia un testo dello staff.
+    if phone and phone.startswith("mail:"):
+        from mail.staff import staff_action
+        reply = await staff_action(content, ctx if ctx is not None else {}, message.author.display_name)
+        if reply:
+            await message.reply(reply, mention_author=False)
+        return
+
     if content.startswith("!r "):
         if not phone:
             await message.reply("❌ Rispondi a una notifica del bot per usare !r", mention_author=False)
