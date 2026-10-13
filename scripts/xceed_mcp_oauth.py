@@ -24,12 +24,15 @@ import webbrowser
 
 BASE = "https://mcp.xceed-services.me"
 RESOURCE = f"{BASE}/mcp"
+# Il firewall di Xceed (Cloudflare, errore 1010) blocca lo User-Agent di default di
+# Python ("Python-urllib/3.x"): ci si presenta con un nome proprio.
+USER_AGENT = "gate-milano-chatbot/1.0"
 
 
 def _post(url: str, data: dict | None = None, *, form: bool = False, headers=None):
     body = (urllib.parse.urlencode(data) if form else json.dumps(data)).encode()
     h = {"Content-Type": "application/x-www-form-urlencoded" if form else "application/json",
-         "Accept": "application/json, text/event-stream"}
+         "Accept": "application/json, text/event-stream", "User-Agent": USER_AGENT}
     h.update(headers or {})
     req = urllib.request.Request(url, data=body, headers=h, method="POST")
     with urllib.request.urlopen(req) as r:

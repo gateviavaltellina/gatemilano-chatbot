@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 _BASE = "https://mcp.xceed-services.me"
 _RESOURCE = f"{_BASE}/mcp"
 _token: dict = {"access": "", "exp": 0.0, "refresh": ""}
+# Cloudflare davanti all'MCP blocca alcuni User-Agent "Python": nome esplicito.
+_UA = {"User-Agent": "gate-milano-chatbot/1.0"}
 
 
 def configured() -> bool:
@@ -57,7 +59,7 @@ async def _access_token() -> str:
     if _token["access"] and time.time() < _token["exp"]:
         return _token["access"]
     refresh = _token["refresh"] or _saved_refresh() or settings.xceed_mcp_refresh_token
-    async with httpx.AsyncClient(timeout=20) as client:
+    async with httpx.AsyncClient(timeout=20, headers=_UA) as client:
         r = await client.post(f"{_BASE}/token", data={
             "grant_type": "refresh_token", "refresh_token": refresh,
             "client_id": settings.xceed_mcp_client_id, "resource": _RESOURCE,
@@ -88,7 +90,7 @@ async def _rpc(method: str, params: dict | None = None) -> dict:
     headers = {"Authorization": f"Bearer {await _access_token()}",
                "Accept": "application/json, text/event-stream",
                "Content-Type": "application/json"}
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with httpx.AsyncClient(timeout=60, headers=_UA) as client:
         init = await client.post(_RESOURCE, headers=headers, json={
             "jsonrpc": "2.0", "id": 1, "method": "initialize",
             "params": {"protocolVersion": "2025-06-18", "capabilities": {},
