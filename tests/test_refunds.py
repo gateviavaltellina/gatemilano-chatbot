@@ -578,3 +578,10 @@ async def test_riverifica_tutte_le_aperte_senza_scrivere(monkeypatch):
     out = await refunds.recheck_all()
     assert rifatti == ["a@x.it", "c@x.it"] and out["esiti"] == {"ok": 2}
     assert scritte == []
+
+
+def test_prezzo_in_formato_mcp_leggibile():
+    t = {"hasCheckedIn": False, "isActive": True, "booking": {"bookingId": 1},
+         "offer": {"name": "Men General Admission",
+                   "price": {"amount": {"onlinePrice": 15, "offlinePrice": 0, "currency": "EUR"}}}}
+    assert xt.summarize([t])["price"] == "€15"

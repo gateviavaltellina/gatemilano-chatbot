@@ -311,8 +311,12 @@ def summarize(tickets: list[dict]) -> dict:
     price = ""
     if tickets:
         p = ((tickets[0].get("offer") or {}).get("price") or {})
-        if p.get("amount"):
-            price = f"{p.get('amount')} {p.get('currency', '')}".strip()
+        amount, currency = p.get("amount"), p.get("currency", "")
+        if isinstance(amount, dict):        # formato MCP: {"onlinePrice": 15, "currency": "EUR"}
+            currency = amount.get("currency") or currency
+            amount = amount.get("onlinePrice") or amount.get("amount")
+        if amount not in (None, ""):
+            price = f"€{amount}" if currency in ("EUR", "") else f"{amount} {currency}"
     return {"count": len(tickets), "used": len(used), "inactive": len(inactive),
             "holders": holders, "booking_ids": booking_ids, "price": price,
             "offer": (tickets[0].get("offer") or {}).get("name", "") if tickets else ""}
@@ -354,6 +358,11 @@ async def probe(term: str) -> dict:
         except Exception as e:
             out["partner_tickets_primo_evento"] = f"errore: {str(e)[:200]}"
     if xceed_mcp.configured():
+        try:
+            eps = await xceed_mcp.tool_json("list_endpoints", {"search": "refund"})
+            out["endpoint_rimborso"] = mask(eps) if not isinstance(eps, str) else eps[:3000]
+        except Exception as e:
+            out["endpoint_rimborso"] = f"errore: {str(e)[:200]}"
         out["mcp"] = []
         for ev in events[:4]:
             row = {"event": ev.get("name"), "day": event_day(ev)}
@@ -364,7 +373,21 @@ async def probe(term: str) -> dict:
                     data = await xceed_mcp.tool_json("bookings_search", {
                         "eventId": str(ev[form]), "search": term, "limit": 3})
                     row[form] = mask(data)
-                    row[f"{form}_estratti"] = [mask(booking_to_ticket(b)) for b in _as_list(data)]
+                    found = _as_list(data)
+                    row[f"{form}_estratti"] = [mask(booking_to_ticket(b)) for b in found]
+                    # Dettaglio completo della prima prenotazione: serve a capire quale
+                    # ID vuole booking_refund e se la prenotazione è rimborsabile.
+                    if found:
+                        b = found[0]
+                        for key in ("id", "uuid", "legacyId"):
+                            if not b.get(key):
+                                continue
+                            try:
+                                row[f"booking_get_{key}"] = mask(await xceed_mcp.tool_json(
+                                    "booking_get", {"eventId": str(ev[form]), "bookingId": str(b[key])}))
+                                break
+                            except Exception as e:
+                                row[f"booking_get_{key}"] = f"errore: {str(e)[:200]}"
                 except Exception as e:
                     row[form] = f"errore: {str(e)[:200]}"
             out["mcp"].append(row)
