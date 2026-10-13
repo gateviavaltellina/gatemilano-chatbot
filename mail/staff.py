@@ -89,7 +89,7 @@ async def refund_action(content: str, ctx: dict, author: str) -> str | None:
     from config import settings
 
     cmd = content.split(" ", 1)[0]
-    if cmd not in ("!rimborsa", "!fatto", "!rifiuta", "!r", "!verifica"):
+    if cmd not in ("!rimborsa", "!fatto", "!rifiuta", "!r", "!verifica", "!inoltra"):
         return None
     if cmd == "!r" and not content[3:].strip():
         return None
@@ -123,6 +123,10 @@ async def refund_action(content: str, ctx: dict, author: str) -> str | None:
         if cmd == "!r":
             await _send(content[3:].strip())
             return f"✅ Risposta di {author} inviata a {mail['from_email']}."
+        if cmd == "!inoltra":
+            esito = await refunds.forward_by_staff(mail["from_email"], content[len("!inoltra"):].strip())
+            ctx["sent_by"] = author
+            return f"📨 {esito} ({author})."
         if cmd == "!rifiuta":
             await _send(templates.refund_refused(lang, content[len("!rifiuta"):].strip()))
             await _close(refunds.LABEL_REFUSED)
@@ -144,4 +148,8 @@ async def refund_action(content: str, ctx: dict, author: str) -> str | None:
         return f"✅ Rimborso segnato come fatto e cliente avvisato ({author})."
     except Exception as e:
         logger.error("Comando rimborso %r fallito: %s", cmd, e)
-        return f"❌ Non riuscito: {str(e)[:150]}"
+        hint = ""
+        if cmd == "!rimborsa":
+            hint = ("\nSe la finestra Xceed è chiusa (dopo il lunedì mattina) usa `!inoltra`: "
+                    "la richiesta va a Xceed e il cliente viene avvisato.")
+        return f"❌ Non riuscito: {str(e)[:150]}{hint}"

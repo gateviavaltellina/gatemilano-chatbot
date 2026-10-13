@@ -266,6 +266,30 @@ def _build_raw(to: str, subject: str, body: str, in_reply_to: str, references: s
     return base64.urlsafe_b64encode(msg.as_bytes()).decode()
 
 
+async def send_new(to: str, subject: str, body: str,
+                   attachments: list[tuple[str, str, bytes]] | None = None) -> str:
+    """Mail nuova (non una risposta), con allegati e firma Gmail. Per gli inoltri."""
+    m = EmailMessage()
+    m["To"] = to
+    m["From"] = f"{settings.mail_from_name} <{settings.mail_reply_as}>"
+    m["Subject"] = subject
+    sig = await get_signature(settings.mail_reply_as)
+    body = body.rstrip()
+    if sig.strip():
+        m.set_content(f"{body}\n\n{_html_to_text(sig)}")
+        m.add_alternative(f'<div dir="ltr">{html.escape(body).replace(chr(10), "<br>")}<br><br>'
+                          f'<div class="gmail_signature">{sig}</div></div>', subtype="html")
+    else:
+        m.set_content(f"{body}\n\n{settings.mail_from_name}")
+    for filename, mime, data in attachments or []:
+        maintype, _, subtype = (mime or "application/octet-stream").partition("/")
+        m.add_attachment(data, maintype=maintype, subtype=subtype or "octet-stream",
+                         filename=filename)
+    raw = base64.urlsafe_b64encode(m.as_bytes()).decode()
+    out = await _request("POST", "/messages/send", json={"raw": raw})
+    return out.get("id", "")
+
+
 async def send_reply(msg: dict, body: str, label: str = "", reply_to: str = "") -> str:
     raw = _build_raw(msg["from_email"], msg["subject"], body,
                      msg["message_id_header"], msg["references"],

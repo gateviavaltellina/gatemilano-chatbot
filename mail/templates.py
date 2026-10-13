@@ -117,3 +117,14 @@ def refund_refused(lang: str, note: str = "") -> str:
             "rimborsabili: il rimborso è previsto solo per chi, con un biglietto valido, non è "
             "stato fatto entrare all'ingresso.")
     return base + (f"\n\n{note}" if note else "") + ""
+
+
+def refund_forwarded(lang: str) -> str:
+    """Richiesta valida ma oltre la finestra di rimborso Xceed: inoltrata a Xceed."""
+    if _en(lang):
+        return ("Hello,\n\nwe have forwarded your refund request to Xceed, our ticketing "
+                "platform: it will be processed within 14 days and you will receive a "
+                "confirmation email directly from them.")
+    return ("Ciao,\n\nabbiamo inoltrato la tua richiesta di rimborso a Xceed, la piattaforma "
+            "di biglietteria: verrà processata entro 14 giorni e riceverai una mail di "
+            "conferma direttamente da loro.")

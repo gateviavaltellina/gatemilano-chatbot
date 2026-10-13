@@ -161,6 +161,11 @@ class Settings(BaseSettings):
     # lo staff conferma con !rimborsa.
     refund_auto_execute: bool = False
     discord_refund_webhook_url: str = ""
+    # Xceed rimborsa via API solo fino al lunedì mattina dopo la serata (staff 13/10).
+    # Dopo, le richieste valide si inoltrano al contatto Xceed (come faceva lo staff a
+    # mano): "entro 14 giorni verrà processata".
+    refund_xceed_cutoff_hour: int = 9
+    refund_xceed_contact: str = "bianca@xceed.me"
     # MCP di Xceed (scripts/xceed_mcp_oauth.py)
     xceed_mcp_client_id: str = ""
     xceed_mcp_refresh_token: str = ""
