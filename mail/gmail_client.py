@@ -24,6 +24,9 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 _API = "https://gmail.googleapis.com/gmail/v1/users/me"
+# Etichetta di ogni mail inviata dal bot (o dallo staff tramite i comandi Discord):
+# distingue le conversazioni del bot da quelle di George e le risposte a mano.
+BOT_SENT_LABEL = "Bot/Inviato"
 _TOKEN_URL = "https://oauth2.googleapis.com/token"
 
 # Access token in cache: dura ~1h, lo rinnoviamo con un margine.
@@ -315,10 +318,23 @@ async def create_draft(msg: dict, body: str) -> str:
     return out.get("id", "")
 
 
-async def send_draft(draft_id: str) -> str:
+async def send_draft(draft_id: str, label: str = "") -> str:
     """Invia una bozza così com'è in Gmail (con le eventuali modifiche fatte lì)."""
     out = await _request("POST", "/drafts/send", json={"id": draft_id})
-    return out.get("id", "")
+    sent_id = out.get("id", "")
+    if label and sent_id:
+        try:
+            await add_label(sent_id, label)
+        except Exception:
+            logger.debug("Etichetta sulla bozza inviata non applicata", exc_info=True)
+    return sent_id
+
+
+async def thread_overview(thread_id: str) -> list[dict]:
+    """Messaggi del thread: id, etichette (ID), data. Per seguire le conversazioni."""
+    data = await _request("GET", f"/threads/{thread_id}", params={"format": "minimal"})
+    return [{"id": m.get("id"), "label_ids": m.get("labelIds") or [],
+             "date_ms": int(m.get("internalDate") or 0)} for m in data.get("messages", [])]
 
 
 async def delete_draft(draft_id: str) -> None:

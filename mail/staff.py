@@ -59,7 +59,7 @@ async def staff_action(content: str, ctx: dict, author: str) -> str | None:
             if not draft_id:
                 return "❌ Il bot non ha proposto una risposta: usa `!r <testo>`."
             try:
-                await gm.send_draft(draft_id)
+                await gm.send_draft(draft_id, label=gm.BOT_SENT_LABEL)
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 404:
                     return "❌ Bozza non trovata in Gmail: forse è già stata inviata o cancellata da lì."
@@ -68,7 +68,7 @@ async def staff_action(content: str, ctx: dict, author: str) -> str | None:
             return f"✅ Inviata a {ctx['mail']['from_email']} (approvata da {author})."
 
         text = content[3:].strip()
-        await gm.send_reply(ctx["mail"], text)
+        await gm.send_reply(ctx["mail"], text, label=gm.BOT_SENT_LABEL)
         if ctx.get("draft_id"):
             try:
                 await gm.delete_draft(ctx["draft_id"])
