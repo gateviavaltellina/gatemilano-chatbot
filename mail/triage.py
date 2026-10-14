@@ -140,7 +140,9 @@ def hard_skip(msg: dict, box: str | None = None) -> str:
     auto_cat = _AUTO_CATEGORIES.intersection(msg.get("label_ids") or [])
     if auto_cat:
         return f"scheda Gmail {sorted(auto_cat)[0]}"
-    if not (msg.get("body") or "").strip():
+    # Vuota davvero solo se non ha nemmeno allegati: chi chiede un rimborso manda
+    # spesso SOLO gli screenshot (caso reale 13/10: richieste scartate in silenzio).
+    if not (msg.get("body") or "").strip() and not msg.get("has_attachments"):
         return "corpo vuoto"
     return ""
 

@@ -67,6 +67,11 @@ def test_corpo_vuoto_mai():
     assert triage.hard_skip(_msg(body="   "))
 
 
+def test_solo_allegati_non_e_vuota():
+    """Caso reale 13/10: richieste di rimborso con solo gli screenshot scartate in silenzio."""
+    assert triage.hard_skip(_msg(body="", has_attachments=True)) == ""
+
+
 def test_cliente_normale_passa():
     assert triage.hard_skip(_msg()) == ""
 
