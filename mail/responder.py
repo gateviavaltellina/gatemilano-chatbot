@@ -33,13 +33,17 @@ LABEL_SKIPPED = "Bot/Ignorato"
 
 
 def _query() -> str:
-    """Solo posta arrivata a info@, non letta e non ancora toccata dal bot.
+    """Solo posta arrivata a info@ negli ultimi giorni e non ancora toccata dal bot.
 
     info@ è una casella Aruba inoltrata su una Gmail PERSONALE: senza il filtro
     `deliveredto:` il bot leggerebbe e risponderebbe a tutta la posta dell'account.
     """
+    # Niente "is:unread": basta aprire la mail dal telefono, o che un'altra
+    # automazione la segni letta (caso reale 14/10, proposta Michael Marchi), e il bot
+    # la saltava. Contro i doppioni bastano le etichette Bot/…; contro le risposte già
+    # date a mano c'è il controllo sul thread.
     return (
-        f"deliveredto:{settings.mail_from_address} in:inbox is:unread "
+        f"deliveredto:{settings.mail_from_address} in:inbox "
         f"newer_than:{settings.mail_max_age_days}d "
         f'-label:"{LABEL_DONE}" -label:"{LABEL_REVIEW}" -label:"{LABEL_SKIPPED}"'
     )

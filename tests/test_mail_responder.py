@@ -218,7 +218,10 @@ def test_query_filtra_sulla_casella():
     from mail import responder
     q = responder._query()
     assert f"deliveredto:{settings.mail_from_address}" in q
-    assert "is:unread" in q
+    # Letta o no non conta: la mail può essere stata aperta dal telefono o segnata
+    # letta da un'altra automazione (caso reale 14/10).
+    assert "is:unread" not in q
+    assert f'-label:"{responder.LABEL_DONE}"' in q
     # Niente arretrato: le non lette vecchie restano allo staff.
     assert f"newer_than:{settings.mail_max_age_days}d" in q
     assert settings.mail_max_age_days <= 3
