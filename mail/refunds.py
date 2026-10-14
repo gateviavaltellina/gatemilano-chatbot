@@ -34,7 +34,7 @@ from mail import xceed_tickets as xt
 logger = logging.getLogger(__name__)
 
 LABEL_SEEN = "Bot/Rimborso"            # ogni messaggio a rimborsi@ già letto dal bot
-LABEL_BOT_SENT = "Bot/Inviato"         # risposte inviate dal bot (≠ risposte dello staff)
+LABEL_BOT_SENT = gm.BOT_SENT_LABEL     # risposte inviate dal bot (≠ risposte dello staff)
 LABEL_ACK = "Bot/Rimborso ricevuto"    # conferma di ricezione già mandata
 LABEL_DONE = "Bot/Rimborso fatto"
 LABEL_REFUSED = "Bot/Rimborso rifiutato"
@@ -177,7 +177,9 @@ def _query_new() -> str:
 
 
 def _query_sender(sender: str, label: str = "") -> str:
-    q = f"deliveredto:{settings.refund_inbox} from:{sender} newer_than:{settings.refund_window_days + 7}d -in:sent"
+    # Anche le risposte a george@: il bot risponde da lì e i clienti rispondono lì.
+    q = (f"from:{sender} {{deliveredto:{settings.refund_inbox} to:{settings.mail_reply_as}}} "
+         f"newer_than:{settings.refund_window_days + 7}d -in:sent")
     return q + (f' label:"{label}"' if label else "")
 
 

@@ -30,10 +30,10 @@ def gmail(monkeypatch):
     async def _no_reply(_tid):
         return False
 
-    async def _send_draft(did):
+    async def _send_draft(did, label=""):
         calls.append(("send_draft", did))
 
-    async def _send_reply(mail, text):
+    async def _send_reply(mail, text, label="", reply_to=""):
         calls.append(("send_reply", mail["from_email"], text))
 
     async def _delete_draft(did):
@@ -87,7 +87,7 @@ async def test_risposta_gia_data_da_gmail_blocca(gmail, monkeypatch):
 
 
 async def test_bozza_sparita_da_gmail(gmail, monkeypatch):
-    async def _gone(_did):
+    async def _gone(_did, label=""):
         req = httpx.Request("POST", "https://x")
         raise httpx.HTTPStatusError("404", request=req, response=httpx.Response(404, request=req))
     monkeypatch.setattr(gm, "send_draft", _gone)

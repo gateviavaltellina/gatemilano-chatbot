@@ -140,6 +140,14 @@ async def _init_background():
             id="mail_autoresponder",
             replace_existing=True,
         )
+        # Risposte dei clienti a george@ nelle conversazioni del bot.
+        from mail.followups import run_once as _followups_run
+        scheduler.add_job(
+            _followups_run,
+            CronTrigger(minute="4-59/5"),
+            id="mail_followups",
+            replace_existing=True,
+        )
         # Rimborsi (rimborsi@): verifica le richieste e le porta su Discord istruite.
         from mail.refunds import run_once as _refunds_run
         scheduler.add_job(

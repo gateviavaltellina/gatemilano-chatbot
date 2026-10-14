@@ -238,7 +238,7 @@ async def test_senza_alias_invia_come_si_fa_bozza(monkeypatch):
     async def _verdict(_m):
         return {"categoria": "orari", "confidenza": "alta", "domanda": "orari sabato"}
 
-    async def _compose(_m, _v):
+    async def _compose(_m, _v, **k):
         return "Apriamo alle 23:00."
 
     async def _send(*a, **k):
@@ -367,7 +367,7 @@ async def test_risposta_che_rimanda_a_info_va_in_bozza(monkeypatch):
     async def _verdict(_m):
         return {"categoria": "orari", "confidenza": "alta", "domanda": "orari"}
 
-    async def _compose(_m, _v):
+    async def _compose(_m, _v, **k):
         return "Per questo scrivi a info@gatemilano.com, ti rispondiamo lì."
 
     async def _send(*a, **k):
@@ -450,10 +450,10 @@ async def _run_process(monkeypatch, verdict, body="Apriamo alle 23."):
     async def _verdict(_m):
         return verdict
 
-    async def _compose(_m, _v):
+    async def _compose(_m, _v, **k):
         return body
 
-    async def _send(msg, text):
+    async def _send(msg, text, **k):
         azioni.append(("send", text))
 
     async def _draft(msg, text):

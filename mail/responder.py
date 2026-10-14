@@ -75,7 +75,7 @@ def _venue_for(msg: dict) -> str:
     return "gate_milano"
 
 
-async def _compose(msg: dict, verdict: dict) -> str:
+async def _compose(msg: dict, verdict: dict, prior: str = "") -> str:
     """Testo della risposta, generato col contesto reale di eventi e tavoli."""
     from ai.claude_client import generate_response
     from rag.context_builder import build_rag_context
@@ -85,7 +85,13 @@ async def _compose(msg: dict, verdict: dict) -> str:
     # va comunque al modello, così non si perde nulla di quello che ha scritto.
     query = verdict.get("domanda") or msg.get("subject", "")
     rag_context, _dates = await build_rag_context(venue, f"{query}\n{msg.get('body','')}")
+    previous = (
+        "QUESTA È LA RISPOSTA DEL CLIENTE A UNA NOSTRA MAIL. La nostra mail precedente era:\n"
+        f"---\n{prior[:2000]}\n---\nRispondi tenendo conto di quello che gli abbiamo già "
+        "scritto: non ripeterlo, rispondi a quello che chiede adesso.\n\n"
+    ) if prior else ""
     user_message = (
+        previous +
         f"Email ricevuta su {settings.mail_from_address}.\n"
         f"Oggetto: {msg.get('subject','')}\n\n"
         f"{msg.get('body','')}\n\n"
@@ -132,7 +138,7 @@ async def _can_send_as() -> bool:
         return False
 
 
-async def process_one(message_id: str) -> str:
+async def process_one(message_id: str, followup: bool = False, prior: str = "") -> str:
     """Gestisce una email. Ritorna l'esito, per i log. Non solleva mai."""
     try:
         msg = await gm.get_message(message_id)
@@ -140,7 +146,8 @@ async def process_one(message_id: str) -> str:
         logger.error("Lettura email %s fallita: %s", message_id, e)
         return "errore-lettura"
 
-    skip = triage.hard_skip(msg)
+    # followup: risposta del cliente (a george@) in una conversazione del bot.
+    skip = triage.hard_skip(msg, box=settings.mail_reply_as if followup else None)
     if skip:
         await gm.add_label(message_id, LABEL_SKIPPED)
         return f"ignorata ({skip})"
@@ -148,7 +155,7 @@ async def process_one(message_id: str) -> str:
     # Se nel thread abbiamo già scritto, non ci torniamo sopra: è la guardia che
     # impedisce sia i loop sia di scavalcare una risposta data a mano dallo staff.
     try:
-        if await gm.thread_has_our_reply(msg["thread_id"]):
+        if not followup and await gm.thread_has_our_reply(msg["thread_id"]):
             await gm.add_label(message_id, LABEL_SKIPPED)
             return "ignorata (thread già gestito)"
     except Exception as e:
@@ -159,7 +166,7 @@ async def process_one(message_id: str) -> str:
 
     # Proposte (artisti, agenzie, portali, servizi): risposta su misura scritta dal
     # modello e controllata; se il controllo non passa, il testo fisso approvato.
-    if verdict.get("categoria") in triage.PROPOSAL_CATEGORIES:
+    if verdict.get("categoria") in triage.PROPOSAL_CATEGORIES and not followup:
         from mail.proposals import write_reply
         reply, origin = await write_reply(
             msg, commercial=verdict.get("categoria") == triage.COMMERCIAL_CATEGORY)
@@ -168,7 +175,7 @@ async def process_one(message_id: str) -> str:
             ok, reason = False, (f"{settings.mail_reply_as} non è un indirizzo "
                                  "'Invia come' verificato in Gmail")
         if ok:
-            await gm.send_reply(msg, reply)
+            await gm.send_reply(msg, reply, label=gm.BOT_SENT_LABEL)
             await gm.add_label(message_id, LABEL_DONE)
             await _notify(msg, verdict, "inviata", reply=reply,
                           reason="" if origin == "generata" else origin)
@@ -179,7 +186,7 @@ async def process_one(message_id: str) -> str:
         return f"bozza ({reason})"
 
     try:
-        body = await _compose(msg, verdict)
+        body = await _compose(msg, verdict, prior=prior)
     except Exception as e:
         logger.error("Generazione risposta fallita per %s: %s", message_id, e)
         await gm.add_label(message_id, LABEL_REVIEW)
@@ -192,6 +199,9 @@ async def process_one(message_id: str) -> str:
         return "revisione (nessuna risposta utile)"
 
     ok, reason = triage.can_autosend(msg, verdict)
+    if followup:
+        # Il seguito di una conversazione lo rilegge sempre una persona.
+        ok, reason = False, "risposta del cliente a una nostra mail: rileggi prima di inviare"
     # Rete di sicurezza: rimandare a info@ chi ha appena scritto a info@ è una
     # risposta inutile. Se il modello lo fa comunque, la si fa rileggere.
     if ok and settings.mail_from_address.lower() in body.lower():
@@ -200,7 +210,7 @@ async def process_one(message_id: str) -> str:
         ok, reason = False, (f"{settings.mail_reply_as} non è un indirizzo "
                              "'Invia come' verificato in Gmail")
     if ok:
-        await gm.send_reply(msg, body + _footer(msg))
+        await gm.send_reply(msg, body + _footer(msg), label=gm.BOT_SENT_LABEL)
         await gm.add_label(message_id, LABEL_DONE)
         await _notify(msg, verdict, "inviata", reply=body)
         return "inviata"
