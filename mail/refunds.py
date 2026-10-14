@@ -437,6 +437,14 @@ async def recheck(sender: str, forward_old: bool = False) -> str:
             event_id_hint=a.get("id_evento_xceed", ""), name_hint=a.get("evento", ""))
     first = datetime.fromtimestamp(msgs[0].get("date_ms", 0) / 1000, _ROME)
     verdict = assess(a, found, first)
+    if forward_old and verdict["status"] == "incompleta" \
+            and await _last_bot_reply_ms(sender) < msgs[-1].get("date_ms", 0):
+        # Arretrato: a chi non ha ancora avuto risposta si scrive cosa manca.
+        await _reply(msgs[-1], templates.refund_missing(a.get("lingua", "it"), verdict["missing"]))
+        await _label_all(msgs, LABEL_SEEN)
+        await _notify(sender, msgs, a, verdict, found,
+                      note="Richiesta arretrata: scritto al cliente cosa manca.")
+        return "incompleta"
     if forward_old and verdict["status"] == "ok" and past_xceed_cutoff(found):
         await forward_to_xceed(sender, msgs, a, found)
         await _notify(sender, msgs, a, {**verdict, "status": "inoltrata"}, found,

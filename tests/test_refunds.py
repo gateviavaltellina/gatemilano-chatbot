@@ -688,3 +688,21 @@ async def test_gia_inoltrato_a_mano_non_si_reinoltra(flow, monkeypatch):
     await refunds.forward_to_xceed("cliente@example.com", [_msg()], _a(), _found(_ticket()))
     assert inviate == [] and flow["replies"] == []
     assert refunds.LABEL_FORWARDED in flow["labels"]
+
+
+
+async def test_arretrato_incompleto_riceve_cosa_manca(flow, monkeypatch):
+    async def _an(msgs):
+        return _a(motivazione="", respinto_alla_porta=False)
+    monkeypatch.setattr(refunds, "analyze", _an)
+    esito = await refunds.recheck("cliente@example.com", forward_old=True)
+    assert esito == "incompleta"
+    assert "cosa è successo all'ingresso" in flow["replies"][0][0]
+
+
+async def test_riverifica_semplice_non_scrive(flow, monkeypatch):
+    async def _an(msgs):
+        return _a(motivazione="", respinto_alla_porta=False)
+    monkeypatch.setattr(refunds, "analyze", _an)
+    await refunds.recheck("cliente@example.com")
+    assert flow["replies"] == []
