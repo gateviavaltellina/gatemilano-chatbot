@@ -81,3 +81,76 @@ def test_gergo_inglese_non_inganna():
               "il perreo xl di sabato ha ancora tavoli in main room?"):
         assert detect_language(t) != "inglese"
         assert language_directive(t) == ""
+
+
+# --- caso reale WhatsApp 16/10: chat in inglese, risposta sulle bottiglie in italiano ---
+
+from ai.language import language_reminder, resolve_language
+
+
+def test_messaggio_corto_eredita_la_lingua_della_chat():
+    history = [{"role": "user", "content": "Hi, I'd like to book a table for Saturday please"},
+               {"role": "assistant", "content": "Sure! Here are the tables..."}]
+    assert resolve_language("2 pls", history) == "inglese"
+
+
+def test_messaggio_corto_italiano_non_eredita():
+    history = [{"role": "user", "content": "Hi, I'd like to book a table for Saturday please"}]
+    assert resolve_language("ok grazie", history) is None
+
+
+def test_messaggio_chiaro_vince_sulla_chat():
+    history = [{"role": "user", "content": "Hi, I'd like to book a table for Saturday please"}]
+    assert resolve_language("vorrei sapere quanto costa il tavolo", history) == "italiano"
+
+
+def test_promemoria_nella_lingua_del_cliente():
+    assert language_reminder("inglese") == "Reply in English only."
+    assert language_reminder("italiano") == ""
+    assert language_reminder(None) == ""
+
+
+async def test_promemoria_in_coda_al_messaggio_del_cliente(monkeypatch):
+    """La riga di sistema non basta con una cronologia lunga: il promemoria va subito
+    dopo il messaggio del cliente, che è l'ultima cosa che il modello legge."""
+    import ai.claude_client as cc
+    preso = {}
+
+    class _Resp:
+        content = [type("B", (), {"type": "text", "text": "Hi! The €300 table..."})()]
+        usage = None
+        stop_reason = "end_turn"
+
+    async def _create(**kw):
+        preso.update(kw)
+        return _Resp()
+
+    monkeypatch.setattr(cc._client.messages, "create", _create)
+    history = [{"role": "user", "content": "do you have tables for saturday?"},
+               {"role": "assistant", "content": "Yes! F1: https://booking..." * 30}]
+    await cc.generate_response(venue="gate_milano",
+                               user_message="2 people, and is there ant bottles included",
+                               rag_context="", history=history)
+    last = preso["messages"][-1]["content"]
+    text = last if isinstance(last, str) else " ".join(b.get("text", "") for b in last)
+    assert text.rstrip().endswith("[Reply in English only.]")
+    assert "INGLESE" in preso["system"][-1]["text"]
+
+
+async def test_nessun_promemoria_per_l_italiano(monkeypatch):
+    import ai.claude_client as cc
+    preso = {}
+
+    class _Resp:
+        content = [type("B", (), {"type": "text", "text": "Ciao!"})()]
+        usage = None
+        stop_reason = "end_turn"
+
+    async def _create(**kw):
+        preso.update(kw)
+        return _Resp()
+
+    monkeypatch.setattr(cc._client.messages, "create", _create)
+    await cc.generate_response(venue="gate_milano", user_message="quanto costa il tavolo sabato?",
+                               rag_context="", history=[])
+    assert "Reply in" not in str(preso["messages"][-1]["content"])
