@@ -137,9 +137,22 @@ def refund_ack(lang: str) -> str:
             "nuovo.")
 
 
-def refund_done(lang: str, event: str = "") -> str:
+def refund_done(lang: str, event: str = "", tickets: int = 0, partial: bool = False) -> str:
     ev_it = f" per {event}" if event else ""
     ev_en = f" for {event}" if event else ""
+    if partial:
+        # Solo i biglietti di chi non è entrato: chi è entrato non viene rimborsato.
+        n = tickets or 1
+        if _en(lang):
+            what = "ticket" if n == 1 else f"{n} tickets"
+            return (f"Hello,\n\nthe refund of the {what} not used at the entrance{ev_en} has "
+                    "been issued; tickets that were used to enter are not refunded. It will be "
+                    "credited to the payment method used for the purchase: timing depends on "
+                    "your bank.")
+        what = "del biglietto non utilizzato" if n == 1 else f"dei {n} biglietti non utilizzati"
+        return (f"Ciao,\n\nil rimborso {what} all'ingresso{ev_it} è stato effettuato; i "
+                "biglietti usati per entrare non vengono rimborsati. L'accredito arriva sullo "
+                "stesso metodo di pagamento usato per l'acquisto: i tempi dipendono dalla tua banca.")
     if _en(lang):
         return (f"Hello,\n\nthe refund of your tickets{ev_en} has been issued for the full "
                 "amount paid, fees included. It will be credited to the payment method used "

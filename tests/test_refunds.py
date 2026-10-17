@@ -296,6 +296,8 @@ def _ctx(**kw):
             "mail": {"from_email": "cliente@example.com", "subject": "Rimborso",
                      "message_id_header": "<a@b>", "references": "", "thread_id": "t1"}}
     base.update(kw)
+    base.setdefault("refund_plan", [{"booking_id": b, "full": True, "codes": [], "tickets": 1}
+                                    for b in base["booking_ids"]])
     return base
 
 
@@ -706,3 +708,105 @@ async def test_riverifica_semplice_non_scrive(flow, monkeypatch):
     monkeypatch.setattr(refunds, "analyze", _an)
     await refunds.recheck("cliente@example.com")
     assert flow["replies"] == []
+
+
+# --- rimborso parziale (staff 17/10: in un gruppo si rimborsano solo i non entrati) -------
+
+def test_piano_parziale_solo_i_non_entrati():
+    tickets = [_ticket(qr="A", checked=True), _ticket(qr="B", checked=True),
+               _ticket(qr="C"), _ticket(qr="D")]
+    plan = xt.refund_plan(tickets)
+    assert plan == [{"booking_id": "24556189", "full": False, "codes": ["C", "D"],
+                     "tickets": 2, "missing_codes": 0}]
+
+
+def test_piano_totale_e_prenotazioni_separate():
+    """Caso momo 17/10 se i 4 biglietti sono 4 prenotazioni: totale solo sulle non entrate."""
+    tickets = [_ticket(bid=1, checked=True), _ticket(bid=2, checked=True), _ticket(bid=3), _ticket(bid=4)]
+    plan = xt.refund_plan(tickets)
+    assert [(p["booking_id"], p["full"]) for p in plan] == [("3", True), ("4", True)]
+
+
+def test_piano_esclude_gia_rimborsati_e_tutti_entrati():
+    assert xt.refund_plan([_ticket(checked=True), _ticket(qr="B", checked=True)]) == []
+    plan = xt.refund_plan([_ticket(qr="A", active=False), _ticket(qr="B")])
+    assert plan[0]["full"] is False and plan[0]["codes"] == ["B"]
+
+
+def test_verifica_parziale_e_verde():
+    tickets = [_ticket(qr="A", checked=True), _ticket(qr="B", checked=True),
+               _ticket(qr="C"), _ticket(qr="D")]
+    v = refunds.assess(_a(), _found(*tickets), _IN_TIME)
+    assert v["status"] == "ok"
+    assert any("PARZIALE" in t and "2 biglietti non usati" in t for _, t in v["checks"])
+
+
+def test_verifica_parziale_senza_codici_da_verificare():
+    tickets = [_ticket(qr="", checked=True), _ticket(qr="")]
+    v = refunds.assess(_a(), _found(*tickets), _IN_TIME)
+    assert v["status"] == "da_verificare"
+    assert any("dashboard" in t for _, t in v["checks"])
+
+
+def test_dettaglio_mcp_un_biglietto_per_pass():
+    b = {"legacyId": 77, "buyer": {"email": "m@x.it"}, "hasCheckedIn": True}
+    detail = {"data": {"passes": [
+        {"qrCode": "Q1", "hasCheckedIn": True, "isActive": True},
+        {"qrCode": "Q2", "hasCheckedIn": False, "isActive": True}]}}
+    tickets = xt.booking_tickets(b, detail)
+    assert [t["qrCode"] for t in tickets] == ["Q1", "Q2"]
+    assert xt.refund_plan(tickets)[0]["codes"] == ["Q2"]
+    assert len(xt.booking_tickets(b, None)) == 1
+
+
+async def test_rimborsa_parziale_un_biglietto_alla_volta(staff_gmail, monkeypatch):
+    from mail import xceed_mcp
+    chiamate = []
+
+    async def _call(name, args):
+        chiamate.append(args)
+        return {"content": []}
+
+    monkeypatch.setattr(xceed_mcp, "configured", lambda: True)
+    monkeypatch.setattr(xceed_mcp, "call_tool", _call)
+    ctx = _ctx(refund_partial=True, refund_plan=[
+        {"booking_id": "24556189", "full": False, "codes": ["C", "D"], "tickets": 2, "missing_codes": 0}])
+    out = await staff.refund_action("!rimborsa", ctx, "George")
+    assert out.startswith("✅") and "2 biglietti" in out
+    assert [(a["legacyId"], a["isFullRefund"], a.get("code")) for a in chiamate] == \
+        [(24556189, False, "C"), (24556189, False, "D")]
+    text = [c[1] for c in staff_gmail if c[0] == "send"][0]
+    assert "dei 2 biglietti non utilizzati" in text and "commissioni" not in text
+
+
+async def test_rimborsa_parziale_senza_codici_non_tocca_xceed(staff_gmail, monkeypatch):
+    from mail import xceed_mcp
+    chiamate = []
+
+    async def _call(name, args):
+        chiamate.append(args)
+        return {"content": []}
+
+    monkeypatch.setattr(xceed_mcp, "configured", lambda: True)
+    monkeypatch.setattr(xceed_mcp, "call_tool", _call)
+    ctx = _ctx(refund_partial=True, refund_plan=[
+        {"booking_id": "1", "full": True, "codes": [], "tickets": 1},
+        {"booking_id": "2", "full": False, "codes": [], "tickets": 1, "missing_codes": 1}])
+    out = await staff.refund_action("!rimborsa", ctx, "George")
+    assert out.startswith("❌") and chiamate == [] and staff_gmail == []
+
+
+async def test_scheda_vecchia_da_verificare_chiede_verifica(staff_gmail, monkeypatch):
+    """Le schede di prima avevano solo booking_ids: rimborsarle intere toccherebbe chi è entrato."""
+    from mail import xceed_mcp
+    monkeypatch.setattr(xceed_mcp, "configured", lambda: True)
+    ctx = _ctx(status="da_verificare")
+    del ctx["refund_plan"]
+    out = await staff.refund_action("!rimborsa", ctx, "George")
+    assert "!verifica" in out and staff_gmail == []
+
+
+def test_inoltro_parziale_indica_i_codici():
+    tickets = [_ticket(qr="A", checked=True), _ticket(qr="C")]
+    body = refunds._forward_body("c@x.it", _a(), _found(*tickets))
+    assert "PARZIALE" in body and "codici C" in body and "NON vanno rimborsati" in body

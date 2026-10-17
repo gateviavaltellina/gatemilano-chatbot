@@ -223,6 +223,59 @@ async def _mcp_bookings(event: dict, term: str) -> list[dict]:
     return []
 
 
+def _passes(detail) -> list[dict]:
+    """I singoli biglietti (passes) nel dettaglio di una prenotazione, in qualsiasi involucro."""
+    if not isinstance(detail, dict):
+        return []
+    for key in ("passes", "tickets"):
+        if isinstance(detail.get(key), list):
+            return [p for p in detail[key] if isinstance(p, dict)]
+    for key in ("data", "booking", "result", "item"):
+        inner = _passes(detail.get(key))
+        if inner:
+            return inner
+    return []
+
+
+def booking_tickets(b: dict, detail=None) -> list[dict]:
+    """Prenotazione MCP → un biglietto per pass, ognuno col suo codice e il suo check-in.
+
+    Serve ai rimborsi parziali (staff 17/10): in un gruppo alcuni entrano e altri no, e
+    si rimborsano solo i biglietti non usati. Senza dettaglio resta un solo "biglietto"
+    per prenotazione, con lo stato complessivo.
+    """
+    base = booking_to_ticket(b)
+    passes = _passes(detail)
+    if not passes:
+        return [base]
+    out = []
+    for p in passes:
+        t = dict(base)
+        t["firstName"] = p.get("firstName") or base["firstName"]
+        t["lastName"] = p.get("lastName") or base["lastName"]
+        t["email"] = p.get("email") or base["email"]
+        t["hasCheckedIn"] = bool(_first(p, "hasCheckedIn", "checkedIn", "isCheckedIn"))
+        active = _first(p, "isActive", "active")
+        t["isActive"] = base["isActive"] if active is None else bool(active)
+        t["qrCode"] = _first(p, "qrCode", "code", "ticketCode") or ""
+        out.append(t)
+    return out
+
+
+async def _mcp_booking_detail(event: dict, b: dict):
+    from mail import xceed_mcp
+    ev_id = event.get(_mcp_event_id_form.get("form") or "uuid") or event.get("uuid")
+    for key in ("id", "uuid", "legacyId"):
+        if not b.get(key):
+            continue
+        try:
+            return await xceed_mcp.tool_json("booking_get", {"eventId": str(ev_id),
+                                                             "bookingId": str(b[key])})
+        except Exception as e:
+            logger.debug("booking_get %s=%s fallita: %s", key, b[key], e)
+    return None
+
+
 async def find_via_mcp(events: list[dict], emails: set[str], codes: set[str],
                        names: set[str]) -> dict:
     terms = [("codice", c) for c in sorted(codes) if len(str(c)) >= 5] + \
@@ -232,8 +285,10 @@ async def find_via_mcp(events: list[dict], emails: set[str], codes: set[str],
         for how, term in terms:
             found = await _mcp_bookings(ev, term)
             if found:
-                return {"event": ev, "tickets": [booking_to_ticket(b) for b in found],
-                        "match": how, "source": "mcp"}
+                tickets = []
+                for b in found:
+                    tickets += booking_tickets(b, await _mcp_booking_detail(ev, b))
+                return {"event": ev, "tickets": tickets, "match": how, "source": "mcp"}
     return {}
 
 
@@ -317,9 +372,40 @@ def summarize(tickets: list[dict]) -> dict:
             amount = amount.get("onlinePrice") or amount.get("amount")
         if amount not in (None, ""):
             price = f"€{amount}" if currency in ("EUR", "") else f"{amount} {currency}"
+    plan = refund_plan(tickets)
     return {"count": len(tickets), "used": len(used), "inactive": len(inactive),
             "holders": holders, "booking_ids": booking_ids, "price": price,
-            "offer": (tickets[0].get("offer") or {}).get("name", "") if tickets else ""}
+            "offer": (tickets[0].get("offer") or {}).get("name", "") if tickets else "",
+            "refund_plan": plan, "to_refund": sum(p["tickets"] for p in plan),
+            "partial": any(not p["full"] for p in plan),
+            "missing_codes": sum(p.get("missing_codes", 0) for p in plan)}
+
+
+def refund_plan(tickets: list[dict]) -> list[dict]:
+    """Cosa rimborsare, prenotazione per prenotazione: solo i biglietti NON usati e validi.
+
+    - nessun biglietto della prenotazione è entrato → rimborso totale della prenotazione;
+    - qualcuno è entrato (o è già rimborsato) → rimborso parziale, biglietto per
+      biglietto, coi codici di quelli non usati: chi è entrato non si rimborsa mai;
+    - tutti entrati → la prenotazione non compare.
+    """
+    by_booking: dict[str, list[dict]] = {}
+    for t in tickets:
+        bid = (t.get("booking") or {}).get("bookingId")
+        if bid:
+            by_booking.setdefault(str(bid), []).append(t)
+    plan = []
+    for bid, ts in sorted(by_booking.items()):
+        todo = [t for t in ts if not t.get("hasCheckedIn") and t.get("isActive") is not False]
+        if not todo:
+            continue
+        if len(todo) == len(ts):
+            plan.append({"booking_id": bid, "full": True, "codes": [], "tickets": len(todo)})
+            continue
+        codes = [str(t["qrCode"]) for t in todo if t.get("qrCode")]
+        plan.append({"booking_id": bid, "full": False, "codes": codes, "tickets": len(todo),
+                     "missing_codes": len(todo) - len(codes)})
+    return plan
 
 
 # --- diagnosi (/debug/refunds?probe=...) -------------------------------------------
