@@ -367,7 +367,7 @@ def first_text(response) -> str:
     return ""
 
 
-from ai.language import language_directive
+from ai.language import language_directive, language_reminder, resolve_language
 
 
 def _strip_markdown(text: str) -> str:
@@ -512,10 +512,12 @@ async def generate_response(
     # reale IG 5/9, domande in inglese sul set di Kobosil con risposte in italiano). Una
     # riga esplicita in CODA al blocco dinamico — cioè subito prima del messaggio — la
     # fa rispettare. Il blocco dinamico non e' cacheato, quindi non tocca la cache.
-    directive = language_directive(
-        language_text if language_text is not None else user_message)
+    lang = resolve_language(language_text if language_text is not None else user_message,
+                            history)
+    directive = language_directive("", lang=lang)
     if directive:
         system[-1]["text"] = system[-1]["text"] + directive
+    reminder = language_reminder(lang)
     history = _sanitize_history(history)
     # Se c'è un'immagine (storia IG a cui l'utente risponde, o foto inviata in chat),
     # la alleghiamo all'ultimo messaggio utente: così il modello la VEDE. La nota
@@ -527,6 +529,11 @@ async def generate_response(
         user_content = [image_block, {"type": "text", "text": note_text}]
     else:
         user_content = user_message
+    if reminder:
+        if isinstance(user_content, list):
+            user_content = [*user_content, {"type": "text", "text": f"[{reminder}]"}]
+        else:
+            user_content = f"{user_content}\n\n[{reminder}]"
     messages = [*history, {"role": "user", "content": user_content}]
     # FIX #3: cache anche il prefisso della conversazione. Mettendo un breakpoint
     # sull'ultimo messaggio della history, i turni successivi della stessa

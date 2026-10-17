@@ -98,13 +98,46 @@ def detect_language(text: str) -> str | None:
     return best
 
 
-def language_directive(text: str) -> str:
+def resolve_language(text: str, history: list[dict] | None = None) -> str | None:
+    """Lingua del messaggio; se è troppo corto per dirlo ("2", "ok", "yes pls"), quella
+    della conversazione — a meno che il messaggio contenga parole italiane.
+
+    Caso reale WhatsApp 16/10: chat in inglese, risposte in inglese, poi un messaggio
+    breve e il bot torna all'italiano di default.
+    """
+    lang = detect_language(text)
+    if lang:
+        return lang
+    if set(_normalize(text or "")) & _MARKERS["italiano"]:
+        return None
+    recent = [m.get("content") for m in (history or [])
+              if m.get("role") == "user" and isinstance(m.get("content"), str)][-3:]
+    return detect_language(" ".join(recent)) if recent else None
+
+
+# Promemoria in coda al messaggio del cliente, nella sua lingua: è l'ultima cosa che il
+# modello legge prima di rispondere. La riga nel prompt di sistema da sola non basta
+# quando in mezzo c'è una cronologia lunga (caso reale 16/10: elenco tavoli, poi la
+# domanda sulle bottiglie in inglese e risposta in italiano copiata dalla KB).
+_REMINDER = {
+    "inglese": "Reply in English only.",
+    "spagnolo": "Responde solo en español.",
+    "francese": "Réponds uniquement en français.",
+    "tedesco": "Antworte nur auf Deutsch.",
+}
+
+
+def language_reminder(lang: str | None) -> str:
+    return _REMINDER.get(lang or "", "")
+
+
+def language_directive(text: str, lang: str | None = None) -> str:
     """Riga da appendere in coda al blocco dinamico, o "" se la lingua non è certa.
 
     Va in fondo al prompt, subito prima del messaggio: è la posizione in cui il modello
     la rispetta davvero, mentre la stessa regola in mezzo alla knowledge base viene persa.
     """
-    lang = detect_language(text)
+    lang = lang or detect_language(text)
     if not lang or lang == "italiano":
         return ""
     return (
