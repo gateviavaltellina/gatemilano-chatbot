@@ -137,13 +137,28 @@ async def refund_action(content: str, ctx: dict, author: str) -> str | None:
                         "dalla dashboard Xceed, poi scrivi `!fatto` qui: il cliente riceve la conferma.")
             if not ctx.get("booking_ids"):
                 return "❌ Nessuna prenotazione Xceed associata: rimborsa da Xceed e poi `!fatto`."
-            done = ctx.setdefault("refunded_ids", [])
-            for bid in ctx["booking_ids"]:
-                if bid in done:          # già rimborsata in un tentativo precedente
-                    continue
-                await xceed_mcp.refund_booking(bid, lang)
-                done.append(bid)
-        await _send(templates.refund_done(lang, ctx.get("evento", "")))
+            plan = ctx.get("refund_plan")
+            if plan is None:
+                # Scheda di prima dei rimborsi parziali: senza il piano si rischierebbe di
+                # rimborsare anche chi è entrato. Le schede verdi erano tutte "non usati".
+                if ctx.get("status") != "ok":
+                    return ("⚠️ Scheda creata prima dei rimborsi parziali: fai `!verifica` e poi "
+                            "`!rimborsa` sulla scheda aggiornata (rimborsa solo i non entrati).")
+                plan = [{"booking_id": b, "full": True, "codes": [], "tickets": 0}
+                        for b in ctx["booking_ids"]]
+            if not plan:
+                return ("❌ Nessun biglietto da rimborsare: risultano tutti usati all'ingresso o "
+                        "già rimborsati. Se è un errore, rimborsa da Xceed e poi `!fatto`.")
+            n = await refunds.execute_plan(plan, lang, ctx.setdefault("refunded_ids", []))
+            partial = bool(ctx.get("refund_partial"))
+            await _send(templates.refund_done(lang, ctx.get("evento", ""), tickets=n, partial=partial))
+            await _close(refunds.LABEL_DONE)
+            what = f"{n} biglietti non usati (parziale)" if partial else "rimborso totale"
+            return f"✅ Rimborsato su Xceed — {what} — e cliente avvisato ({author})."
+        # `!fatto`: rimborsato a mano dalla dashboard, il messaggio segue la scheda.
+        await _send(templates.refund_done(
+            lang, ctx.get("evento", ""), partial=bool(ctx.get("refund_partial")),
+            tickets=sum(p.get("tickets", 0) for p in ctx.get("refund_plan") or [])))
         await _close(refunds.LABEL_DONE)
         return f"✅ Rimborso segnato come fatto e cliente avvisato ({author})."
     except Exception as e:

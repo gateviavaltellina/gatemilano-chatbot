@@ -146,10 +146,23 @@ def assess(a: dict, found: dict, first_request: datetime) -> dict:
         checks.append(("✅" if found["match"] != "nome" else "⚠️",
                        f"trovati {s['count']} biglietti {how}: {ev.get('name')} del {day}"
                        + (f" · {s['offer']} {s['price']}" if s["offer"] else "")))
-        checks.append(("❌", f"{s['used']} biglietti risultano USATI all'ingresso: il cliente è entrato")
-                      if s["used"] else ("✅", "biglietti non usati all'ingresso"))
+        n = s["to_refund"]
+        if not s["used"]:
+            checks.append(("✅", "biglietti non usati all'ingresso"))
+        elif n:
+            # Gruppo diviso alla porta: si rimborsano solo i non entrati (staff 17/10).
+            checks.append(("✅", f"rimborso PARZIALE: {n} biglietti non usati da rimborsare"
+                                 + (f" ({n} × {s['price']})" if s["price"] else "")
+                                 + f"; {s['used']} usati all'ingresso (entrati: esclusi)"))
+        else:
+            checks.append(("❌", f"{s['used']} biglietti risultano USATI all'ingresso: il cliente è entrato"))
         if s["inactive"]:
-            checks.append(("❌", f"{s['inactive']} biglietti non più validi (già rimborsati o annullati?)"))
+            checks.append(("⚠️" if n else "❌",
+                           f"{s['inactive']} biglietti non più validi (già rimborsati o annullati?)"
+                           + (": esclusi" if n else "")))
+        if s["missing_codes"]:
+            checks.append(("⚠️", f"codici di {s['missing_codes']} biglietti non letti da Xceed: il "
+                                 "rimborso parziale va fatto dalla dashboard, poi `!fatto`"))
         deadline = refund_deadline(day)
         checks.append(("✅", f"richiesta nei tempi (scadenza {deadline:%d/%m})")
                       if first_request <= deadline else
@@ -269,11 +282,14 @@ async def _notify(sender: str, msgs: list[dict], a: dict, verdict: dict, found: 
 def _forward_body(sender: str, a: dict, found: dict, note: str = "") -> str:
     s = xt.summarize(found.get("tickets", [])) if found.get("tickets") else {}
     ev = found.get("event") or {}
+    partial = bool(s.get("used") or s.get("partial"))
     lines = [
         "Ciao Bianca,",
         "",
         "ti inoltriamo una richiesta di rimborso per ingresso negato alla porta "
-        "(oltre la finestra di rimborso diretto). Rimborso totale, commissioni incluse.",
+        "(oltre la finestra di rimborso diretto). "
+        + ("Rimborso PARZIALE: solo i biglietti non usati indicati sotto."
+           if partial else "Rimborso totale, commissioni incluse."),
         "",
         f"Cliente: {sender}",
     ]
@@ -281,9 +297,17 @@ def _forward_body(sender: str, a: dict, found: dict, note: str = "") -> str:
         lines.append(f"Evento: {ev.get('name')} del {xt.event_day(ev)}")
     if s.get("booking_ids"):
         lines.append(f"Ordine/i: {', '.join(s['booking_ids'])}")
-    if s.get("count"):
+    if s.get("count") and not partial:
         lines.append(f"Biglietti: {s['count']} ({s.get('offer', '')} {s.get('price', '')}) — "
                      f"non usati all'ingresso")
+    elif s.get("count"):
+        lines.append(f"Biglietti: {s['count']} ({s.get('offer', '')} {s.get('price', '')}), "
+                     f"di cui {s['used']} usati all'ingresso: NON vanno rimborsati")
+        for p in s.get("refund_plan", []):
+            what = ("tutta la prenotazione" if p["full"]
+                    else f"{p['tickets']} biglietti" + (f" (codici {', '.join(p['codes'])})"
+                                                        if p["codes"] else ""))
+            lines.append(f"Da rimborsare — ordine {p['booking_id']}: {what}")
     if a.get("motivazione"):
         lines.append(f"Motivo: {a['motivazione'].strip()}")
     if note:
@@ -329,19 +353,41 @@ async def forward_to_xceed(sender: str, msgs: list[dict], a: dict, found: dict,
     await _label_all(msgs, LABEL_FORWARDED)
 
 
+async def execute_plan(plan: list[dict], lang: str, done: list[str]) -> int:
+    """Esegue il piano di rimborso su Xceed; `done` tiene le chiavi già rimborsate.
+
+    Ritorna quanti biglietti risultano rimborsati in tutto. Se un rimborso parziale
+    non ha i codici dei biglietti si ferma PRIMA di toccare Xceed.
+    """
+    from mail import xceed_mcp
+    for p in plan:
+        if not p["full"] and (p.get("missing_codes") or not p["codes"]):
+            raise RuntimeError(f"codici dei biglietti dell'ordine {p['booking_id']} non "
+                               "disponibili: rimborso parziale da fare dalla dashboard Xceed")
+    for p in plan:
+        for code in ([""] if p["full"] else p["codes"]):
+            key = f"{p['booking_id']}:{code}" if code else p["booking_id"]
+            if key in done:          # già rimborsato in un tentativo precedente
+                continue
+            await xceed_mcp.refund_booking(p["booking_id"], lang, code=code)
+            done.append(key)
+    return sum(p["tickets"] for p in plan)
+
+
 async def _auto_refund(latest: dict, msgs: list[dict], found: dict, lang: str) -> bool:
     """Rimborso senza intervento umano (REFUND_AUTO_EXECUTE). False se non possibile."""
     from mail import xceed_mcp
-    booking_ids = xt.summarize(found.get("tickets", [])).get("booking_ids", [])
-    if not (xceed_mcp.configured() and settings.xceed_mcp_refund_tool and booking_ids):
+    s = xt.summarize(found.get("tickets", []))
+    plan = s.get("refund_plan", [])
+    if not (xceed_mcp.configured() and settings.xceed_mcp_refund_tool and plan):
         return False
     try:
-        for bid in booking_ids:
-            await xceed_mcp.refund_booking(bid, lang)
+        n = await execute_plan(plan, lang, [])
     except Exception as e:
         logger.error("Rimborso automatico fallito: %s", e)
         return False
-    await _reply(latest, templates.refund_done(lang, (found.get("event") or {}).get("name", "")))
+    await _reply(latest, templates.refund_done(lang, (found.get("event") or {}).get("name", ""),
+                                               tickets=n, partial=bool(s["used"] or s["partial"])))
     await _label_all(msgs, LABEL_DONE)
     return True
 

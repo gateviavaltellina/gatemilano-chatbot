@@ -277,7 +277,7 @@ async def notify_email(msg: dict, verdict: dict, venue: str, reply: str, status:
 _REFUND_STATUS = {
     # stato: (colore, titolo, comandi)
     "ok": (0x16A34A, "✅ Requisiti OK — da rimborsare",
-           "`!rimborsa` rimborsa su Xceed · `!fatto` se l'hai già rimborsato da Xceed · "
+           "`!rimborsa` rimborsa su Xceed (solo i biglietti non usati) · `!fatto` se l'hai già rimborsato da Xceed · "
            "`!rifiuta <nota>` · `!inoltra` (dopo lunedì mattina) · `!r <testo>` · `!verifica`"),
     "da_verificare": (0xF59E0B, "⚠️ Richiesta completa, ma qualcosa non torna",
                       "`!rimborsa` · `!inoltra` · `!fatto` · `!rifiuta <nota>` · `!r <testo>` · "
@@ -332,6 +332,9 @@ async def notify_refund(sender: str, msgs: list[dict], analysis: dict, verdict: 
         "lingua": analysis.get("lingua", "it"),
         "evento": (found.get("event") or {}).get("name", "") or analysis.get("evento", ""),
         "booking_ids": summary.get("booking_ids", []),
+        # Cosa rimborsa `!rimborsa`: solo i biglietti non usati (anche parziale).
+        "refund_plan": summary.get("refund_plan", []),
+        "refund_partial": bool(summary.get("used") or summary.get("partial")),
         "gmail_ids": [m.get("id") for m in msgs if m.get("id")],
         "user_msg": _cut(text),
         "bot_reply": "",
