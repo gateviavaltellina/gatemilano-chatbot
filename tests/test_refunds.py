@@ -810,3 +810,60 @@ def test_inoltro_parziale_indica_i_codici():
     tickets = [_ticket(qr="A", checked=True), _ticket(qr="C")]
     body = refunds._forward_body("c@x.it", _a(), _found(*tickets))
     assert "PARZIALE" in body and "codici C" in body and "NON vanno rimborsati" in body
+
+
+# --- biglietti "non trovati" che c'erano (caso reale 24/10, biglietti backstage) ----------
+
+async def test_mcp_trova_per_cognome_se_il_nome_intero_non_basta(monkeypatch):
+    from mail import xceed_mcp
+
+    async def _tool(name, args):
+        if name != "bookings_search":
+            raise RuntimeError("no detail")
+        if args["search"] == "arafeh":
+            return {"data": [
+                {"legacyId": 9, "buyer": {"firstName": "Basel", "lastName": "Arafeh"}},
+                {"legacyId": 8, "buyer": {"firstName": "Omar", "lastName": "Arafeh"}}]}
+        return {"data": []}
+
+    monkeypatch.setattr(xceed_mcp, "tool_json", _tool)
+    out = await xt.find_via_mcp([_EVENT], {"b@yahoo.com"}, set(), {"Basel Arafeh"})
+    assert out["match"] == "nome"
+    assert [t["booking"]["bookingId"] for t in out["tickets"]] == [9]
+
+
+def test_partner_nome_in_ordine_diverso():
+    t = _ticket(first="Basel", last="Arafeh")
+    found, how = xt.match_tickets([t], set(), set(), {"ARAFEH Basel"})
+    assert how == "nome" and found == [t]
+
+
+async def test_errori_della_ricerca_non_diventano_non_trovati(monkeypatch):
+    from mail import xceed_mcp
+
+    async def _tool(name, args):
+        raise RuntimeError("timeout")
+
+    async def _events(days):
+        return [_EVENT]
+
+    async def _tickets(ev):
+        raise RuntimeError("502 Bad Gateway")
+
+    monkeypatch.setattr(xt.settings, "xceed_api_key", "k")
+    monkeypatch.setattr(xceed_mcp, "configured", lambda: True)
+    monkeypatch.setattr(xceed_mcp, "tool_json", _tool)
+    monkeypatch.setattr(xt, "recent_events", _events)
+    monkeypatch.setattr(xt, "event_tickets", _tickets)
+    found = await xt.find_request_tickets({"b@yahoo.com"}, set(), {"Basel Arafeh"})
+    assert found["errors"] and not found.get("tickets")
+    v = refunds.assess(_a(), found, _IN_TIME)
+    assert v["status"] == "da_verificare"
+    assert any(i == "⚠️" and "errori" in t for i, t in v["checks"])
+    assert not any("NON trovati" in t for _, t in v["checks"])
+
+
+def test_scheda_dice_cosa_ha_cercato():
+    from notifications import discord as d
+    out = d._searched("b@yahoo.com", {"codici": ["123"], "nomi": ["Basel Arafeh"], "data_evento": "2026-10-23"})
+    assert "b@yahoo.com" in out and "Basel Arafeh" in out and "2026-10-23" in out
