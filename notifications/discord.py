@@ -316,6 +316,10 @@ async def notify_refund(sender: str, msgs: list[dict], analysis: dict, verdict: 
         fields.append({"name": "📎 Mancano",
                        "value": ", ".join(_MISSING_LABEL.get(m, m) for m in verdict["missing"]),
                        "inline": False})
+    searched = _searched(sender, analysis)
+    if searched and not (found or {}).get("tickets") and verdict.get("checks"):
+        # Biglietti non trovati: cosa ha cercato il bot, per capire subito perché.
+        fields.append({"name": "🔍 Cercato su Xceed", "value": _cut(searched, 512), "inline": False})
     if verdict.get("checks"):
         fields.append({"name": "🔎 Verifica",
                        "value": _cut("\n".join(f"{i} {t}" for i, t in verdict["checks"])),
@@ -343,6 +347,16 @@ async def notify_refund(sender: str, msgs: list[dict], analysis: dict, verdict: 
                  ("from_email", "subject", "message_id_header", "references", "thread_id")},
     }
     await _post_and_register(url.split("?")[0] + "?wait=true", payload, f"refund:{sender}", context)
+
+
+def _searched(sender: str, analysis: dict) -> str:
+    if not analysis:
+        return ""
+    emails = sorted({sender, *analysis.get("email_acquisto", [])} - {""})
+    rows = [("email", emails), ("codici", analysis.get("codici", [])),
+            ("nomi", analysis.get("nomi", [])),
+            ("serata", [v for v in (analysis.get("evento"), analysis.get("data_evento")) if v])]
+    return "\n".join(f"{k}: {', '.join(map(str, v)) if v else '—'}" for k, v in rows)
 
 
 def xt_summary(found: dict) -> dict:

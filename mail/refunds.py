@@ -136,6 +136,11 @@ def assess(a: dict, found: dict, first_request: datetime) -> dict:
                                      ("✅", "prova d'acquisto e biglietti allegati")]
     if found.get("error"):
         checks.append(("⚠️", f"verifica Xceed non riuscita: {found['error']}"))
+    elif not found.get("tickets") and found.get("errors"):
+        # La ricerca non è andata a buon fine: "non trovati" non vorrebbe dire niente.
+        checks.append(("⚠️", "biglietti non trovati, ma la ricerca Xceed ha dato errori: "
+                             + "; ".join(found["errors"][:3])
+                             + " — riprova con `!verifica` o cerca a mano"))
     elif not found.get("tickets"):
         checks.append(("❌", "biglietti NON trovati su Xceed (email, codici e nomi non corrispondono)"))
     else:

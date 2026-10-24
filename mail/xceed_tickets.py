@@ -132,7 +132,7 @@ def match_tickets(tickets: list[dict], emails: set[str], codes: set[str],
     by_email = [t for t in tickets if _ticket_emails(t) & emails]
     if by_email:
         return _whole_bookings(tickets, by_email), "email"
-    by_name = [t for t in tickets if _ticket_names(t) & names]
+    by_name = [t for t in tickets if _ticket_names(t) & names or _same_person(t, names)]
     if by_name:
         return by_name, "nome"
     return [], ""
@@ -204,11 +204,12 @@ def booking_to_ticket(b: dict) -> dict:
     }
 
 
-async def _mcp_bookings(event: dict, term: str) -> list[dict]:
+async def _mcp_bookings(event: dict, term: str, errors: list[str] | None = None) -> list[dict]:
     from mail import xceed_mcp
     forms = [("uuid", event.get("uuid")), ("id", event.get("id"))]
     known = _mcp_event_id_form.get("form")
     forms.sort(key=lambda f: f[0] != known)
+    failures = []
     for form, ev_id in forms:
         if not ev_id:
             continue
@@ -217,10 +218,24 @@ async def _mcp_bookings(event: dict, term: str) -> list[dict]:
                 "eventId": str(ev_id), "search": term, "limit": 10})
         except Exception as e:
             logger.debug("bookings_search %s=%s fallita: %s", form, ev_id, e)
+            failures.append(str(e))
             continue
         _mcp_event_id_form["form"] = form
         return _as_list(data)
+    if failures and errors is not None:
+        # Prima un errore qui diventava "biglietti non trovati" (caso reale 24/10).
+        errors.append(f"MCP {event.get('name', '')}: {failures[0][:100]}")
     return []
+
+
+def _name_tokens(name: str) -> list[str]:
+    return [t for t in _norm(name).split(" ") if len(t) >= 3]
+
+
+def _same_person(t: dict, names: set[str]) -> bool:
+    """Il biglietto è di una delle persone cercate? (tutte le parti del nome, in qualsiasi ordine)"""
+    holder = set(_norm(f"{t.get('firstName', '')} {t.get('lastName', '')}").split(" "))
+    return any(set(_name_tokens(n)) <= holder for n in names if _name_tokens(n))
 
 
 def _passes(detail) -> list[dict]:
@@ -277,18 +292,30 @@ async def _mcp_booking_detail(event: dict, b: dict):
 
 
 async def find_via_mcp(events: list[dict], emails: set[str], codes: set[str],
-                       names: set[str]) -> dict:
+                       names: set[str], errors: list[str] | None = None) -> dict:
     terms = [("codice", c) for c in sorted(codes) if len(str(c)) >= 5] + \
             [("email", e) for e in sorted(emails) if "@" in e] + \
             [("nome", n) for n in sorted(names) if len(n) >= 5]
+    # La ricerca di Xceed confronta un campo alla volta: "Nome Cognome" intero spesso
+    # non trova nulla. Si cerca anche per cognome (la parte più lunga) e si tiene solo
+    # chi ha tutte le parti del nome.
+    surnames = sorted({max(_name_tokens(n), key=len) for n in names if len(_name_tokens(n)) >= 2})
     for ev in events:
         for how, term in terms:
-            found = await _mcp_bookings(ev, term)
+            found = await _mcp_bookings(ev, term, errors)
             if found:
                 tickets = []
                 for b in found:
                     tickets += booking_tickets(b, await _mcp_booking_detail(ev, b))
                 return {"event": ev, "tickets": tickets, "match": how, "source": "mcp"}
+        for term in surnames:
+            found = [b for b in await _mcp_bookings(ev, term, errors)
+                     if _same_person(booking_to_ticket(b), names)]
+            if found:
+                tickets = []
+                for b in found:
+                    tickets += booking_tickets(b, await _mcp_booking_detail(ev, b))
+                return {"event": ev, "tickets": tickets, "match": "nome", "source": "mcp"}
     return {}
 
 
@@ -324,16 +351,17 @@ async def find_request_tickets(emails: set[str], codes: set[str], names: set[str
     events.sort(key=lambda e: _event_rank(e, date_hint, event_id_hint, name_hint))
 
     from mail import xceed_mcp
+    errors: list[str] = []
+    via_mcp: dict = {}
     if xceed_mcp.configured():
         try:
-            via_mcp = await find_via_mcp(events, emails, codes, names)
+            via_mcp = await find_via_mcp(events, emails, codes, names, errors)
             if via_mcp and via_mcp["match"] != "nome":
                 return via_mcp
         except Exception as e:
             logger.warning("Ricerca prenotazioni via MCP fallita: %s", e)
+            errors.append(f"MCP: {str(e)[:100]}")
             via_mcp = {}
-    else:
-        via_mcp = {}
 
     weak: dict = via_mcp
     for ev in events:
@@ -341,13 +369,18 @@ async def find_request_tickets(emails: set[str], codes: set[str], names: set[str
             tickets = await event_tickets(ev)
         except Exception as e:
             logger.warning("Biglietti Xceed non leggibili per %s: %s", ev.get("name"), e)
+            errors.append(f"Partner {ev.get('name', '')}: {str(e)[:100]}")
             continue
         found, how = match_tickets(tickets, emails, codes, names)
         if found and how != "nome":
             return {"event": ev, "tickets": found, "match": how}
         if found and not weak:
             weak = {"event": ev, "tickets": found, "match": how}
-    return weak
+    if weak:
+        return weak
+    # Non trovati: si dice allo staff se la ricerca è stata completa o se qualcosa
+    # ha dato errore (allora "non trovati" non vuol dire che non esistono).
+    return {"errors": errors[:5], "events_checked": len(events)} if errors else {}
 
 
 def event_day(event: dict) -> str:
