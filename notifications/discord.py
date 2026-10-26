@@ -283,7 +283,7 @@ _REFUND_STATUS = {
                       "`!rimborsa` · `!inoltra` · `!fatto` · `!rifiuta <nota>` · `!r <testo>` · "
                       "`!verifica`"),
     "incompleta": (0x64748B, "📎 Incompleta — al cliente è stato scritto cosa manca",
-                   "Aspetta la sua risposta, oppure `!r <testo>`."),
+                   "Aspetta la sua risposta · `!manca` gli scrive cosa manca · `!r <testo>`"),
     "non_rimborsabile": (0xDC2626, "❌ Fuori policy — non è venuto per motivi propri",
                          "`!rifiuta` invia la risposta standard · `!r <testo>`"),
     "inoltrata": (0x2563EB, "📨 Inoltrata a Xceed — cliente avvisato (14 giorni)",
@@ -336,6 +336,7 @@ async def notify_refund(sender: str, msgs: list[dict], analysis: dict, verdict: 
         "lingua": analysis.get("lingua", "it"),
         "evento": (found.get("event") or {}).get("name", "") or analysis.get("evento", ""),
         "booking_ids": summary.get("booking_ids", []),
+        "missing": verdict.get("missing", []),
         # Cosa rimborsa `!rimborsa`: solo i biglietti non usati (anche parziale).
         "refund_plan": summary.get("refund_plan", []),
         "refund_partial": bool(summary.get("used") or summary.get("partial")),

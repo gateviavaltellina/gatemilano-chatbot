@@ -187,6 +187,21 @@ def past_xceed_cutoff(found: dict, now: datetime | None = None) -> bool:
     return now > xceed_cutoff(xt.event_day(found["event"]))
 
 
+def proposal(verdict: dict, found: dict, now: datetime | None = None) -> str:
+    """Il prossimo passo suggerito allo staff, col comando da dare sulla scheda."""
+    status = verdict.get("status")
+    if status == "incompleta":
+        return "Proposta: `!manca` — gli scrive cosa manca ancora."
+    if status == "non_rimborsabile":
+        return "Proposta: `!rifiuta` — fuori policy."
+    if status == "ok" and past_xceed_cutoff(found, now):
+        return "Proposta: `!inoltra` — requisiti ok, ma la finestra di rimborso Xceed è chiusa."
+    if status == "ok":
+        return "Proposta: `!rimborsa` — requisiti ok, rimborsabile su Xceed."
+    return ("Proposta: guarda i punti ⚠️/❌ qui sotto, poi `!rimborsa`, `!inoltra` o "
+            "`!rifiuta <nota>`.")
+
+
 # --- Gmail e modello ---------------------------------------------------------------
 
 def _query_new() -> str:
@@ -422,12 +437,15 @@ async def process_sender(sender: str, new_msgs: list[dict]) -> str:
             await _notify(sender, new_msgs, {}, {"status": "nota", "missing": [], "checks": []}, {},
                           note=f"Nuovo messaggio su una richiesta {what}.")
             return f"nota ({what})"
+    # Lo staff ha già scritto a mano in queste conversazioni: il bot non scrive più al
+    # cliente, ma analizza e verifica comunque e propone la soluzione sulla scheda (caso
+    # reale 25/10: rimandato a mano da info@ a rimborsi@, la richiesta completa era
+    # rimasta senza scheda).
+    staff_involved = False
     for tid in {m["thread_id"] for m in msgs}:
         if await gm.thread_staff_replied(tid, LABEL_BOT_SENT):
-            await _label_all(new_msgs, LABEL_SEEN)
-            await _notify(sender, new_msgs, {}, {"status": "nota", "missing": [], "checks": []}, {},
-                          note="Lo staff ha già risposto a mano: il bot non interviene.")
-            return "nota (staff)"
+            staff_involved = True
+            break
 
     a = await analyze(msgs)
     if not a:
@@ -445,6 +463,13 @@ async def process_sender(sender: str, new_msgs: list[dict]) -> str:
     first = datetime.fromtimestamp(msgs[0].get("date_ms", 0) / 1000, _ROME)
     verdict = assess(a, found, first)
     lang = a.get("lingua", "it")
+
+    if staff_involved:
+        await _label_all(new_msgs, LABEL_SEEN)
+        await _notify(sender, msgs, a, verdict, found,
+                      note="Avete già risposto a mano in questa conversazione: il bot non ha "
+                           "scritto al cliente. " + proposal(verdict, found))
+        return "proposta (staff)"
 
     if verdict["status"] == "ok" and past_xceed_cutoff(found):
         # Oltre la finestra Xceed: si inoltra, come faceva lo staff a mano.
@@ -504,7 +529,8 @@ async def recheck(sender: str, forward_old: bool = False) -> str:
                       note=f"Richiesta arretrata: inoltrata a {settings.refund_xceed_contact}, "
                            "cliente avvisato (14 giorni).")
         return "inoltrata"
-    await _notify(sender, msgs, a, verdict, found, note="Verifica rifatta su richiesta dello staff.")
+    await _notify(sender, msgs, a, verdict, found,
+                  note="Verifica rifatta su richiesta dello staff. " + proposal(verdict, found))
     return verdict["status"]
 
 
