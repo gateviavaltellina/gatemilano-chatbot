@@ -277,20 +277,45 @@ async def test_staff_ha_risposto_a_mano_il_bot_propone_senza_scrivere(flow, monk
     assert status == "ok" and "`!rimborsa`" in note and "a mano" in note
 
 
-async def test_staff_ha_risposto_oltre_finestra_propone_inoltra(flow, monkeypatch):
+async def test_staff_ha_risposto_requisiti_ok_oltre_finestra_inoltra_lo_stesso(flow, monkeypatch):
+    """Staff 26/10: se rispecchia tutti i requisiti si inoltra in automatico anche così."""
     flow["staff"] = True
+    inviate = []
 
     async def _an(msgs):
         return _a()
 
     async def _find(*a, **k):
         return _found(_ticket())
+
+    async def _new(to, subject, body, attachments=None):
+        inviate.append(to)
+
+    async def _no(sender):
+        return False
     monkeypatch.setattr(refunds, "analyze", _an)
     monkeypatch.setattr(xt, "find_request_tickets", _find)
     monkeypatch.setattr(refunds, "past_xceed_cutoff", lambda found, now=None: True)
-    await refunds.process_sender("cliente@example.com", [_msg()])
+    monkeypatch.setattr(gm, "send_new", _new)
+    monkeypatch.setattr(refunds, "already_forwarded", _no)
+    assert (await refunds.process_sender("cliente@example.com", [_msg()])) == "inoltrata"
+    assert inviate == ["bianca@xceed.me"]
+    assert len(flow["replies"]) == 1 and "14 giorni" in flow["replies"][0][0]
+
+
+async def test_staff_ha_risposto_qualcosa_non_torna_non_inoltra(flow, monkeypatch):
+    flow["staff"] = True
+
+    async def _an(msgs):
+        return _a()
+
+    async def _find(*a, **k):
+        return _found(_ticket(checked=True))
+    monkeypatch.setattr(refunds, "analyze", _an)
+    monkeypatch.setattr(xt, "find_request_tickets", _find)
+    monkeypatch.setattr(refunds, "past_xceed_cutoff", lambda found, now=None: True)
+    assert (await refunds.process_sender("cliente@example.com", [_msg()])) == "proposta (staff)"
     assert flow["replies"] == []
-    assert "`!inoltra`" in flow["notes"][-1][1]
 
 
 async def test_staff_ha_risposto_incompleta_propone_manca(flow, monkeypatch):
