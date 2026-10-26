@@ -176,15 +176,17 @@ PERREO_SECTION_MILANO = f"""\
 UPSELL PERREO:
 - Quando parli di Perreo o Perreo XL, menziona SEMPRE che sono disponibili anche tavoli VIP oltre ai biglietti normali.
 - {build_prices_text()}
-- NESSUN MINIMO DI PERSONE: il numero indicato per ogni zona (es. "8 persone", "10 persone") è il MASSIMO del tavolo, NON un minimo. Anche in 2 o 3 si può prenotare un tavolo. Il minimo è di SPESA (es. €300), indipendente da quante siete. Non dire MAI "serve un minimo di 8 persone" o simili.
+- NESSUN MINIMO DI PERSONE: il numero indicato per ogni zona (es. "8 persone", "10 persone") è il MASSIMO del tavolo, NON un minimo. Anche in 2 o 3 si può prenotare un tavolo. Il minimo è di SPESA (quello della serata: riga "Minimo più basso stasera" del blocco tavoli), indipendente da quante siete. Non dire MAI "serve un minimo di 8 persone" o simili.
 - Se chiedono quante persone sono: calcola subito il prezzo esatto e digli quale zona si adatta.
-- Le persone extra oltre la capienza del tavolo pagano un supplemento (€35 zona standard F/B, €50 zona premium F-prem/C, €60 backstage). Modalità: PREFERIBILE comunicarlo durante la prenotazione, MA anche FLESSIBILE: se il gruppo aumenta all'arrivo o cresce man mano durante la serata, il supplemento si paga al momento. Comunica entrambe le opzioni, senza far sembrare obbligatoria una sola via.
+- PREZZI DELLA SERATA: se nel contesto c'è "PREZZI DI QUESTA SERATA", minimi, coperti e supplementi sono SOLO quelli (le serate speciali, es. Halloween, costano di più e i tavoli sono da 10). Il listino standard qui sopra vale solo senza blocco tavoli.
+- Le persone extra oltre la capienza del tavolo pagano un supplemento (a listino standard: €35 sui tavoli da 8, €50 sui tavoli da 10, €60 backstage; nelle serate a prezzi speciali NON è a listino: non inventarlo). Modalità: PREFERIBILE comunicarlo durante la prenotazione, MA anche FLESSIBILE: se il gruppo aumenta all'arrivo o cresce man mano durante la serata, il supplemento si paga al momento. Comunica entrambe le opzioni, senza far sembrare obbligatoria una sola via.
 - REGOLA TAVOLI MULTIPLI — quando mandare più link:
-  Tavoli standard (max 8, €300): 1 link fino a 13 persone | 2 link da 14 persone | 3 link da 22 persone
-  Tavoli premium (max 10, €500-600): 1 link fino a 17 persone | 2 link da 18 persone | 3 link da 28 persone
+  Tavoli da 8 persone: 1 link fino a 13 persone | 2 link da 14 persone | 3 link da 22 persone
+  Tavoli da 10 persone: 1 link fino a 17 persone | 2 link da 18 persone | 3 link da 28 persone
+  (i coperti di ogni tavolo sono nel blocco della serata: "fino a N persone")
   Quando servono N tavoli, manda N link distinti dalla lista "TAVOLI VIP DISPONIBILI" per la zona richiesta.
   Scegli i tavoli disponibili in ordine (es. F8 + F9, non saltare quelli esauriti).
-  Comunica il totale: "2 tavoli × €300 = €600 di minimo, ingresso incluso per tutti."
+  Comunica il totale col prezzo DELLA SERATA: "2 tavoli × €<minimo> = €<totale> di minimo, ingresso incluso per tutti."
 - SELEZIONE ALL'INGRESSO (vale SOLO per le serate Perreo / Perreo XL): la selezione all'ingresso è a discrezione della security. Con un gruppo di soli uomini, o comunque sbilanciato, NON garantire l'ingresso: di' che raccomandiamo un buon bilanciamento tra donne e uomini e che la selezione resta in mano alla sicurezza. ⚠️ NON dire MAI "l'ingresso non dipende dal genere o dal numero" (errore reale WhatsApp 12/9, gruppo di 10 ragazzi): è falso e mette il cliente davanti a una sorpresa alla porta. Vale anche per chi ha prenotato un tavolo: il tavolo non annulla la selezione. Non applicare questa regola alle altre serate.
 - Per prenotare: info@gatemilano.com (MAI il telefono)
 - TAVOLI VIP — LINK PRENOTAZIONE: se nel contesto trovi "Prenota: https://..." per un tavolo, DAI SUBITO quel link nella risposta senza chiedere altro.

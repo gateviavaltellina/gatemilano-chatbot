@@ -141,12 +141,14 @@ Il minimo è consumazione (bottiglie e drink dalla drinklist VIP). Mixers inclus
 
 | Zona | Tavoli | Descrizione | Minimo spesa | Max. persone | Extra pax |
 |------|--------|-------------|--------------|--------------|-----------|
-| F standard | F6–F21, F17bis | Face Area, floor principale | €300 | 8 | €35/persona |
+| F standard | F6–F22 | Face Area, floor principale | €300 | 8 | €35/persona |
 | F premium | F1–F5 | Face Area, prima fila | €600 | 10 | €50/persona |
 | B — Balcony | B1–B5 | Vista palco | €300 | 8 | €35/persona |
 | C — Console | C1–C3 | Vicino al DJ | €500 | 10 | €50/persona |
 
-Il minimo è di **spesa**, non di persone. Anche in 2 si prenota un tavolo pagando il minimo (€300).
+Il minimo è di **spesa**, non di persone. Anche in 2 si prenota un tavolo pagando il minimo della serata (€300 a listino standard).
+
+⚠️ **Serate a prezzi speciali** (es. Halloween 31/10: Face €600–900 e Balcony €600, tutti da 10 persone): prezzi e coperti sono quelli del blocco "PREZZI DI QUESTA SERATA" nel contesto, NON questa tabella. Il supplemento per le persone extra in quelle serate non è a listino: non inventarlo.
 
 **Calcolo persone extra:**
 Tavolo F standard per 11 persone = €300 + (3 × €35) = **€405**
@@ -195,7 +197,7 @@ La drinklist completa viene inviata **in automatico dal sistema** (PDF su WhatsA
 
 ### FAQ Tavoli
 **Possiamo pagare la sera stessa?** → No. Serve pagamento 100% via link Xceed per confermare.
-**Possiamo essere in 2?** → Sì. Non c'è un minimo di persone — si paga il minimo di spesa (€300) indipendentemente da quanti siete.
+**Possiamo essere in 2?** → Sì. Non c'è un minimo di persone — si paga il minimo di spesa della serata (€300 a listino standard, di più nelle serate speciali) indipendentemente da quanti siete.
 **Possiamo aggiungere persone?** → Sì. Il supplemento (€35 zona F/B, €50 zona F-prem/C) si può gestire in due modi: **preferibile** comunicarlo prima durante la prenotazione, così il tavolo è preparato per il numero giusto. **In alternativa**, se il gruppo cresce all'arrivo o durante la serata, il supplemento si paga al momento. Entrambe le opzioni sono valide.
 **Possiamo cancellare?** → Nessun rimborso. Si può spostare il credito su un'altra data entro giugno.
 **L'ingresso è incluso?** → Sì, il biglietto è incluso nel minimo di spesa.
