@@ -62,3 +62,31 @@ async def test_all_sold_is_soldout():
     _C._payload = {"tables": [_t("B1", "venduto"), _t("B2", "occupato")]}
     out = await vt.get_vip_tables_via_site("EVENTO", "2026-10-16")
     assert "tutti esauriti" in out
+
+
+# --- prezzi della serata (Halloween 31/10: tutto più caro e tavoli da 10) -----------------
+
+def _tz(zona, cod, prezzo, cop, stato="libero"):
+    return {"codice": cod, "zona": zona, "prezzo": prezzo, "coperti": cop, "stato": stato,
+            "checkoutUrl": f"https://booking-plugin.xceed.me/x/{cod}"}
+
+
+async def test_serata_speciale_prezzi_e_niente_listino():
+    _C._payload = {"tables": [_tz("VIP FACE", "F1", 900, 10), _tz("VIP FACE", "F10", 600, 10),
+                              _tz("VIP FACE", "F9", 600, 10), _tz("VIP BALCONY", "B3", 600, 10),
+                              _tz("VIP FACE", "F6", 600, 10, "venduto")]}
+    out = await vt.get_vip_tables_via_site("PERREO XL", "2026-10-31")
+    assert "PREZZI DI QUESTA SERATA" in out
+    assert "VIP FACE €600, fino a 10 persone, persona extra: supplemento NON a listino — F9, F10" in out
+    assert "Minimo più basso stasera: €600" in out
+    assert "PREZZI SPECIALI" in out
+
+
+async def test_serata_standard_supplementi_a_listino():
+    _C._payload = {"tables": [_tz("VIP FACE", "F1", 600, 10), _tz("VIP FACE", "F6", 300, 8),
+                              _tz("VIP BALCONY", "B1", 300, 8)]}
+    out = await vt.get_vip_tables_via_site("PERREO XL", "2026-11-07")
+    assert "VIP FACE €300, fino a 8 persone, persona extra €35 — F6" in out
+    assert "VIP FACE €600, fino a 10 persone, persona extra €50 — F1" in out
+    assert "Minimo più basso stasera: €300" in out
+    assert "PREZZI SPECIALI" not in out

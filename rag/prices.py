@@ -2,7 +2,7 @@
 
 PERREO_TABLES = {
     "f_standard": {
-        "label": "VIP Face standard (F6-F21)",
+        "label": "VIP Face standard (F6-F22)",
         "min_spend": 300,
         "max_people": 8,
         "extra_per_person": 35,

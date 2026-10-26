@@ -229,7 +229,7 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
     else:
         header = f"TAVOLI VIP: tutti esauriti per {event_name} ({date_iso})."
 
-    lines = [header]
+    lines = [header, *_milano_price_summary(available or closed)]
     for t in available:
         url = (t.get("checkoutUrl") or "").strip()
         if url:
@@ -250,6 +250,47 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
     text = f"{map_line}\n" + "\n".join(lines)
     _site_cache[key] = {"text": text, "ts": time.time()}
     return text
+
+
+# Listino standard dei tavoli Milano: (minimo, coperti) → supplemento per persona extra.
+# Serate speciali (es. Halloween 31/10: Face €600–900 da 10, Balcony €600 da 10) hanno
+# prezzi diversi: il bot citava il listino ("anche in 2 pagate €300", "max 8", "+€35").
+_MILANO_STANDARD = {(300, 8): 35, (500, 10): 50, (600, 10): 50}
+
+
+def _codes(tables: list) -> str:
+    codes = sorted((t.get("codice") or "" for t in tables),
+                   key=lambda c: (re.sub(r"\d", "", c), int(re.sub(r"\D", "", c) or 0)))
+    return ", ".join(c for c in codes if c)
+
+
+def _milano_price_summary(tables: list) -> list[str]:
+    """Prezzi e coperti DI QUESTA SERATA per zona, in testa al blocco, con il supplemento
+    solo se la combinazione è quella del listino standard."""
+    if not tables:
+        return []
+    groups: dict[tuple, list] = {}
+    for t in tables:
+        groups.setdefault((t.get("zona") or "VIP", t.get("prezzo"), t.get("coperti")), []).append(t)
+    lines = ["PREZZI DI QUESTA SERATA (minimo di spesa, ingresso incluso — valgono SOLO questi):"]
+    # Basta una zona fuori listino perché la serata sia "speciale": allora nessun
+    # supplemento è a listino, nemmeno dove la coppia prezzo/coperti coincide.
+    special = any((prezzo, cop) not in _MILANO_STANDARD for _, prezzo, cop in groups)
+    for (zona, prezzo, cop), ts in sorted(groups.items(), key=lambda g: (g[0][0], -(g[0][1] or 0))):
+        extra = None if special else _MILANO_STANDARD.get((prezzo, cop))
+        cop_str = f", fino a {cop} persone" if cop else ""
+        extra_str = (f", persona extra €{extra}" if extra
+                     else ", persona extra: supplemento NON a listino")
+        lines.append(f"  · {zona} €{prezzo}{cop_str}{extra_str} — {_codes(ts)}")
+    prices = sorted({t.get("prezzo") for t in tables if t.get("prezzo") is not None})
+    if prices:
+        lines.append(f"  Minimo più basso stasera: €{prices[0]} (anche in 2 si paga questo).")
+    if special:
+        lines.append(
+            "  ⚠️ Serata a PREZZI SPECIALI: NON usare il listino standard (€300, max 8, "
+            "€35/€50). Per le persone extra di' che c'è un supplemento a persona e che "
+            "l'importo lo conferma lo staff (info@gatemilano.com): NON inventarlo.")
+    return lines
 
 
 async def get_vip_tables_sardinia(sanity_id: str) -> str:
