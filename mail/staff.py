@@ -84,12 +84,13 @@ async def staff_action(content: str, ctx: dict, author: str) -> str | None:
 # --- rimborsi -----------------------------------------------------------------------
 
 async def refund_action(content: str, ctx: dict, author: str) -> str | None:
-    """Comandi sulle schede rimborso: !rimborsa, !fatto, !rifiuta [nota], !r <testo>."""
+    """Comandi sulle schede rimborso: !rimborsa, !fatto, !rifiuta [nota], !inoltra, !manca,
+    !verifica, !r <testo>."""
     from mail import refunds, templates, xceed_mcp
     from config import settings
 
     cmd = content.split(" ", 1)[0]
-    if cmd not in ("!rimborsa", "!fatto", "!rifiuta", "!r", "!verifica", "!inoltra"):
+    if cmd not in ("!rimborsa", "!fatto", "!rifiuta", "!r", "!verifica", "!inoltra", "!manca"):
         return None
     if cmd == "!r" and not content[3:].strip():
         return None
@@ -123,6 +124,12 @@ async def refund_action(content: str, ctx: dict, author: str) -> str | None:
         if cmd == "!r":
             await _send(content[3:].strip())
             return f"✅ Risposta di {author} inviata a {mail['from_email']}."
+        if cmd == "!manca":
+            # Non chiude la richiesta: si aspetta che il cliente mandi il resto.
+            if not ctx.get("missing"):
+                return "❌ Secondo la verifica non manca niente: usa `!r <testo>` se serve."
+            await _send(templates.refund_missing(lang, ctx["missing"]))
+            return f"✅ Scritto a {mail['from_email']} cosa manca ({author})."
         if cmd == "!inoltra":
             esito = await refunds.forward_by_staff(mail["from_email"], content[len("!inoltra"):].strip())
             ctx["sent_by"] = author

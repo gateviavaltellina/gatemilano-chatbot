@@ -259,14 +259,49 @@ async def test_gia_rimborsata_solo_nota(flow, monkeypatch):
     assert esito.startswith("nota") and flow["replies"] == []
 
 
-async def test_staff_ha_risposto_a_mano_il_bot_si_ferma(flow, monkeypatch):
+async def test_staff_ha_risposto_a_mano_il_bot_propone_senza_scrivere(flow, monkeypatch):
+    """Caso reale 25/10: rimandato a mano a rimborsi@, poi richiesta completa nello stesso thread."""
     flow["staff"] = True
 
-    async def _boom(msgs):
-        raise AssertionError("non deve rianalizzare")
-    monkeypatch.setattr(refunds, "analyze", _boom)
-    assert (await refunds.process_sender("cliente@example.com", [_msg()])) == "nota (staff)"
+    async def _an(msgs):
+        return _a()
+
+    async def _find(*a, **k):
+        return _found(_ticket())
+    monkeypatch.setattr(refunds, "analyze", _an)
+    monkeypatch.setattr(xt, "find_request_tickets", _find)
+    monkeypatch.setattr(refunds.settings, "refund_auto_execute", True)
+    assert (await refunds.process_sender("cliente@example.com", [_msg()])) == "proposta (staff)"
+    assert flow["replies"] == [] and refunds.LABEL_DONE not in flow["labels"]
+    status, note = flow["notes"][-1]
+    assert status == "ok" and "`!rimborsa`" in note and "a mano" in note
+
+
+async def test_staff_ha_risposto_oltre_finestra_propone_inoltra(flow, monkeypatch):
+    flow["staff"] = True
+
+    async def _an(msgs):
+        return _a()
+
+    async def _find(*a, **k):
+        return _found(_ticket())
+    monkeypatch.setattr(refunds, "analyze", _an)
+    monkeypatch.setattr(xt, "find_request_tickets", _find)
+    monkeypatch.setattr(refunds, "past_xceed_cutoff", lambda found, now=None: True)
+    await refunds.process_sender("cliente@example.com", [_msg()])
     assert flow["replies"] == []
+    assert "`!inoltra`" in flow["notes"][-1][1]
+
+
+async def test_staff_ha_risposto_incompleta_propone_manca(flow, monkeypatch):
+    flow["staff"] = True
+
+    async def _an(msgs):
+        return _a(prova_acquisto=False)
+    monkeypatch.setattr(refunds, "analyze", _an)
+    await refunds.process_sender("cliente@example.com", [_msg()])
+    assert flow["replies"] == []
+    assert flow["notes"][-1][0] == "incompleta" and "`!manca`" in flow["notes"][-1][1]
 
 
 async def test_spento_non_fa_nulla(monkeypatch):
@@ -867,3 +902,17 @@ def test_scheda_dice_cosa_ha_cercato():
     from notifications import discord as d
     out = d._searched("b@yahoo.com", {"codici": ["123"], "nomi": ["Basel Arafeh"], "data_evento": "2026-10-23"})
     assert "b@yahoo.com" in out and "Basel Arafeh" in out and "2026-10-23" in out
+
+
+async def test_manca_scrive_cosa_manca_senza_chiudere(staff_gmail):
+    ctx = _ctx(missing=["prova_acquisto", "biglietti"])
+    out = await staff.refund_action("!manca", ctx, "George")
+    assert out.startswith("✅") and ctx["sent_by"] == ""
+    text = [c[1] for c in staff_gmail if c[0] == "send"][0]
+    assert "prova d'acquisto" in text
+    assert not any(c[0] == "label" for c in staff_gmail)
+
+
+async def test_manca_senza_niente_da_chiedere(staff_gmail):
+    out = await staff.refund_action("!manca", _ctx(missing=[]), "George")
+    assert out.startswith("❌") and staff_gmail == []
