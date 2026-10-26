@@ -464,13 +464,6 @@ async def process_sender(sender: str, new_msgs: list[dict]) -> str:
     verdict = assess(a, found, first)
     lang = a.get("lingua", "it")
 
-    if staff_involved:
-        await _label_all(new_msgs, LABEL_SEEN)
-        await _notify(sender, msgs, a, verdict, found,
-                      note="Avete già risposto a mano in questa conversazione: il bot non ha "
-                           "scritto al cliente. " + proposal(verdict, found))
-        return "proposta (staff)"
-
     if verdict["status"] == "ok" and past_xceed_cutoff(found):
         # Oltre la finestra Xceed: si inoltra, come faceva lo staff a mano.
         await forward_to_xceed(sender, msgs, a, found)
@@ -479,6 +472,14 @@ async def process_sender(sender: str, new_msgs: list[dict]) -> str:
                       note=f"Oltre la finestra Xceed: inoltrata a {settings.refund_xceed_contact}, "
                            "cliente avvisato (14 giorni).")
         return "inoltrata"
+    if staff_involved:
+        # Avete già scritto a mano: requisiti tutti ok e finestra Xceed chiusa si inoltra
+        # comunque (sopra, staff 26/10); per il resto il bot propone e non scrive.
+        await _label_all(new_msgs, LABEL_SEEN)
+        await _notify(sender, msgs, a, verdict, found,
+                      note="Avete già risposto a mano in questa conversazione: il bot non ha "
+                           "scritto al cliente. " + proposal(verdict, found))
+        return "proposta (staff)"
     if (verdict["status"] == "ok" and settings.refund_auto_execute
             and await _auto_refund(latest, msgs, found, lang)):
         await _label_all(new_msgs, LABEL_SEEN)
