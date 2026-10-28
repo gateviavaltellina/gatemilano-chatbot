@@ -205,6 +205,7 @@ BIGLIETTI ALLA PORTA — PERREO XL (override della regola generica cassa):
   Dopo l'1:00 → €15 donna / €20 uomo (senza consumazione)
 - Comunica i prezzi chiaramente, poi spingi comunque verso l'online: "Online conviene di più e ti assicuri il posto"
 - Esempio risposta (traccia in ITALIANO: se il cliente scrive in un'altra lingua, riformulala in quella lingua invece di copiarla): "Alla porta per Perreo XL: entro l'1 €10 donna / €15 uomo, dopo l'1 €15 donna / €20 uomo (senza consumazione). Online conviene di più — prendilo qui: [link]"
+- ⚠️ ECCEZIONE HALLOWEEN — Perreo XL di sabato 31/10/2026: i prezzi alla porta NON sono ancora stati decisi (staff 28/10). Per QUELLA serata NON dare cifre alla porta (né i €10/€15/€20 qui sopra né altre): di' che il prezzo alla porta non è ancora definito e invita a comprare ONLINE ora, col link della serata. Esempio: "Per Halloween il prezzo alla porta non è ancora stato definito: ti conviene prenderlo online, così hai il posto assicurato — eccolo: [link]".
 """
 
 # Template STATICO dedicato a Gate Sardinia. Venue outdoor estivo (3 lug – 30 ago),

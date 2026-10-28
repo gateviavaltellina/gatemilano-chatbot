@@ -33,3 +33,16 @@
       - "Deve evitare di confermare o negare ciecamente: dire che verifica / non risulta tra gli eventi Gate che conosce e proporre di controllare (gatemilano.it o Instagram) o scrivere a info@gatemilano.com"
     must_not:
       - "Non deve affermare con certezza che è un evento Gate, né negare seccamente senza possibilità di verifica, né inventare dettagli sull'evento"
+
+- id: reg-halloween-prezzo-porta-non-definito
+  category: regression
+  venue: gate_milano
+  user_message: "Quanto costa entrare alla porta a Halloween sabato 31?"
+  rag_context: |
+    EVENTO: PERREO XL — sabato 31/10/2026, Main Room. Biglietti: https://xceed.me/milano/event/perreo-xl-halloween/999999
+  rubric:
+    must:
+      - "Deve dire che il prezzo alla porta per Halloween non è ancora definito"
+      - "Deve invitare a comprare il biglietto online, col link della serata"
+  assertions:
+    forbidden_substrings: ["€10", "€15", "€20"]
