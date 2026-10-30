@@ -389,12 +389,13 @@ NIGHT_NOTICES = {
     "2026-10-31": (
         "HALLOWEEN",
         # Staff 28/10: prezzo alla porta non deciso. Staff 30/10: biglietti online finiti.
-        "I BIGLIETTI ONLINE SONO ESAURITI: restano SOLO i TAVOLI VIP. NON proporre "
+        "I BIGLIETTI ONLINE SONO ESAURITI: online restano SOLO i TAVOLI VIP. NON proporre "
         "biglietti né link di biglietti per questa serata, anche se nel contesto compaiono "
-        "ancora offerte o release disponibili (sono dati non aggiornati). Il prezzo alla "
-        "porta NON è ancora stato definito: NON dare cifre (né €10/€15/€20 né altre) e NON "
-        "dire che alla porta si entra di sicuro o che \"potete venire e pagare lì\". "
-        "Proponi invece SUBITO i tavoli: prezzi e link dal blocco \"TAVOLI VIP\" se c'è, "
+        "ancora offerte o release disponibili (sono dati non aggiornati). ALLA CASSA qualche "
+        "biglietto ci sarà (staff 30/10), ma fino a esaurimento e il prezzo NON è ancora "
+        "stato definito: puoi dirlo, ma NON dare cifre (né €10/€15/€20 né altre) e NON "
+        "garantire che alla porta si entri. Per essere sicuri di entrare, proponi SUBITO i "
+        "tavoli: prezzi e link dal blocco \"TAVOLI VIP\" se c'è, "
         "altrimenti la mappa tavoli della serata "
         "https://gatemilano.it/mappa-vip?name=PERREO+XL&date=2026-10-31 (anche in 2 si "
         "prenota pagando il minimo del tavolo, ingresso incluso)."

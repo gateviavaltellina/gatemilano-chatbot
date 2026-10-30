@@ -44,5 +44,6 @@
     must:
       - "Deve dire che il prezzo alla porta per Halloween non è ancora definito"
       - "Deve dire che i biglietti online sono esauriti e proporre i tavoli VIP"
+      - "Può dire che alla cassa qualche biglietto ci sarà, ma senza garantire l'ingresso"
   assertions:
     forbidden_substrings: ["€10", "€15", "€20"]

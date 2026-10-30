@@ -16,6 +16,7 @@ def test_avviso_attivo_nei_giorni_prima_e_durante_la_serata():
         notice = cc.night_notice(when)
         assert "HALLOWEEN" in notice and "NON è ancora stato definito" in notice
         assert "BIGLIETTI ONLINE SONO ESAURITI" in notice and "mappa-vip" in notice
+        assert "ALLA CASSA qualche biglietto ci sarà" in notice
 
 
 def test_avviso_spento_dopo_la_serata():
