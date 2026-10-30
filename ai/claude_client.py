@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import base64
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 import httpx
 from anthropic import AsyncAnthropic
@@ -200,7 +200,7 @@ UPSELL PERREO:
 - VIETATO inventare orari di esibizione artisti, timetable, slot di b2b o opening (es. "Claptone suona alle 02:00"). Gli orari di policy operative sono invece comunicabili: apertura porte (23:00), chiusura (05:00), orario massimo di arrivo al tavolo (03:30).
 
 BIGLIETTI ALLA PORTA — PERREO XL (override della regola generica cassa):
-- Per Perreo XL i prezzi alla porta sono SEMPRE disponibili e CERTI (non "previa disponibilità"):
+- Per Perreo XL i prezzi alla porta sono disponibili e certi (non "previa disponibilità") — SALVO un "AVVISO DI QUESTI GIORNI" nel contesto che dica il contrario per una serata, che vale di più:
   Entro l'1:00 → €10 donna / €15 uomo (senza consumazione)
   Dopo l'1:00 → €15 donna / €20 uomo (senza consumazione)
 - Comunica i prezzi chiaramente, poi spingi comunque verso l'online: "Online conviene di più e ti assicuri il posto"
@@ -380,6 +380,35 @@ def _strip_markdown(text: str) -> str:
     return text.strip()
 
 
+# Serate Perreo XL per cui il prezzo alla porta NON è ancora deciso: data → nome serata.
+# Caso reale (WA 30/10): la regola nel prompt statico non bastava — il cliente non
+# nominava Halloween né il 31 e il bot dava i soliti €10/€15/€20. Nei giorni prima
+# della serata l'avviso va nel blocco dinamico e vale per QUALSIASI domanda sulla
+# porta che non indichi esplicitamente un'altra data.
+DOOR_PRICE_UNDECIDED = {"2026-10-31": "HALLOWEEN"}
+
+
+def door_price_notice(now: datetime | None = None) -> str:
+    from zoneinfo import ZoneInfo
+    rome = ZoneInfo("Europe/Rome")
+    now = (now or datetime.now(rome)).astimezone(rome)
+    for day, name in sorted(DOOR_PRICE_UNDECIDED.items()):
+        d = datetime.strptime(day, "%Y-%m-%d").replace(tzinfo=rome)
+        # Dalla settimana prima fino alle 06:00 del giorno dopo (fine serata).
+        if d - timedelta(days=7) <= now <= d + timedelta(hours=30):
+            return (
+                f"⚠️ AVVISO DI QUESTI GIORNI — vale PIÙ della regola \"BIGLIETTI ALLA PORTA — "
+                f"PERREO XL\": la prossima serata Perreo XL è {name}, {d:%d/%m}. Per {name} il "
+                "prezzo alla porta NON è ancora stato definito. Ogni domanda su cassa, porta, "
+                "\"pagare al locale\" o \"senza prevendita\" riguarda questa serata, a meno che il "
+                "cliente non indichi ESPLICITAMENTE una serata successiva: NON dare cifre (né "
+                "€10/€15/€20 né altre) e non dire che alla porta si entra di sicuro; di' che il "
+                f"prezzo alla porta per {name} non è ancora definito e invita a comprare ONLINE "
+                "ora col link della serata."
+            )
+    return ""
+
+
 def build_system_blocks(venue: str, rag_context: str, current_datetime: str) -> list[dict]:
     """System prompt come due blocchi: statico (cacheato per venue) + dinamico.
 
@@ -411,6 +440,9 @@ def build_system_blocks(venue: str, rag_context: str, current_datetime: str) -> 
         current_datetime=current_datetime,
         rag_context=rag_context or "Nessuna informazione specifica disponibile al momento.",
     )
+    notice = door_price_notice() if venue != "gate_sardinia" else ""
+    if notice:
+        dynamic_system = f"{dynamic_system}\n\n{notice}"
     corrections_text = corrections.get_rules_text(venue)
     if corrections_text:
         dynamic_system = f"{corrections_text}\n\n{dynamic_system}"
