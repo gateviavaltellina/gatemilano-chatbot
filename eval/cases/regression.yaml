@@ -43,6 +43,6 @@
   rubric:
     must:
       - "Deve dire che il prezzo alla porta per Halloween non è ancora definito"
-      - "Deve invitare a comprare il biglietto online, col link della serata"
+      - "Deve dire che i biglietti online sono esauriti e proporre i tavoli VIP"
   assertions:
     forbidden_substrings: ["€10", "€15", "€20"]

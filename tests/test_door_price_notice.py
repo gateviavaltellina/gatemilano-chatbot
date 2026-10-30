@@ -13,16 +13,17 @@ ROME = ZoneInfo("Europe/Rome")
 
 def test_avviso_attivo_nei_giorni_prima_e_durante_la_serata():
     for when in (datetime(2026, 10, 30, 16, 0, tzinfo=ROME), datetime(2026, 11, 1, 3, 0, tzinfo=ROME)):
-        notice = cc.door_price_notice(when)
+        notice = cc.night_notice(when)
         assert "HALLOWEEN" in notice and "NON è ancora stato definito" in notice
+        assert "BIGLIETTI ONLINE SONO ESAURITI" in notice and "mappa-vip" in notice
 
 
 def test_avviso_spento_dopo_la_serata():
-    assert cc.door_price_notice(datetime(2026, 11, 2, 12, 0, tzinfo=ROME)) == ""
+    assert cc.night_notice(datetime(2026, 11, 2, 12, 0, tzinfo=ROME)) == ""
 
 
 def test_avviso_nel_blocco_dinamico_solo_milano(monkeypatch):
-    monkeypatch.setattr(cc, "door_price_notice", lambda now=None: "AVVISO PORTA")
+    monkeypatch.setattr(cc, "night_notice", lambda now=None: "AVVISO PORTA")
     milano = cc.build_system_blocks("gate_milano", "", "oggi")
     assert "AVVISO PORTA" in milano[1]["text"] and "AVVISO PORTA" not in milano[0]["text"]
     sardegna = cc.build_system_blocks("gate_sardinia", "", "oggi")
