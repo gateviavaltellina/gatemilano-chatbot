@@ -62,7 +62,7 @@ Il calendario eventi è sincronizzato: quando nel contesto compare un blocco "PR
 ## Biglietti
 - Acquisto online su Xceed (xceed.me)
 - **Cassa la sera stessa: SÌ**, si può comprare il biglietto direttamente all'ingresso (salvo sold out) — ma **in cassa il prezzo è più alto** rispetto all'online: consiglia SEMPRE di acquistare in anticipo su Xceed (non citare cifre precise per la cassa: non sono pubblicate)
-- **Halloween — Perreo XL sabato 31/10/2026:** biglietti online **ESAURITI** (staff 30/10): restano **solo i tavoli VIP**. Il prezzo alla porta **non è ancora definito** (staff 28/10): non dare cifre e non garantire l'ingresso alla porta; proponi i tavoli.
+- **Halloween — Perreo XL sabato 31/10/2026:** biglietti online **ESAURITI** (staff 30/10): online restano **solo i tavoli VIP**. Alla cassa qualche biglietto ci sarà, fino a esaurimento (staff 30/10), ma il prezzo **non è ancora definito** (staff 28/10): non dare cifre e non garantire l'ingresso alla porta; per essere sicuri proponi i tavoli.
 - Acquisto consigliato in anticipo per prezzi migliori
 - eTicket digitale da mostrare su smartphone — non serve stampare nulla
 - Il biglietto è valido per la sala specifica (Main Room o Club Room) — ogni sala ha il suo ingresso dedicato
