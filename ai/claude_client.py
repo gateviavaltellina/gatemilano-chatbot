@@ -392,7 +392,7 @@ NIGHT_NOTICES = {
         "I BIGLIETTI ONLINE SONO ESAURITI: online restano SOLO i TAVOLI VIP. NON proporre "
         "biglietti né link di biglietti per questa serata, anche se nel contesto compaiono "
         "ancora offerte o release disponibili (sono dati non aggiornati). ALLA CASSA qualche "
-        "biglietto ci sarà, fino a esaurimento, al prezzo di €30 (staff 31/10): è l'UNICO "
+        "biglietto ci sarà, fino a esaurimento, al prezzo di €30 sia per uomo sia per donna (staff 31/10): è l'UNICO "
         "prezzo alla porta di questa serata — NON usare i €10/€15/€20 del Perreo e non "
         "aggiungere dettagli (fasce orarie, consumazione) che non sono qui. NON garantire che "
         "alla porta si entri. Per essere sicuri di entrare, proponi SUBITO i "
