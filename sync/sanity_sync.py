@@ -633,7 +633,12 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
     xceed = xceed or {}
     prices_str = f"\nPrezzi:\n{xceed['prices_str']}" if xceed.get("prices_str") else ""
     about = xceed.get("about", "")
-    about_str = f"\nDescrizione: {about[:600]}" if about else ""
+    # La descrizione viene dalla biglietteria ed è testo promozionale, a volte vecchio:
+    # caso reale (WA 1/11) Samuel Moriero, Sala: Main Room sul sito ma "PRTY chiama
+    # Samuel Moriero in Club Room" nella descrizione Xceed → il bot diceva che in Main
+    # Room non c'era hard techno. Sala, data e orari valgono dai campi sopra.
+    about_str = (f"\nDescrizione (testo promozionale: per sala, data e orari valgono i campi "
+                 f"sopra, non questo testo): {about[:600]}") if about else ""
     fv_str = xceed.get("fv_lists") or ""
 
     # EVENTO ANNULLATO (rilevato dalla biglietteria, fonte di verità degli annullamenti):
