@@ -310,11 +310,17 @@ async def _notify(sender: str, msgs: list[dict], a: dict, verdict: dict, found: 
 
 
 def _forward_body(sender: str, a: dict, found: dict, note: str = "",
-                  include_used: bool = False) -> str:
+                  include_used: bool = False, count: int = 0) -> str:
     s = xt.summarize(found.get("tickets", [])) if found.get("tickets") else {}
     ev = found.get("event") or {}
+    if count and s:
+        # Lo staff ha deciso quanti biglietti rimborsare (`!inoltra N`).
+        s = {**s, "refund_plan": xt.plan_for_count(s["tickets_brief"], count), "used": s["used"] or 1}
+        include_used = False
     partial = bool(s.get("used") or s.get("partial")) and not include_used
-    if include_used:
+    if count and s:
+        what = f"Rimborso PARZIALE: SOLO {count} {'biglietto' if count == 1 else 'biglietti'}, indicati sotto."
+    elif include_used:
         what = ("Rimborso TOTALE, commissioni incluse: i biglietti risultano scansionati, ma "
                 "il cliente è stato respinto subito dopo la scansione (verificato da noi), "
                 "quindi NON è entrato.")
@@ -341,8 +347,12 @@ def _forward_body(sender: str, a: dict, found: dict, note: str = "",
         lines.append(f"Biglietti: {s['count']} ({s.get('offer', '')} {s.get('price', '')}) — "
                      f"non usati all'ingresso")
     elif s.get("count"):
-        lines.append(f"Biglietti: {s['count']} ({s.get('offer', '')} {s.get('price', '')}), "
-                     f"di cui {s['used']} usati all'ingresso: NON vanno rimborsati")
+        if count:
+            lines.append(f"Biglietti dell'ordine: {s['count']} ({s.get('offer', '')} "
+                         f"{s.get('price', '')}): da rimborsare SOLO {count}, gli altri no")
+        else:
+            lines.append(f"Biglietti: {s['count']} ({s.get('offer', '')} {s.get('price', '')}), "
+                         f"di cui {s['used']} usati all'ingresso: NON vanno rimborsati")
         for p in s.get("refund_plan", []):
             what = ("tutta la prenotazione" if p["full"]
                     else f"{p['tickets']} biglietti" + (f" (codici {', '.join(p['codes'])})"
@@ -363,7 +373,7 @@ async def already_forwarded(sender: str) -> bool:
 
 
 async def forward_to_xceed(sender: str, msgs: list[dict], a: dict, found: dict,
-                           note: str = "", include_used: bool = False) -> None:
+                           note: str = "", include_used: bool = False, count: int = 0) -> None:
     """Inoltro al contatto Xceed + risposta al cliente: il procedimento manuale dello staff."""
     if await already_forwarded(sender):
         # Già passato a Xceed a mano: niente doppio inoltro né doppio messaggio al cliente.
@@ -385,7 +395,7 @@ async def forward_to_xceed(sender: str, msgs: list[dict], a: dict, found: dict,
                 continue
             total += len(data)
             attachments.append((att["filename"], att.get("mime", ""), data))
-    body = _forward_body(sender, a, found, note, include_used) + "\n\n" + "\n\n".join(originals)
+    body = _forward_body(sender, a, found, note, include_used, count) + "\n\n" + "\n\n".join(originals)
     ev = (found.get("event") or {}).get("name") or a.get("evento") or ""
     subject = f"Rimborso Gate Milano – {ev} – {sender}".replace(" –  –", " –")
     await gm.send_new(settings.refund_xceed_contact, subject, body, attachments)
@@ -555,7 +565,8 @@ async def recheck(sender: str, forward_old: bool = False) -> str:
     return verdict["status"]
 
 
-async def forward_by_staff(sender: str, note: str = "", include_used: bool = False) -> str:
+async def forward_by_staff(sender: str, note: str = "", include_used: bool = False,
+                           count: int = 0) -> str:
     """`!inoltra`: inoltro a Xceed deciso dallo staff, anche su schede non verdi.
 
     `!inoltra tutti` (include_used): rimborso di tutti i biglietti, anche quelli che
@@ -570,8 +581,10 @@ async def forward_by_staff(sender: str, note: str = "", include_used: bool = Fal
         {sender, *a.get("email_acquisto", [])}, set(a.get("codici", [])),
         set(a.get("nomi", [])), a.get("data_evento", ""),
         event_id_hint=a.get("id_evento_xceed", ""), name_hint=a.get("evento", ""))
-    await forward_to_xceed(sender, msgs, a, found, note=note, include_used=include_used)
-    what = " (tutti i biglietti, anche gli scansionati)" if include_used else ""
+    await forward_to_xceed(sender, msgs, a, found, note=note, include_used=include_used,
+                           count=count)
+    what = (f" (solo {count} {'biglietto' if count == 1 else 'biglietti'})" if count
+            else " (tutti i biglietti, anche gli scansionati)" if include_used else "")
     return f"Inoltrata a {settings.refund_xceed_contact}{what}, cliente avvisato (14 giorni)"
 
 
