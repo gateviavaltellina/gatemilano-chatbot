@@ -413,8 +413,38 @@ def summarize(tickets: list[dict]) -> dict:
             "refund_plan": plan, "to_refund": sum(p["tickets"] for p in plan),
             # Anche gli usati: per chi è stato scansionato e poi respinto (staff 2/11).
             "refund_plan_all": plan_all,
+            # Biglietto per biglietto, per `!rimborsa N` (staff 2/11: "solo uno").
+            "tickets_brief": [ticket_brief(t) for t in tickets],
             "partial": any(not p["full"] for p in plan),
             "missing_codes": sum(p.get("missing_codes", 0) for p in plan)}
+
+
+def ticket_brief(t: dict) -> dict:
+    return {"booking_id": str((t.get("booking") or {}).get("bookingId") or ""),
+            "code": str(t.get("qrCode") or ""), "used": bool(t.get("hasCheckedIn")),
+            "active": t.get("isActive") is not False}
+
+
+def plan_for_count(brief: list[dict], n: int) -> list[dict]:
+    """Piano per rimborsare SOLO `n` biglietti, scelto dallo staff (`!rimborsa 1`).
+
+    Prima i non usati, poi gli usati; mai quelli già rimborsati. Se si prendono tutti i
+    biglietti di una prenotazione, rimborso totale di quella prenotazione; altrimenti
+    biglietto per biglietto coi codici.
+    """
+    active = [b for b in brief if b["active"] and b["booking_id"]]
+    chosen = sorted(active, key=lambda b: (b["used"], b["booking_id"], b["code"]))[:max(n, 0)]
+    plan = []
+    for bid in sorted({b["booking_id"] for b in chosen}):
+        mine = [b for b in chosen if b["booking_id"] == bid]
+        whole = [b for b in brief if b["booking_id"] == bid]
+        if len(mine) == len(whole):
+            plan.append({"booking_id": bid, "full": True, "codes": [], "tickets": len(mine)})
+            continue
+        codes = [b["code"] for b in mine if b["code"]]
+        plan.append({"booking_id": bid, "full": False, "codes": codes, "tickets": len(mine),
+                     "missing_codes": len(mine) - len(codes)})
+    return plan
 
 
 def refund_plan(tickets: list[dict], include_used: bool = False) -> list[dict]:

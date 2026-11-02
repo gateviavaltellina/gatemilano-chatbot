@@ -132,10 +132,13 @@ async def refund_action(content: str, ctx: dict, author: str) -> str | None:
             return f"✅ Scritto a {mail['from_email']} cosa manca ({author})."
         if cmd == "!inoltra":
             rest = content[len("!inoltra"):].strip()
-            all_tickets = rest.split(" ", 1)[0].lower() == "tutti"
-            if all_tickets:
-                rest = rest[len("tutti"):].strip()
-            esito = await refunds.forward_by_staff(mail["from_email"], rest, include_used=all_tickets)
+            first = rest.split(" ", 1)[0].lower()
+            all_tickets = first == "tutti"
+            count = int(first) if first.isdigit() else 0
+            if all_tickets or count:
+                rest = rest[len(first):].strip()
+            esito = await refunds.forward_by_staff(mail["from_email"], rest,
+                                                   include_used=all_tickets, count=count)
             ctx["sent_by"] = author
             return f"📨 {esito} ({author})."
         if cmd == "!rifiuta":
@@ -148,8 +151,16 @@ async def refund_action(content: str, ctx: dict, author: str) -> str | None:
                         "dalla dashboard Xceed, poi scrivi `!fatto` qui: il cliente riceve la conferma.")
             if not ctx.get("booking_ids"):
                 return "❌ Nessuna prenotazione Xceed associata: rimborsa da Xceed e poi `!fatto`."
-            all_tickets = content[len("!rimborsa"):].strip().lower() == "tutti"
-            if all_tickets:
+            arg = content[len("!rimborsa"):].strip().lower()
+            all_tickets = arg == "tutti"
+            count = int(arg) if arg.isdigit() else 0
+            if count:
+                # Solo N biglietti, scelti dallo staff (prima i non usati).
+                if not ctx.get("tickets"):
+                    return "⚠️ Scheda vecchia: fai `!verifica` e poi `!rimborsa N` sulla scheda aggiornata."
+                from mail import xceed_tickets as xt
+                plan = xt.plan_for_count(ctx["tickets"], count)
+            elif all_tickets:
                 # Biglietti scansionati e cliente respinto: si rimborsano anche gli usati.
                 plan = ctx.get("refund_plan_all")
                 if plan is None:
@@ -169,15 +180,22 @@ async def refund_action(content: str, ctx: dict, author: str) -> str | None:
                         "già rimborsati. Se li hanno scansionati per errore: `!rimborsa tutti`. "
                         "Altrimenti rimborsa da Xceed e poi `!fatto`.")
             n = await refunds.execute_plan(plan, lang, ctx.setdefault("refunded_ids", []))
-            partial = bool(ctx.get("refund_partial")) and not all_tickets
+            partial = (bool(ctx.get("refund_partial")) and not all_tickets) or (
+                count and count < sum(1 for t in ctx["tickets"] if t["active"]))
             await _send(templates.refund_done(lang, ctx.get("evento", ""), tickets=n, partial=partial))
             await _close(refunds.LABEL_DONE)
             what = f"{n} biglietti non usati (parziale)" if partial else "rimborso totale"
             return f"✅ Rimborsato su Xceed — {what} — e cliente avvisato ({author})."
         # `!fatto`: rimborsato a mano dalla dashboard, il messaggio segue la scheda.
-        await _send(templates.refund_done(
-            lang, ctx.get("evento", ""), partial=bool(ctx.get("refund_partial")),
-            tickets=sum(p.get("tickets", 0) for p in ctx.get("refund_plan") or [])))
+        # `!fatto N`: rimborsati a mano solo N biglietti.
+        arg = content[len("!fatto"):].strip()
+        if arg.isdigit():
+            await _send(templates.refund_done(lang, ctx.get("evento", ""), partial=True,
+                                              tickets=int(arg)))
+        else:
+            await _send(templates.refund_done(
+                lang, ctx.get("evento", ""), partial=bool(ctx.get("refund_partial")),
+                tickets=sum(p.get("tickets", 0) for p in ctx.get("refund_plan") or [])))
         await _close(refunds.LABEL_DONE)
         return f"✅ Rimborso segnato come fatto e cliente avvisato ({author})."
     except Exception as e:

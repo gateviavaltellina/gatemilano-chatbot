@@ -711,7 +711,7 @@ async def test_richiesta_inoltrata_non_riceve_altri_messaggi(flow, monkeypatch):
 async def test_comando_inoltra(staff_gmail, monkeypatch):
     chiamato = []
 
-    async def _fwd(sender, note="", include_used=False):
+    async def _fwd(sender, note="", include_used=False, count=0):
         chiamato.append((sender, note, include_used))
         return "Inoltrata a bianca@xceed.me, cliente avvisato (14 giorni)"
 
@@ -986,3 +986,62 @@ def test_inoltro_tutti_dice_a_xceed_di_rimborsare_anche_gli_scansionati():
     body = refunds._forward_body("c@x.it", _a(), _found(*tickets), include_used=True)
     assert "Rimborso TOTALE" in body and "respinto subito dopo la scansione" in body
     assert "NON vanno rimborsati" not in body
+
+
+# --- solo N biglietti, scelti dallo staff (staff 2/11: "devo rimborsarne solo uno") --------
+
+def _brief(bid, code, used=False, active=True):
+    return {"booking_id": bid, "code": code, "used": used, "active": active}
+
+
+def test_piano_n_prende_prima_i_non_usati():
+    brief = [_brief("1", "A", used=True), _brief("1", "B"), _brief("1", "C")]
+    plan = xt.plan_for_count(brief, 1)
+    assert plan == [{"booking_id": "1", "full": False, "codes": ["B"], "tickets": 1, "missing_codes": 0}]
+
+
+def test_piano_n_prenotazione_intera_diventa_totale():
+    brief = [_brief("1", "A"), _brief("2", "B"), _brief("2", "C")]
+    plan = xt.plan_for_count(brief, 1)
+    assert plan == [{"booking_id": "1", "full": True, "codes": [], "tickets": 1}]
+
+
+async def test_rimborsa_uno(staff_gmail, monkeypatch):
+    from mail import xceed_mcp
+    chiamate = []
+
+    async def _call(name, args):
+        chiamate.append(args)
+        return {"content": []}
+
+    monkeypatch.setattr(xceed_mcp, "configured", lambda: True)
+    monkeypatch.setattr(xceed_mcp, "call_tool", _call)
+    ctx = _ctx(tickets=[_brief("24556189", "A"), _brief("24556189", "B"), _brief("24556189", "C")])
+    out = await staff.refund_action("!rimborsa 1", ctx, "George")
+    assert out.startswith("✅")
+    assert [(a["isFullRefund"], a.get("code")) for a in chiamate] == [(False, "A")]
+    text = [c[1] for c in staff_gmail if c[0] == "send"][0]
+    assert "del biglietto non utilizzato" in text
+
+
+async def test_fatto_uno(staff_gmail):
+    await staff.refund_action("!fatto 1", _ctx(), "George")
+    text = [c[1] for c in staff_gmail if c[0] == "send"][0]
+    assert "del biglietto non utilizzato" in text
+
+
+async def test_inoltra_uno(staff_gmail, monkeypatch):
+    chiamato = []
+
+    async def _fwd(sender, note="", include_used=False, count=0):
+        chiamato.append((note, include_used, count))
+        return "ok"
+    monkeypatch.setattr(refunds, "forward_by_staff", _fwd)
+    await staff.refund_action("!inoltra 1 solo lui è stato respinto", _ctx(), "George")
+    assert chiamato == [("solo lui è stato respinto", False, 1)]
+
+
+def test_inoltro_di_uno_solo_lo_dice_a_xceed():
+    tickets = [_ticket(qr="A"), _ticket(qr="B"), _ticket(qr="C")]
+    body = refunds._forward_body("c@x.it", _a(), _found(*tickets), count=1)
+    assert "SOLO 1 biglietto" in body and "codici A" in body
