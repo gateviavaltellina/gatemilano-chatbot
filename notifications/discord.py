@@ -281,7 +281,7 @@ _REFUND_STATUS = {
            "`!rifiuta <nota>` · `!inoltra` (dopo lunedì mattina) · `!r <testo>` · `!verifica`"),
     "da_verificare": (0xF59E0B, "⚠️ Richiesta completa, ma qualcosa non torna",
                       "`!rimborsa` · `!inoltra` · `!fatto` · `!rifiuta <nota>` · `!r <testo>` · "
-                      "`!verifica`"),
+                      "`!verifica` · scansionati per errore: `!rimborsa tutti` / `!inoltra tutti`"),
     "incompleta": (0x64748B, "📎 Incompleta — al cliente è stato scritto cosa manca",
                    "Aspetta la sua risposta · `!manca` gli scrive cosa manca · `!r <testo>`"),
     "non_rimborsabile": (0xDC2626, "❌ Fuori policy — non è venuto per motivi propri",
@@ -339,6 +339,7 @@ async def notify_refund(sender: str, msgs: list[dict], analysis: dict, verdict: 
         "missing": verdict.get("missing", []),
         # Cosa rimborsa `!rimborsa`: solo i biglietti non usati (anche parziale).
         "refund_plan": summary.get("refund_plan", []),
+        "refund_plan_all": summary.get("refund_plan_all", []),
         "refund_partial": bool(summary.get("used") or summary.get("partial")),
         "gmail_ids": [m.get("id") for m in msgs if m.get("id")],
         "user_msg": _cut(text),

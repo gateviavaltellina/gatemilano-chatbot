@@ -711,15 +711,17 @@ async def test_richiesta_inoltrata_non_riceve_altri_messaggi(flow, monkeypatch):
 async def test_comando_inoltra(staff_gmail, monkeypatch):
     chiamato = []
 
-    async def _fwd(sender, note=""):
-        chiamato.append((sender, note))
+    async def _fwd(sender, note="", include_used=False):
+        chiamato.append((sender, note, include_used))
         return "Inoltrata a bianca@xceed.me, cliente avvisato (14 giorni)"
 
     monkeypatch.setattr(refunds, "forward_by_staff", _fwd)
     ctx = _ctx()
     out = await staff.refund_action("!inoltra serata del 3/10", ctx, "George")
-    assert chiamato == [("cliente@example.com", "serata del 3/10")]
+    assert chiamato == [("cliente@example.com", "serata del 3/10", False)]
     assert "Inoltrata" in out and ctx["sent_by"] == "George"
+    await staff.refund_action("!inoltra tutti scansionati per errore", _ctx(), "George")
+    assert chiamato[-1] == ("cliente@example.com", "scansionati per errore", True)
 
 
 async def test_rimborsa_rifiutato_suggerisce_inoltra(staff_gmail, monkeypatch):
@@ -941,3 +943,46 @@ async def test_manca_scrive_cosa_manca_senza_chiudere(staff_gmail):
 async def test_manca_senza_niente_da_chiedere(staff_gmail):
     out = await staff.refund_action("!manca", _ctx(missing=[]), "George")
     assert out.startswith("❌") and staff_gmail == []
+
+
+# --- biglietti scansionati e cliente respinto (caso reale Taha 2/11) ------------------------
+
+def test_scansionati_poi_respinti_non_e_entrato():
+    tickets = [_ticket(qr=q, checked=True) for q in "ABCDE"]
+    v = refunds.assess(_a(scansionato_poi_respinto=True), _found(*tickets), _IN_TIME)
+    assert v["status"] == "da_verificare"
+    assert any(i == "⚠️" and "`!rimborsa tutti`" in t for i, t in v["checks"])
+    assert not any("il cliente è entrato" in t for _, t in v["checks"])
+
+
+def test_piano_tutti_include_gli_usati():
+    tickets = [_ticket(qr="A", checked=True), _ticket(qr="B", checked=True)]
+    assert xt.refund_plan(tickets) == []
+    plan = xt.refund_plan(tickets, include_used=True)
+    assert plan[0]["full"] is True and plan[0]["tickets"] == 2
+
+
+async def test_rimborsa_tutti_rimborsa_anche_gli_scansionati(staff_gmail, monkeypatch):
+    from mail import xceed_mcp
+    chiamate = []
+
+    async def _call(name, args):
+        chiamate.append(args)
+        return {"content": []}
+
+    monkeypatch.setattr(xceed_mcp, "configured", lambda: True)
+    monkeypatch.setattr(xceed_mcp, "call_tool", _call)
+    ctx = _ctx(refund_plan=[], refund_partial=True, status="da_verificare", refund_plan_all=[
+        {"booking_id": "24556189", "full": True, "codes": [], "tickets": 5}])
+    assert (await staff.refund_action("!rimborsa", ctx, "George")).startswith("❌")
+    out = await staff.refund_action("!rimborsa tutti", ctx, "George")
+    assert out.startswith("✅") and chiamate[0]["isFullRefund"] is True
+    text = [c[1] for c in staff_gmail if c[0] == "send"][0]
+    assert "commissioni comprese" in text
+
+
+def test_inoltro_tutti_dice_a_xceed_di_rimborsare_anche_gli_scansionati():
+    tickets = [_ticket(qr="A", checked=True), _ticket(qr="B", checked=True)]
+    body = refunds._forward_body("c@x.it", _a(), _found(*tickets), include_used=True)
+    assert "Rimborso TOTALE" in body and "respinto subito dopo la scansione" in body
+    assert "NON vanno rimborsati" not in body
