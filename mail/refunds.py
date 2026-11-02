@@ -59,6 +59,9 @@ imprevisti, ha cambiato idea) NON rientra.
 - motivazione: con parole tue, cosa racconta il cliente di quello che è successo alla
   porta. Vuoto se non lo spiega (es. scrive solo "rimborso" o manda solo foto).
 - non_venuto: true se dice di non essere venuto per motivi propri.
+- scansionato_poi_respinto: true se dice che alla porta gli hanno SCANSIONATO il
+  biglietto e poi non l'hanno fatto entrare comunque (es. "mi scannerizza il codice, poi
+  cambia idea").
 - prova_acquisto: true se c'è una conferma d'ordine, ricevuta o screenshot del pagamento.
 - biglietti: true se c'è il biglietto (PDF, QR code, conferma Xceed con i biglietti).
 - codici: numeri di prenotazione/biglietto/ordine e codici QR LEGGIBILI negli allegati o
@@ -80,6 +83,7 @@ _TOOL = {
             "respinto_alla_porta": {"type": "boolean"},
             "motivazione": {"type": "string"},
             "non_venuto": {"type": "boolean"},
+            "scansionato_poi_respinto": {"type": "boolean"},
             "prova_acquisto": {"type": "boolean"},
             "biglietti": {"type": "boolean"},
             "codici": {"type": "array", "items": {"type": "string"}},
@@ -154,6 +158,12 @@ def assess(a: dict, found: dict, first_request: datetime) -> dict:
         n = s["to_refund"]
         if not s["used"]:
             checks.append(("✅", "biglietti non usati all'ingresso"))
+        elif a.get("scansionato_poi_respinto"):
+            # Biglietti scansionati e cliente respinto subito dopo (caso reale 2/11): "usato"
+            # non vuol dire entrato. Lo decide lo staff, il bot non lo prende per buono.
+            checks.append(("⚠️", f"{s['used']} biglietti risultano USATI, ma il cliente dice che "
+                                 "li hanno scansionati e poi l'hanno respinto: se lo confermate, "
+                                 "`!rimborsa tutti` (dopo la finestra Xceed `!inoltra tutti`)"))
         elif n:
             # Gruppo diviso alla porta: si rimborsano solo i non entrati (staff 17/10).
             checks.append(("✅", f"rimborso PARZIALE: {n} biglietti non usati da rimborsare"
@@ -299,17 +309,24 @@ async def _notify(sender: str, msgs: list[dict], a: dict, verdict: dict, found: 
         logger.debug("Notifica Discord rimborso non riuscita", exc_info=True)
 
 
-def _forward_body(sender: str, a: dict, found: dict, note: str = "") -> str:
+def _forward_body(sender: str, a: dict, found: dict, note: str = "",
+                  include_used: bool = False) -> str:
     s = xt.summarize(found.get("tickets", [])) if found.get("tickets") else {}
     ev = found.get("event") or {}
-    partial = bool(s.get("used") or s.get("partial"))
+    partial = bool(s.get("used") or s.get("partial")) and not include_used
+    if include_used:
+        what = ("Rimborso TOTALE, commissioni incluse: i biglietti risultano scansionati, ma "
+                "il cliente è stato respinto subito dopo la scansione (verificato da noi), "
+                "quindi NON è entrato.")
+    elif partial:
+        what = "Rimborso PARZIALE: solo i biglietti non usati indicati sotto."
+    else:
+        what = "Rimborso totale, commissioni incluse."
     lines = [
         "Ciao Bianca,",
         "",
         "ti inoltriamo una richiesta di rimborso per ingresso negato alla porta "
-        "(oltre la finestra di rimborso diretto). "
-        + ("Rimborso PARZIALE: solo i biglietti non usati indicati sotto."
-           if partial else "Rimborso totale, commissioni incluse."),
+        "(oltre la finestra di rimborso diretto). " + what,
         "",
         f"Cliente: {sender}",
     ]
@@ -317,7 +334,10 @@ def _forward_body(sender: str, a: dict, found: dict, note: str = "") -> str:
         lines.append(f"Evento: {ev.get('name')} del {xt.event_day(ev)}")
     if s.get("booking_ids"):
         lines.append(f"Ordine/i: {', '.join(s['booking_ids'])}")
-    if s.get("count") and not partial:
+    if s.get("count") and include_used:
+        lines.append(f"Biglietti: {s['count']} ({s.get('offer', '')} {s.get('price', '')}) — "
+                     "da rimborsare tutti, anche quelli che risultano scansionati")
+    elif s.get("count") and not partial:
         lines.append(f"Biglietti: {s['count']} ({s.get('offer', '')} {s.get('price', '')}) — "
                      f"non usati all'ingresso")
     elif s.get("count"):
@@ -343,7 +363,7 @@ async def already_forwarded(sender: str) -> bool:
 
 
 async def forward_to_xceed(sender: str, msgs: list[dict], a: dict, found: dict,
-                           note: str = "") -> None:
+                           note: str = "", include_used: bool = False) -> None:
     """Inoltro al contatto Xceed + risposta al cliente: il procedimento manuale dello staff."""
     if await already_forwarded(sender):
         # Già passato a Xceed a mano: niente doppio inoltro né doppio messaggio al cliente.
@@ -365,7 +385,7 @@ async def forward_to_xceed(sender: str, msgs: list[dict], a: dict, found: dict,
                 continue
             total += len(data)
             attachments.append((att["filename"], att.get("mime", ""), data))
-    body = _forward_body(sender, a, found, note) + "\n\n" + "\n\n".join(originals)
+    body = _forward_body(sender, a, found, note, include_used) + "\n\n" + "\n\n".join(originals)
     ev = (found.get("event") or {}).get("name") or a.get("evento") or ""
     subject = f"Rimborso Gate Milano – {ev} – {sender}".replace(" –  –", " –")
     await gm.send_new(settings.refund_xceed_contact, subject, body, attachments)
@@ -535,8 +555,12 @@ async def recheck(sender: str, forward_old: bool = False) -> str:
     return verdict["status"]
 
 
-async def forward_by_staff(sender: str, note: str = "") -> str:
-    """`!inoltra`: inoltro a Xceed deciso dallo staff, anche su schede non verdi."""
+async def forward_by_staff(sender: str, note: str = "", include_used: bool = False) -> str:
+    """`!inoltra`: inoltro a Xceed deciso dallo staff, anche su schede non verdi.
+
+    `!inoltra tutti` (include_used): rimborso di tutti i biglietti, anche quelli che
+    risultano usati — biglietti scansionati e cliente respinto (staff 2/11).
+    """
     ids = await gm.list_unprocessed(_query_sender(sender), 20)
     msgs = sorted([await gm.get_message(i) for i in ids], key=lambda m: m.get("date_ms", 0))
     if not msgs:
@@ -546,8 +570,9 @@ async def forward_by_staff(sender: str, note: str = "") -> str:
         {sender, *a.get("email_acquisto", [])}, set(a.get("codici", [])),
         set(a.get("nomi", [])), a.get("data_evento", ""),
         event_id_hint=a.get("id_evento_xceed", ""), name_hint=a.get("evento", ""))
-    await forward_to_xceed(sender, msgs, a, found, note=note)
-    return f"Inoltrata a {settings.refund_xceed_contact}, cliente avvisato (14 giorni)"
+    await forward_to_xceed(sender, msgs, a, found, note=note, include_used=include_used)
+    what = " (tutti i biglietti, anche gli scansionati)" if include_used else ""
+    return f"Inoltrata a {settings.refund_xceed_contact}{what}, cliente avvisato (14 giorni)"
 
 
 async def open_senders() -> list[str]:

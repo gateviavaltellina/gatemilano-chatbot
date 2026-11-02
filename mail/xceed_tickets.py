@@ -406,21 +406,26 @@ def summarize(tickets: list[dict]) -> dict:
         if amount not in (None, ""):
             price = f"€{amount}" if currency in ("EUR", "") else f"{amount} {currency}"
     plan = refund_plan(tickets)
+    plan_all = refund_plan(tickets, include_used=True)
     return {"count": len(tickets), "used": len(used), "inactive": len(inactive),
             "holders": holders, "booking_ids": booking_ids, "price": price,
             "offer": (tickets[0].get("offer") or {}).get("name", "") if tickets else "",
             "refund_plan": plan, "to_refund": sum(p["tickets"] for p in plan),
+            # Anche gli usati: per chi è stato scansionato e poi respinto (staff 2/11).
+            "refund_plan_all": plan_all,
             "partial": any(not p["full"] for p in plan),
             "missing_codes": sum(p.get("missing_codes", 0) for p in plan)}
 
 
-def refund_plan(tickets: list[dict]) -> list[dict]:
+def refund_plan(tickets: list[dict], include_used: bool = False) -> list[dict]:
     """Cosa rimborsare, prenotazione per prenotazione: solo i biglietti NON usati e validi.
 
     - nessun biglietto della prenotazione è entrato → rimborso totale della prenotazione;
     - qualcuno è entrato (o è già rimborsato) → rimborso parziale, biglietto per
       biglietto, coi codici di quelli non usati: chi è entrato non si rimborsa mai;
     - tutti entrati → la prenotazione non compare.
+    Con `include_used` anche i biglietti usati: caso reale 2/11, biglietti scansionati
+    alla porta e cliente respinto subito dopo — lo staff conferma e si rimborsa tutto.
     """
     by_booking: dict[str, list[dict]] = {}
     for t in tickets:
@@ -429,7 +434,8 @@ def refund_plan(tickets: list[dict]) -> list[dict]:
             by_booking.setdefault(str(bid), []).append(t)
     plan = []
     for bid, ts in sorted(by_booking.items()):
-        todo = [t for t in ts if not t.get("hasCheckedIn") and t.get("isActive") is not False]
+        todo = [t for t in ts if (include_used or not t.get("hasCheckedIn"))
+                and t.get("isActive") is not False]
         if not todo:
             continue
         if len(todo) == len(ts):

@@ -131,7 +131,11 @@ async def refund_action(content: str, ctx: dict, author: str) -> str | None:
             await _send(templates.refund_missing(lang, ctx["missing"]))
             return f"✅ Scritto a {mail['from_email']} cosa manca ({author})."
         if cmd == "!inoltra":
-            esito = await refunds.forward_by_staff(mail["from_email"], content[len("!inoltra"):].strip())
+            rest = content[len("!inoltra"):].strip()
+            all_tickets = rest.split(" ", 1)[0].lower() == "tutti"
+            if all_tickets:
+                rest = rest[len("tutti"):].strip()
+            esito = await refunds.forward_by_staff(mail["from_email"], rest, include_used=all_tickets)
             ctx["sent_by"] = author
             return f"📨 {esito} ({author})."
         if cmd == "!rifiuta":
@@ -144,7 +148,14 @@ async def refund_action(content: str, ctx: dict, author: str) -> str | None:
                         "dalla dashboard Xceed, poi scrivi `!fatto` qui: il cliente riceve la conferma.")
             if not ctx.get("booking_ids"):
                 return "❌ Nessuna prenotazione Xceed associata: rimborsa da Xceed e poi `!fatto`."
-            plan = ctx.get("refund_plan")
+            all_tickets = content[len("!rimborsa"):].strip().lower() == "tutti"
+            if all_tickets:
+                # Biglietti scansionati e cliente respinto: si rimborsano anche gli usati.
+                plan = ctx.get("refund_plan_all")
+                if plan is None:
+                    return "⚠️ Scheda vecchia: fai `!verifica` e poi `!rimborsa tutti` sulla scheda aggiornata."
+            else:
+                plan = ctx.get("refund_plan")
             if plan is None:
                 # Scheda di prima dei rimborsi parziali: senza il piano si rischierebbe di
                 # rimborsare anche chi è entrato. Le schede verdi erano tutte "non usati".
@@ -155,9 +166,10 @@ async def refund_action(content: str, ctx: dict, author: str) -> str | None:
                         for b in ctx["booking_ids"]]
             if not plan:
                 return ("❌ Nessun biglietto da rimborsare: risultano tutti usati all'ingresso o "
-                        "già rimborsati. Se è un errore, rimborsa da Xceed e poi `!fatto`.")
+                        "già rimborsati. Se li hanno scansionati per errore: `!rimborsa tutti`. "
+                        "Altrimenti rimborsa da Xceed e poi `!fatto`.")
             n = await refunds.execute_plan(plan, lang, ctx.setdefault("refunded_ids", []))
-            partial = bool(ctx.get("refund_partial"))
+            partial = bool(ctx.get("refund_partial")) and not all_tickets
             await _send(templates.refund_done(lang, ctx.get("evento", ""), tickets=n, partial=partial))
             await _close(refunds.LABEL_DONE)
             what = f"{n} biglietti non usati (parziale)" if partial else "rimborso totale"
