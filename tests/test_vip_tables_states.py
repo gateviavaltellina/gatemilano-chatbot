@@ -90,3 +90,15 @@ async def test_serata_standard_supplementi_a_listino():
     assert "VIP FACE €600, fino a 10 persone, persona extra €50 — F1" in out
     assert "Minimo più basso stasera: €300" in out
     assert "PREZZI SPECIALI" not in out
+
+
+async def test_checkout_sul_sito_manda_la_mappa_non_info():
+    """Adrián Mills all'Alcatraz (27/2/2027): tavoli pagati sul sito, niente link per tavolo."""
+    _C._payload = {"checkout": "revolut", "venue": "Alcatraz Milano",
+                   "tables": [{"codice": "B1", "zona": "TAVOLI", "prezzo": 400, "coperti": 10,
+                               "stato": "libero", "checkoutUrl": None}]}
+    out = await vt.get_vip_tables_via_site("ADRIÁN MILLS - ALL NIGHT LONG", "2027-02-27")
+    assert "sede: Alcatraz Milano" in out
+    assert "PRENOTA E PAGA ONLINE sulla mappa: https://gatemilano.it/mappa-vip?" in out
+    row = [l for l in out.splitlines() if l.startswith("- TAVOLI B1")][0]
+    assert "prenotabile sulla mappa" in row and "info@" not in row

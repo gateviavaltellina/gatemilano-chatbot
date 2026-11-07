@@ -229,11 +229,23 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
     else:
         header = f"TAVOLI VIP: tutti esauriti per {event_name} ({date_iso})."
 
+    # Checkout sul sito (Revolut): si sceglie e si paga il tavolo sulla MAPPA, non c'è un
+    # link per tavolo. Caso reale (Adrián Mills all'Alcatraz, 27/2/2027): senza questo il
+    # bot avrebbe mandato il cliente a scrivere a info@ invece di dargli la mappa.
+    site_checkout = isinstance(data, dict) and data.get("checkout") == "revolut"
+    venue = data.get("venue") if isinstance(data, dict) else None
+    if venue and venue not in ("Main Room", "Club Room"):
+        header += f" — sede: {venue}"
     lines = [header, *_milano_price_summary(available or closed)]
+    if site_checkout and available:
+        lines.append(f"  PRENOTA E PAGA ONLINE sulla mappa: {map_url} (si sceglie il tavolo e si "
+                     "paga lì; il pagamento conferma la prenotazione)")
     for t in available:
         url = (t.get("checkoutUrl") or "").strip()
         if url:
             lines.append(f"- {_row(t)}: €{t.get('prezzo')} → Prenota: {url}")
+        elif site_checkout:
+            lines.append(f"- {_row(t)}: €{t.get('prezzo')} → libero, prenotabile sulla mappa")
         else:
             # Senza checkoutUrl il tavolo esiste ed e' libero, ma NON si compra online.
             # Prima qui finiva la stringa "None" e il bot rischiava di girarla al cliente.
