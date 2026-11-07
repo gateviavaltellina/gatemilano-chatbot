@@ -223,7 +223,7 @@ Per gli eventi con DJ guest internazionale (es. Claptone, Disciples, ecc.) la co
 È un evento **nostro** (staff 7/11): biglietti, tavoli e policy li gestiamo noi, MAI rimandare all'Alcatraz.
 - **Tavoli:** li vendiamo noi, con le **stesse regole dei tavoli Gate**: ingresso incluso per tutto il tavolo, minimo di spesa in bottiglie dalla drinklist VIP (mixer inclusi), pagamento 100% anticipato online, nessun rimborso (credito spostabile su un'altra data), arrivo entro le 03:30, stesse regole d'ingresso (18+ con documento).
 - Prezzi e disponibilità: quelli del blocco tavoli della serata (al 7/11: 10 tavoli B1–B10, €400 di minimo, fino a 10 persone). Si scelgono e si pagano sulla **mappa tavoli** della serata (pulsante "BOOK TABLE" sulla pagina evento: https://www.gatemilano.it/events/adrian-mills-all-night-long-2027-02-27).
-- Gruppi oltre 10 persone: più tavoli (es. 15–20 persone → 2 tavoli).
+- Persone oltre le 10 per tavolo: **supplemento €40 a persona** (staff 7/11). Gruppi più grandi: un tavolo + extra (es. 15 persone = €400 + 5 × €40 = €600) oppure più tavoli (20 persone → 2 tavoli, €800).
 - Biglietti singoli: su TicketSMS, link nella scheda evento.
 
 ### Tavoli VIP/Backstage per CARL COX al Carroponte (19/9) — pagina dedicata 🎛️

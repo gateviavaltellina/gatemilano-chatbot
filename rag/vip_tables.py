@@ -267,7 +267,8 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
 # Listino standard dei tavoli Milano: (minimo, coperti) → supplemento per persona extra.
 # Serate speciali (es. Halloween 31/10: Face €600–900 da 10, Balcony €600 da 10) hanno
 # prezzi diversi: il bot citava il listino ("anche in 2 pagate €300", "max 8", "+€35").
-_MILANO_STANDARD = {(300, 8): 35, (500, 10): 50, (600, 10): 50}
+# (400, 10): tavoli dell'Alcatraz per gli eventi Gate (Adrián Mills 27/2/2027, staff 7/11).
+_MILANO_STANDARD = {(300, 8): 35, (400, 10): 40, (500, 10): 50, (600, 10): 50}
 
 
 def _codes(tables: list) -> str:

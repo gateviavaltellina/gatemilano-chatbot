@@ -100,5 +100,6 @@ async def test_checkout_sul_sito_manda_la_mappa_non_info():
     out = await vt.get_vip_tables_via_site("ADRIÁN MILLS - ALL NIGHT LONG", "2027-02-27")
     assert "sede: Alcatraz Milano" in out
     assert "PRENOTA E PAGA ONLINE sulla mappa: https://gatemilano.it/mappa-vip?" in out
+    assert "TAVOLI €400, fino a 10 persone, persona extra €40" in out
     row = [l for l in out.splitlines() if l.startswith("- TAVOLI B1")][0]
     assert "prenotabile sulla mappa" in row and "info@" not in row
