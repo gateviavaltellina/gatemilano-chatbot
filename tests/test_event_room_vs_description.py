@@ -21,3 +21,8 @@ def test_descrizione_marcata_come_promozionale():
 def test_regola_sala_nel_prompt():
     static = cc.build_system_blocks("gate_milano", "", "oggi")[0]["text"]
     assert "SALA DI UN EVENTO" in static and '"Hardtechno" = hard techno' in static
+
+
+def test_regola_problemi_acquisto_gira_link_evento():
+    static = cc.build_system_blocks("gate_milano", "", "oggi")[0]["text"]
+    assert "PROBLEMI DURANTE L'ACQUISTO" in static and "aspettare qualche minuto" in static
