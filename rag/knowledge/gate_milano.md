@@ -66,7 +66,7 @@ Il calendario eventi è sincronizzato: quando nel contesto compare un blocco "PR
 - Acquisto consigliato in anticipo per prezzi migliori
 - eTicket digitale da mostrare su smartphone — non serve stampare nulla
 - Il biglietto è valido per la sala specifica (Main Room o Club Room) — ogni sala ha il suo ingresso dedicato
-- Problemi tecnici di pagamento/checkout durante l'acquisto su Xceed: support@xceed.me. NB: biglietti regolarmente acquistati ma NON ricevuti → marketing@gatemilano.com (Andrea Esposito), MAI support@xceed.me né info@gatemilano.com per questo caso.
+- Problemi tecnici durante l'acquisto (checkout, pagamento, verifica del telefono/SMS che non arriva): prima gira il **link biglietti dell'evento** e invita a riprovare da lì (anche da browser); se non va, aspettare qualche minuto e riprovare (staff 13/11). Solo se non si sblocca: support@xceed.me. NB: biglietti regolarmente acquistati ma NON ricevuti → marketing@gatemilano.com (Andrea Esposito), MAI support@xceed.me né info@gatemilano.com per questo caso.
 - I biglietti non sono rimborsabili. È possibile rivenderli tramite i canali di rivendita Xceed.
 - **Rimborsi (policy staff 13/10):** l'UNICO caso rimborsabile è il cliente con biglietto valido **respinto all'ingresso dalla sicurezza**. La richiesta va inviata **esclusivamente a rimborsi@gatemilano.com**, entro il lunedì successivo all'evento, **allegando la prova d'acquisto e i biglietti**. Senza questi allegati la richiesta non viene presa in carico. Non partecipare per motivi propri (lavoro, malattia, imprevisti) non dà diritto a rimborso: c'è la rivendita su Xceed. Mai promettere l'esito: verifica lo staff.
 - **Nessun rientro** dopo l'uscita: serve un nuovo biglietto

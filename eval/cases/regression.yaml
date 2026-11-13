@@ -46,3 +46,16 @@
       - "Deve dire che i biglietti online sono esauriti e proporre i tavoli VIP"
   assertions:
     forbidden_substrings: ["€10", "€15", "€20"]
+
+- id: reg-checkout-xceed-gira-link-evento
+  category: regression
+  venue: gate_milano
+  user_message: "I am not receiving phone number verification on Xceed, so I am unable to purchase tickets for Funk Tribu."
+  rag_context: |
+    EVENTO: FUNK TRIBU — venerdì 13/11/2026, Main Room. Acquista biglietti: https://xceed.me/milano/event/funk-tribu/999999
+  rubric:
+    must:
+      - "Deve rispondere in inglese"
+      - "Deve dare il link biglietti dell'evento e invitare a riprovare da lì"
+      - "Deve suggerire, se non funziona, di aspettare qualche minuto e riprovare"
+      - "Non deve limitarsi a rimandare a support@xceed.me"
