@@ -216,6 +216,8 @@ async def _mcp_bookings(event: dict, term: str, errors: list[str] | None = None)
         try:
             data = await xceed_mcp.tool_json("bookings_search", {
                 "eventId": str(ev_id), "search": term, "limit": 10})
+        except xceed_mcp.McpAuthError:
+            raise          # inutile riprovare evento per evento: lo gestisce chi cerca
         except Exception as e:
             logger.debug("bookings_search %s=%s fallita: %s", form, ev_id, e)
             failures.append(str(e))
@@ -358,6 +360,11 @@ async def find_request_tickets(emails: set[str], codes: set[str], names: set[str
             via_mcp = await find_via_mcp(events, emails, codes, names, errors)
             if via_mcp and via_mcp["match"] != "nome":
                 return via_mcp
+        except xceed_mcp.McpAuthError as e:
+            # Un solo messaggio chiaro, non uno per evento (caso reale 14/11).
+            logger.error("MCP Xceed: %s", e)
+            errors.append(str(e))
+            via_mcp = {}
         except Exception as e:
             logger.warning("Ricerca prenotazioni via MCP fallita: %s", e)
             errors.append(f"MCP: {str(e)[:100]}")
