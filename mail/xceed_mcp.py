@@ -7,6 +7,7 @@ Railway sarebbe già scaduta.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import time
@@ -25,6 +26,15 @@ _token: dict = {"access": "", "exp": 0.0, "refresh": ""}
 _UA = {"User-Agent": "gate-milano-chatbot/1.0"}
 
 
+class McpAuthError(RuntimeError):
+    """Xceed rifiuta il refresh token: serve rifare il consenso (scripts/xceed_mcp_oauth.py)."""
+
+
+AUTH_HELP = ("autorizzazione MCP Xceed scaduta: rifai il collegamento con "
+             "scripts/xceed_mcp_oauth.py e aggiorna su Railway XCEED_MCP_CLIENT_ID e "
+             "XCEED_MCP_REFRESH_TOKEN")
+
+
 def configured() -> bool:
     return bool(settings.xceed_mcp_client_id and (_saved_refresh() or settings.xceed_mcp_refresh_token))
 
@@ -34,11 +44,24 @@ def _token_file() -> Path | None:
     return Path(d) / "xceed_mcp_token.json" if d else None
 
 
+def _env_fingerprint() -> str:
+    """Impronta delle credenziali su Railway: se cambiano, lo staff ha rifatto il consenso."""
+    raw = f"{settings.xceed_mcp_client_id}|{settings.xceed_mcp_refresh_token}".encode()
+    return hashlib.sha256(raw).hexdigest()[:16]
+
+
 def _saved_refresh() -> str:
+    """Il refresh token rinnovato salvato su disco, se deriva dalle credenziali ATTUALI.
+
+    Caso reale 14/11: token scaduto; se lo staff rifà il consenso e aggiorna Railway,
+    il vecchio token sul volume non deve più avere la precedenza.
+    """
     f = _token_file()
     try:
         if f and f.exists():
-            return json.loads(f.read_text()).get("refresh_token", "")
+            data = json.loads(f.read_text())
+            if data.get("env") in (None, _env_fingerprint()):
+                return data.get("refresh_token", "")
     except Exception:
         logger.debug("Token MCP salvato non leggibile", exc_info=True)
     return ""
@@ -50,20 +73,35 @@ def _save_refresh(token: str) -> None:
         return
     try:
         f.parent.mkdir(parents=True, exist_ok=True)
-        f.write_text(json.dumps({"refresh_token": token}))
+        f.write_text(json.dumps({"refresh_token": token, "env": _env_fingerprint()}))
     except Exception:
         logger.warning("Refresh token MCP non salvato su disco", exc_info=True)
+
+
+async def _refresh_with(client: httpx.AsyncClient, refresh: str) -> httpx.Response:
+    return await client.post(f"{_BASE}/token", data={
+        "grant_type": "refresh_token", "refresh_token": refresh,
+        "client_id": settings.xceed_mcp_client_id, "resource": _RESOURCE,
+    })
 
 
 async def _access_token() -> str:
     if _token["access"] and time.time() < _token["exp"]:
         return _token["access"]
-    refresh = _token["refresh"] or _saved_refresh() or settings.xceed_mcp_refresh_token
+    candidates = [t for t in dict.fromkeys(
+        (_token["refresh"], _saved_refresh(), settings.xceed_mcp_refresh_token)) if t]
+    r = None
+    refresh = ""
     async with httpx.AsyncClient(timeout=20, headers=_UA) as client:
-        r = await client.post(f"{_BASE}/token", data={
-            "grant_type": "refresh_token", "refresh_token": refresh,
-            "client_id": settings.xceed_mcp_client_id, "resource": _RESOURCE,
-        })
+        # Si prova il più recente; se Xceed lo rifiuta, quello su Railway.
+        for refresh in candidates:
+            r = await _refresh_with(client, refresh)
+            if r.status_code < 400:
+                break
+            logger.warning("Refresh token MCP Xceed rifiutato (HTTP %s)", r.status_code)
+    if r is None or r.status_code in (400, 401):
+        _token["access"] = ""
+        raise McpAuthError(AUTH_HELP)
     r.raise_for_status()
     data = r.json()
     _token["access"] = data["access_token"]
