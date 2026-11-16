@@ -185,8 +185,8 @@ def assess(a: dict, found: dict, first_request: datetime) -> dict:
     status = "ok" if all(c[0] == "✅" for c in checks) else "da_verificare"
     if found.get("tickets"):
         cutoff = xceed_cutoff(xt.event_day(found["event"]))
-        checks.append(("ℹ️", f"rimborsabile su Xceed fino a lunedì {cutoff:%d/%m %H:%M}; "
-                             "dopo si inoltra a Xceed (`!inoltra`)"))
+        checks.append(("ℹ️", f"finestra Xceed fino a lunedì {cutoff:%d/%m %H:%M}; dopo si "
+                             "prova comunque `!rimborsa`, se Xceed rifiuta si inoltra"))
     return {"status": status, "missing": [], "checks": checks}
 
 
@@ -205,7 +205,8 @@ def proposal(verdict: dict, found: dict, now: datetime | None = None) -> str:
     if status == "non_rimborsabile":
         return "Proposta: `!rifiuta` — fuori policy."
     if status == "ok" and past_xceed_cutoff(found, now):
-        return "Proposta: `!inoltra` — requisiti ok, ma la finestra di rimborso Xceed è chiusa."
+        return ("Proposta: `!rimborsa` — requisiti ok; la finestra Xceed è chiusa: se Xceed "
+                "rifiuta, la richiesta si inoltra da sola.")
     if status == "ok":
         return "Proposta: `!rimborsa` — requisiti ok, rimborsabile su Xceed."
     return ("Proposta: guarda i punti ⚠️/❌ qui sotto, poi `!rimborsa`, `!inoltra` o "
@@ -424,22 +425,57 @@ async def execute_plan(plan: list[dict], lang: str, done: list[str]) -> int:
     return sum(p["tickets"] for p in plan)
 
 
+class RefundInterrupted(RuntimeError):
+    """Rimborso fermato a metà: qualche biglietto è già rimborsato, non si inoltra."""
+
+
 async def _auto_refund(latest: dict, msgs: list[dict], found: dict, lang: str) -> bool:
-    """Rimborso senza intervento umano (REFUND_AUTO_EXECUTE). False se non possibile."""
+    """Rimborso senza intervento umano (REFUND_AUTO_EXECUTE). False se non possibile.
+
+    Se Xceed rifiuta dopo aver già rimborsato una parte, RefundInterrupted: inoltrare
+    tutto a Xceed vorrebbe dire rimborsare due volte quei biglietti.
+    """
     from mail import xceed_mcp
     s = xt.summarize(found.get("tickets", []))
     plan = s.get("refund_plan", [])
     if not (xceed_mcp.configured() and settings.xceed_mcp_refund_tool and plan):
         return False
+    done: list[str] = []
     try:
-        n = await execute_plan(plan, lang, [])
+        n = await execute_plan(plan, lang, done)
     except Exception as e:
         logger.error("Rimborso automatico fallito: %s", e)
+        if done:
+            raise RefundInterrupted(f"rimborsati {', '.join(done)}, poi Xceed ha rifiutato: "
+                                    f"{str(e)[:150]}") from e
         return False
     await _reply(latest, templates.refund_done(lang, (found.get("event") or {}).get("name", ""),
                                                tickets=n, partial=bool(s["used"] or s["partial"])))
     await _label_all(msgs, LABEL_DONE)
     return True
+
+
+async def refund_or_forward(sender: str, msgs: list[dict], a: dict, found: dict,
+                            verdict: dict, why: str) -> str:
+    """Richiesta in regola oltre la finestra Xceed (lunedì mattina): prima si prova a
+    rimborsare su Xceed, e solo se Xceed non lo fa si inoltra a Xceed (staff 16/11).
+    """
+    if settings.refund_auto_execute:
+        try:
+            if await _auto_refund(msgs[-1], msgs, found, a.get("lingua", "it")):
+                await _notify(sender, msgs, a, verdict, found,
+                              note=f"{why}: oltre la finestra Xceed, ma rimborsato su Xceed.")
+                return "rimborsato"
+        except RefundInterrupted as e:
+            await _notify(sender, msgs, a, {**verdict, "status": "da_verificare"}, found,
+                          note=f"⚠️ Rimborso interrotto a metà ({e}). NON inoltrato: completa "
+                               "dalla dashboard Xceed e poi `!fatto`.")
+            return "rimborso interrotto"
+    await forward_to_xceed(sender, msgs, a, found)
+    await _notify(sender, msgs, a, {**verdict, "status": "inoltrata"}, found,
+                  note=f"{why}: Xceed non ha rimborsato, inoltrata a "
+                       f"{settings.refund_xceed_contact}, cliente avvisato (14 giorni).")
+    return "inoltrata"
 
 
 async def process_sender(sender: str, new_msgs: list[dict]) -> str:
@@ -495,13 +531,10 @@ async def process_sender(sender: str, new_msgs: list[dict]) -> str:
     lang = a.get("lingua", "it")
 
     if verdict["status"] == "ok" and past_xceed_cutoff(found):
-        # Oltre la finestra Xceed: si inoltra, come faceva lo staff a mano.
-        await forward_to_xceed(sender, msgs, a, found)
+        # Oltre la finestra Xceed: si prova comunque il rimborso, se no si inoltra.
+        esito = await refund_or_forward(sender, msgs, a, found, verdict, "Richiesta in regola")
         await _label_all(new_msgs, LABEL_SEEN)
-        await _notify(sender, msgs, a, {**verdict, "status": "inoltrata"}, found,
-                      note=f"Oltre la finestra Xceed: inoltrata a {settings.refund_xceed_contact}, "
-                           "cliente avvisato (14 giorni).")
-        return "inoltrata"
+        return esito
     if staff_involved:
         # Avete già scritto a mano: requisiti tutti ok e finestra Xceed chiusa si inoltra
         # comunque (sopra, staff 26/10); per il resto il bot propone e non scrive.
@@ -555,11 +588,7 @@ async def recheck(sender: str, forward_old: bool = False) -> str:
                       note="Richiesta arretrata: scritto al cliente cosa manca.")
         return "incompleta"
     if forward_old and verdict["status"] == "ok" and past_xceed_cutoff(found):
-        await forward_to_xceed(sender, msgs, a, found)
-        await _notify(sender, msgs, a, {**verdict, "status": "inoltrata"}, found,
-                      note=f"Richiesta arretrata: inoltrata a {settings.refund_xceed_contact}, "
-                           "cliente avvisato (14 giorni).")
-        return "inoltrata"
+        return await refund_or_forward(sender, msgs, a, found, verdict, "Richiesta arretrata")
     await _notify(sender, msgs, a, verdict, found,
                   note="Verifica rifatta su richiesta dello staff. " + proposal(verdict, found))
     return verdict["status"]

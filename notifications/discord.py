@@ -336,6 +336,8 @@ async def notify_refund(sender: str, msgs: list[dict], analysis: dict, verdict: 
         "status": status,
         "lingua": analysis.get("lingua", "it"),
         "evento": (found.get("event") or {}).get("name", "") or analysis.get("evento", ""),
+        # Giorno della serata su Xceed: dopo la finestra un `!rimborsa` rifiutato si inoltra.
+        "data_evento": _event_day(found),
         "booking_ids": summary.get("booking_ids", []),
         "missing": verdict.get("missing", []),
         # Cosa rimborsa `!rimborsa`: solo i biglietti non usati (anche parziale).
@@ -361,6 +363,13 @@ def _searched(sender: str, analysis: dict) -> str:
             ("nomi", analysis.get("nomi", [])),
             ("serata", [v for v in (analysis.get("evento"), analysis.get("data_evento")) if v])]
     return "\n".join(f"{k}: {', '.join(map(str, v)) if v else '—'}" for k, v in rows)
+
+
+def _event_day(found: dict) -> str:
+    if not found.get("event"):
+        return ""
+    from mail.xceed_tickets import event_day
+    return event_day(found["event"])
 
 
 def xt_summary(found: dict) -> dict:
