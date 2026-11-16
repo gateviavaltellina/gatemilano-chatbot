@@ -1045,3 +1045,102 @@ def test_inoltro_di_uno_solo_lo_dice_a_xceed():
     tickets = [_ticket(qr="A"), _ticket(qr="B"), _ticket(qr="C")]
     body = refunds._forward_body("c@x.it", _a(), _found(*tickets), count=1)
     assert "SOLO 1 biglietto" in body and "codici A" in body
+
+
+# --- oltre la finestra Xceed: prima si prova il rimborso, se no a Bianca (staff 16/11) ---
+
+@pytest.fixture
+def oltre_finestra(flow, monkeypatch):
+    from mail import xceed_mcp
+    st = {"inviate": [], "refund": lambda args: {"content": [{"type": "text", "text": "ok"}]},
+          "chiamate": []}
+
+    async def _an(msgs):
+        return _a()
+
+    async def _find(*a, **k):
+        return _found(_ticket())
+
+    async def _new(to, subject, body, attachments=None):
+        st["inviate"].append(to)
+
+    async def _no(sender):
+        return False
+
+    async def _call(name, args):
+        st["chiamate"].append(args)
+        return st["refund"](args)
+    monkeypatch.setattr(refunds, "analyze", _an)
+    monkeypatch.setattr(xt, "find_request_tickets", _find)
+    monkeypatch.setattr(refunds, "past_xceed_cutoff", lambda found, now=None: True)
+    monkeypatch.setattr(gm, "send_new", _new)
+    monkeypatch.setattr(refunds, "already_forwarded", _no)
+    monkeypatch.setattr(refunds.settings, "refund_auto_execute", True)
+    monkeypatch.setattr(xceed_mcp, "configured", lambda: True)
+    monkeypatch.setattr(xceed_mcp, "call_tool", _call)
+    return st
+
+
+async def test_oltre_finestra_se_xceed_rimborsa_niente_inoltro(flow, oltre_finestra):
+    assert await refunds.process_sender("cliente@example.com", [_msg()]) == "rimborsato"
+    assert oltre_finestra["chiamate"] and oltre_finestra["inviate"] == []
+    assert refunds.LABEL_DONE in flow["labels"] and refunds.LABEL_FORWARDED not in flow["labels"]
+    assert "rimborsato su Xceed" in flow["notes"][-1][1]
+
+
+async def test_oltre_finestra_se_xceed_rifiuta_si_inoltra_a_bianca(flow, oltre_finestra):
+    oltre_finestra["refund"] = lambda args: {
+        "isError": True, "content": [{"type": "text", "text": "Participant can not be refunded"}]}
+    assert await refunds.process_sender("cliente@example.com", [_msg()]) == "inoltrata"
+    assert oltre_finestra["inviate"] == ["bianca@xceed.me"]
+    assert len(flow["replies"]) == 1 and "14 giorni" in flow["replies"][0][0]
+    assert refunds.LABEL_DONE not in flow["labels"]
+
+
+async def test_oltre_finestra_rimborso_a_meta_non_si_inoltra(flow, oltre_finestra, monkeypatch):
+    # Due prenotazioni: la prima passa, la seconda no → inoltrare rimborserebbe due volte.
+    async def _find(*a, **k):
+        return _found(_ticket(bid=1), _ticket(bid=2))
+    monkeypatch.setattr(xt, "find_request_tickets", _find)
+    oltre_finestra["refund"] = lambda args: (
+        {"content": [{"type": "text", "text": "ok"}]} if args["legacyId"] == 1 else
+        {"isError": True, "content": [{"type": "text", "text": "no"}]})
+    assert await refunds.process_sender("cliente@example.com", [_msg()]) == "rimborso interrotto"
+    assert oltre_finestra["inviate"] == [] and flow["replies"] == []
+    assert "NON inoltrato" in flow["notes"][-1][1]
+
+
+async def test_rimborsa_staff_oltre_finestra_rifiutato_inoltra(staff_gmail, monkeypatch):
+    from mail import xceed_mcp
+    inoltri = []
+
+    async def _call(name, args):
+        return {"isError": True, "content": [{"type": "text", "text": "Participant can not be refunded"}]}
+
+    async def _fwd(sender, note="", include_used=False, count=0):
+        inoltri.append((sender, include_used, count))
+        return "Inoltrata a bianca@xceed.me, cliente avvisato (14 giorni)"
+    monkeypatch.setattr(xceed_mcp, "configured", lambda: True)
+    monkeypatch.setattr(xceed_mcp, "call_tool", _call)
+    monkeypatch.setattr(refunds, "forward_by_staff", _fwd)
+    ctx = _ctx(data_evento="2026-10-10")
+    ctx["refund_plan_all"] = ctx["refund_plan"]
+    out = await staff.refund_action("!rimborsa tutti", ctx, "George")
+    assert out.startswith("📨") and "bianca@xceed.me" in out
+    assert inoltri == [("cliente@example.com", True, 0)] and ctx["sent_by"] == "George"
+
+
+async def test_rimborsa_staff_dentro_finestra_rifiutato_non_inoltra(staff_gmail, monkeypatch):
+    from datetime import date
+    from mail import xceed_mcp
+
+    async def _call(name, args):
+        return {"isError": True, "content": [{"type": "text", "text": "no"}]}
+
+    async def _fwd(*a, **k):
+        raise AssertionError("dentro la finestra non si inoltra da soli")
+    monkeypatch.setattr(xceed_mcp, "configured", lambda: True)
+    monkeypatch.setattr(xceed_mcp, "call_tool", _call)
+    monkeypatch.setattr(refunds, "forward_by_staff", _fwd)
+    out = await staff.refund_action("!rimborsa", _ctx(data_evento=date.today().isoformat()), "George")
+    assert out.startswith("❌") and "!inoltra" in out

@@ -10,6 +10,7 @@ l'invio AUTOMATICO.
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 
 import httpx
 
@@ -200,8 +201,29 @@ async def refund_action(content: str, ctx: dict, author: str) -> str | None:
         return f"✅ Rimborso segnato come fatto e cliente avvisato ({author})."
     except Exception as e:
         logger.error("Comando rimborso %r fallito: %s", cmd, e)
+        if cmd == "!rimborsa" and not ctx.get("refunded_ids") and _past_cutoff(ctx):
+            # Finestra Xceed chiusa e niente rimborsato: si inoltra da soli (staff 16/11).
+            arg = content[len("!rimborsa"):].strip().lower()
+            try:
+                esito = await refunds.forward_by_staff(
+                    mail["from_email"], include_used=arg == "tutti",
+                    count=int(arg) if arg.isdigit() else 0)
+            except Exception as e2:
+                return (f"❌ Rimborso non riuscito ({str(e)[:100]}) e inoltro non riuscito: "
+                        f"{str(e2)[:100]}")
+            ctx["sent_by"] = author
+            return f"📨 Xceed non ha rimborsato ({str(e)[:100]}). {esito} ({author})."
         hint = ""
         if cmd == "!rimborsa":
-            hint = ("\nSe la finestra Xceed è chiusa (dopo il lunedì mattina) usa `!inoltra`: "
-                    "la richiesta va a Xceed e il cliente viene avvisato.")
+            hint = "\nSe vuoi passarla a Xceed: `!inoltra` (il cliente viene avvisato)."
         return f"❌ Non riuscito: {str(e)[:150]}{hint}"
+
+
+def _past_cutoff(ctx: dict) -> bool:
+    """La serata della scheda ha la finestra Xceed già chiusa?"""
+    from mail import refunds
+    day = ctx.get("data_evento") or ""
+    try:
+        return datetime.now(refunds._ROME) > refunds.xceed_cutoff(day)
+    except ValueError:
+        return False
