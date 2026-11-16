@@ -5,9 +5,11 @@ Cosa fa:
 2. apre il browser per il login Xceed e riceve il consenso su 127.0.0.1;
 3. elenca gli strumenti disponibili (servono per capire come si fa un rimborso) e li
    salva in xceed_mcp_tools.json — quel file NON contiene segreti, si può condividere;
-4. stampa le righe da incollare su Railway (quelle sì sono segrete).
+4. stampa le righe da incollare su Railway (quelle sì sono segrete) oppure, con
+   --railway, le imposta direttamente con la CLI di Railway (progetto collegato con
+   `railway link`): il bot si riavvia e i rimborsi ripartono, senza copia-incolla.
 
-Solo libreria standard:   python3 xceed_mcp_oauth.py
+Solo libreria standard:   python3 xceed_mcp_oauth.py [--railway]
 """
 from __future__ import annotations
 
@@ -16,6 +18,8 @@ import hashlib
 import http.server
 import json
 import secrets
+import shutil
+import subprocess
 import sys
 import urllib.error
 import urllib.parse
@@ -142,13 +146,31 @@ def main() -> int:
     for t in tools:
         print(f"  - {t.get('name')}: {(t.get('description') or '').splitlines()[0][:100] if t.get('description') else ''}")
 
+    if not refresh:
+        print("\n⚠️ Xceed non ha restituito un refresh token: dimmelo, va gestito diversamente.")
+        return 1
+    if "--railway" in sys.argv[1:] and _set_on_railway(client_id, refresh):
+        print("\n✅ Variabili aggiornate su Railway: il bot si riavvia da solo e i rimborsi ripartono.")
+        return 0
     print("\nOra su Railway (servizio del bot → Variables → Raw Editor) incolla queste righe.")
     print("Non condividerle in chat. Il file xceed_mcp_tools.json invece mandalo pure.\n")
     print(f"XCEED_MCP_CLIENT_ID={client_id}")
     print(f"XCEED_MCP_REFRESH_TOKEN={refresh}")
-    if not refresh:
-        print("\n⚠️ Xceed non ha restituito un refresh token: dimmelo, va gestito diversamente.")
     return 0
+
+
+def _set_on_railway(client_id: str, refresh: str) -> bool:
+    if not shutil.which("railway"):
+        print("\nCLI di Railway non trovata: le variabili vanno incollate a mano.")
+        return False
+    r = subprocess.run(["railway", "variables",
+                        "--set", f"XCEED_MCP_CLIENT_ID={client_id}",
+                        "--set", f"XCEED_MCP_REFRESH_TOKEN={refresh}"],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        print("\nRailway non ha accettato le variabili:", (r.stderr or r.stdout).strip()[:300])
+        return False
+    return True
 
 
 if __name__ == "__main__":

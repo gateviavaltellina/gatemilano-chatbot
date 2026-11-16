@@ -7,6 +7,7 @@ Railway sarebbe già scaduta.
 """
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -24,6 +25,9 @@ _RESOURCE = f"{_BASE}/mcp"
 _token: dict = {"access": "", "exp": 0.0, "refresh": ""}
 # Cloudflare davanti all'MCP blocca alcuni User-Agent "Python": nome esplicito.
 _UA = {"User-Agent": "gate-milano-chatbot/1.0"}
+# Un rinnovo alla volta: Xceed ruota il refresh token, e due rinnovi in parallelo con
+# lo stesso token ne bruciano uno (il secondo vince in memoria, l'altro sul volume).
+_refresh_lock = asyncio.Lock()
 
 
 class McpAuthError(RuntimeError):
@@ -31,8 +35,8 @@ class McpAuthError(RuntimeError):
 
 
 AUTH_HELP = ("autorizzazione MCP Xceed scaduta: rifai il collegamento con "
-             "scripts/xceed_mcp_oauth.py e aggiorna su Railway XCEED_MCP_CLIENT_ID e "
-             "XCEED_MCP_REFRESH_TOKEN")
+             "`python3 scripts/xceed_mcp_oauth.py --railway` (aggiorna da solo su Railway "
+             "XCEED_MCP_CLIENT_ID e XCEED_MCP_REFRESH_TOKEN)")
 
 
 def configured() -> bool:
@@ -73,7 +77,11 @@ def _save_refresh(token: str) -> None:
         return
     try:
         f.parent.mkdir(parents=True, exist_ok=True)
-        f.write_text(json.dumps({"refresh_token": token, "env": _env_fingerprint()}))
+        # Scrittura atomica: un riavvio a metà non deve lasciare un file vuoto, il token
+        # vecchio è già stato consumato da Xceed.
+        tmp = f.with_suffix(".tmp")
+        tmp.write_text(json.dumps({"refresh_token": token, "env": _env_fingerprint()}))
+        tmp.replace(f)
     except Exception:
         logger.warning("Refresh token MCP non salvato su disco", exc_info=True)
 
@@ -85,9 +93,24 @@ async def _refresh_with(client: httpx.AsyncClient, refresh: str) -> httpx.Respon
     })
 
 
+def _error_detail(r: httpx.Response) -> str:
+    try:
+        d = r.json()
+        return f"{d.get('error', '')}: {d.get('error_description', '')}".strip(": ")
+    except Exception:
+        return r.text[:200]
+
+
 async def _access_token() -> str:
     if _token["access"] and time.time() < _token["exp"]:
         return _token["access"]
+    async with _refresh_lock:
+        if _token["access"] and time.time() < _token["exp"]:
+            return _token["access"]  # rinnovato da chi aspettava prima di noi
+        return await _refresh()
+
+
+async def _refresh() -> str:
     candidates = [t for t in dict.fromkeys(
         (_token["refresh"], _saved_refresh(), settings.xceed_mcp_refresh_token)) if t]
     r = None
@@ -98,10 +121,11 @@ async def _access_token() -> str:
             r = await _refresh_with(client, refresh)
             if r.status_code < 400:
                 break
-            logger.warning("Refresh token MCP Xceed rifiutato (HTTP %s)", r.status_code)
+            logger.warning("Refresh token MCP Xceed rifiutato (HTTP %s — %s)",
+                           r.status_code, _error_detail(r))
     if r is None or r.status_code in (400, 401):
         _token["access"] = ""
-        raise McpAuthError(AUTH_HELP)
+        raise McpAuthError(f"{AUTH_HELP} (Xceed: {_error_detail(r)})" if r is not None else AUTH_HELP)
     r.raise_for_status()
     data = r.json()
     _token["access"] = data["access_token"]
@@ -111,6 +135,23 @@ async def _access_token() -> str:
         _token["refresh"] = new_refresh
         _save_refresh(new_refresh)
     return _token["access"]
+
+
+async def check_auth() -> tuple[bool | None, str]:
+    """Per il controllo orario (notifications/token_health): (verdetto, dettaglio).
+
+    Rinnova il token quando l'access token è scaduto, cioè circa ogni ora: il refresh
+    token resta "usato" (se Xceed lo fa scadere per inattività non scade più) e, se
+    Xceed lo revoca, lo staff lo sa subito invece che al primo rimborso.
+    None = problema di rete, non del token.
+    """
+    try:
+        await _access_token()
+        return True, "ok"
+    except McpAuthError as e:
+        return False, str(e)
+    except Exception as e:
+        return None, str(e)
 
 
 def _parse(resp: httpx.Response) -> dict:

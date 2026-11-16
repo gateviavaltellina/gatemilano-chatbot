@@ -4,6 +4,7 @@
 - se lo staff rifà il consenso e aggiorna Railway, il token vecchio salvato sul volume
   non deve più avere la precedenza.
 """
+import asyncio
 import json
 
 import pytest
@@ -37,9 +38,15 @@ def mcp(monkeypatch, tmp_path):
 
         async def post(self, url, data=None, **k):
             sent.append(data["refresh_token"])
+            await asyncio.sleep(0)  # lascia entrare un eventuale rinnovo parallelo
             if data["refresh_token"] == good["token"]:
+                if good.get("rotate"):  # Xceed ruota: il token usato non vale più
+                    good["token"] = good["rotate"]
+                    return _Resp(200, {"access_token": "acc", "expires_in": 3600,
+                                       "refresh_token": good["rotate"]})
                 return _Resp(200, {"access_token": "acc", "expires_in": 3600})
-            return _Resp(400, {"error": "invalid_grant"})
+            return _Resp(400, {"error": "invalid_grant",
+                               "error_description": "Invalid refresh token"})
 
     monkeypatch.setattr(xm.httpx, "AsyncClient", _C)
     monkeypatch.setattr(xm.settings, "persist_dir", str(tmp_path))
@@ -71,6 +78,56 @@ async def test_tutti_rifiutati_errore_chiaro(mcp):
     with pytest.raises(xm.McpAuthError) as e:
         await xm._access_token()
     assert "xceed_mcp_oauth.py" in str(e.value) and "XCEED_MCP_REFRESH_TOKEN" in str(e.value)
+    assert "invalid_grant" in str(e.value)  # il motivo di Xceed, non solo "400"
+
+
+async def test_rinnovi_in_parallelo_usano_il_token_una_volta_sola(mcp):
+    # Caso reale 14/11: con la rotazione, due rinnovi paralleli con lo stesso token
+    # ne bruciano uno. Il lock fa rinnovare una volta sola e salva il token nuovo.
+    sent, good, tmp = mcp
+    good["rotate"] = "ruotato"
+    assert await asyncio.gather(xm._access_token(), xm._access_token()) == ["acc", "acc"]
+    assert sent == ["env-new"]
+    saved = json.loads((tmp / "xceed_mcp_token.json").read_text())
+    assert saved["refresh_token"] == "ruotato"
+    assert not (tmp / "xceed_mcp_token.tmp").exists()
+
+
+async def test_check_auth_verdetti(mcp, monkeypatch):
+    sent, good, tmp = mcp
+    assert await xm.check_auth() == (True, "ok")
+    xm._token.update(access="", exp=0.0)
+    good["token"] = "nessuno"
+    ok, detail = await xm.check_auth()
+    assert ok is False and "xceed_mcp_oauth.py" in detail
+
+    async def _rete():
+        raise OSError("timeout")
+    monkeypatch.setattr(xm, "_access_token", _rete)
+    assert (await xm.check_auth())[0] is None  # rete: non concludente
+
+
+async def test_token_health_allarme_mcp_al_cambio_di_stato(monkeypatch):
+    from notifications import token_health as th
+    alerts = []
+
+    async def _alert(text):
+        alerts.append(text)
+    verdicts = iter([(True, "ok"), (False, "scaduta"), (False, "scaduta"), (True, "ok")])
+
+    async def _check():
+        return next(verdicts)
+    monkeypatch.setattr(th, "_alert", _alert)
+    monkeypatch.setattr(th, "_targets", lambda: [])
+    monkeypatch.setattr(xm, "configured", lambda: True)
+    monkeypatch.setattr(xm, "check_auth", _check)
+    th._last_status.clear()
+    for _ in range(4):
+        await th.check_tokens()
+    th._last_status.clear()
+    assert len(alerts) == 2
+    assert "AUTORIZZAZIONE SCADUTA" in alerts[0] and "--railway" in alerts[0]
+    assert "ripartono" in alerts[1]
 
 
 async def test_ricerca_un_solo_errore_di_autorizzazione(monkeypatch):

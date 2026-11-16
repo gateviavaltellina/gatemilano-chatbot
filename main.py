@@ -107,8 +107,9 @@ async def _init_background():
             id="cancellation_recheck",
             replace_existing=True,
         )
-        # Health check token Meta (IG/WA) ogni ora: un token scaduto fa fallire
-        # TUTTI gli invii — meglio un alert proattivo che scoprirlo da un cliente.
+        # Health check token Meta (IG/WA) e MCP Xceed ogni ora: un token scaduto fa
+        # fallire TUTTI gli invii (o i rimborsi) — meglio un alert proattivo che
+        # scoprirlo da un cliente.
         from notifications.token_health import check_tokens
         scheduler.add_job(
             check_tokens,
