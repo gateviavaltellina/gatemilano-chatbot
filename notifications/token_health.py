@@ -1,4 +1,4 @@
-"""Health check dei token Meta (Instagram + WhatsApp).
+"""Health check dei token Meta (Instagram + WhatsApp) e dell'MCP Xceed (rimborsi).
 
 Un token scaduto (durano ~60 giorni) fa fallire TUTTI gli invii: senza questo
 check lo si scopre solo quando un cliente scrive e non riceve risposta. Qui i
@@ -82,20 +82,38 @@ async def check_tokens() -> dict[str, dict]:
     for name, url, token in _targets():
         ok, detail = await _token_ok(url, token)
         results[name] = {"ok": ok, "detail": detail}
-        if ok is None:
-            continue  # non concludente: stato invariato
-        prev = _last_status.get(name)
-        if prev in (True, None) and ok is False:
-            await _alert(
-                f"🚨 **TOKEN SCADUTO O NON VALIDO — {name}**\n"
-                f"Errore Meta: {detail}\n"
-                "Gli invii da questo canale stanno FALLENDO: i clienti non ricevono risposte.\n"
-                "Rigenera il token su Meta Business e aggiorna la variabile su Railway."
-            )
-        elif prev is False and ok is True:
-            await _alert(f"✅ Token {name} di nuovo valido — invii ripristinati.")
-        _last_status[name] = ok
+        await _transition(name, ok,
+                          f"🚨 **TOKEN SCADUTO O NON VALIDO — {name}**\n"
+                          f"Errore Meta: {detail}\n"
+                          "Gli invii da questo canale stanno FALLENDO: i clienti non ricevono risposte.\n"
+                          "Rigenera il token su Meta Business e aggiorna la variabile su Railway.",
+                          f"✅ Token {name} di nuovo valido — invii ripristinati.")
+    # MCP Xceed: il controllo rinnova anche il token, così non scade per inattività
+    # (caso reale 14/11: scoperto solo quando lo staff ha provato un !rimborsa).
+    from mail import xceed_mcp
+    if xceed_mcp.configured():
+        name = "MCP Xceed (rimborsi)"
+        ok, detail = await xceed_mcp.check_auth()
+        results[name] = {"ok": ok, "detail": detail}
+        await _transition(name, ok,
+                          f"🚨 **{name} — AUTORIZZAZIONE SCADUTA**\n"
+                          f"{detail}\n"
+                          "I rimborsi dal bot NON partono finché non si rifà il collegamento: "
+                          "`python3 scripts/xceed_mcp_oauth.py --railway`",
+                          f"✅ {name} di nuovo collegato — i rimborsi ripartono.")
     return results
+
+
+async def _transition(name: str, ok: bool | None, down: str, up: str) -> None:
+    """Allarme solo al cambio di stato; None (non concludente) lascia lo stato com'è."""
+    if ok is None:
+        return
+    prev = _last_status.get(name)
+    if prev in (True, None) and ok is False:
+        await _alert(down)
+    elif prev is False and ok is True:
+        await _alert(up)
+    _last_status[name] = ok
 
 
 def get_token_status() -> dict[str, bool | None]:
