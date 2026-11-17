@@ -138,6 +138,9 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     Compact upcoming events (1 line each) keep context lean for tourists
     planning ahead; full event details are only injected for explicitly queried dates.
     """
+    if venue == "milano_school_festival":
+        from rag.school_festival import build_context
+        return build_context(), []
     lower_text = text.lower()
     other_venue = _OTHER_VENUE.get(venue, "gate_milano")
     other_venue_name = _OTHER_VENUE_NAME.get(venue, "Gate Milano")

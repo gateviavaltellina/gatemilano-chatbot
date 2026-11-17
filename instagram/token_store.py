@@ -20,14 +20,18 @@ from config import settings
 
 logger = logging.getLogger(__name__)
 
-VENUES = ("gate_milano", "gate_sardinia")
+VENUES = ("gate_milano", "gate_sardinia", "milano_school_festival")
 
 _tokens: dict[str, str] = {}
 _origin: dict[str, str] = {}   # valore env da cui discende il token attivo per venue
 
 
 def _env_token(venue: str) -> str:
-    tok = settings.ig_gatemilano_token if venue == "gate_milano" else settings.ig_gatesardinia_token
+    tok = {
+        "gate_milano": settings.ig_gatemilano_token,
+        "gate_sardinia": settings.ig_gatesardinia_token,
+        "milano_school_festival": settings.ig_schoolfestival_token,
+    }.get(venue, "")
     return tok or ""
 
 
@@ -67,9 +71,10 @@ def load() -> None:
             _tokens[v] = env                # rotazione manuale (env nuova != origin), o niente persistito
             _origin[v] = env
     logger.info(
-        "token_store caricato (milano=%s, sardinia=%s)",
+        "token_store caricato (milano=%s, sardinia=%s, school_festival=%s)",
         "set" if _tokens.get("gate_milano") else "vuoto",
         "set" if _tokens.get("gate_sardinia") else "vuoto",
+        "set" if _tokens.get("milano_school_festival") else "vuoto",
     )
 
 

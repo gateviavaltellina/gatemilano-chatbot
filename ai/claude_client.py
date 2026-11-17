@@ -23,6 +23,7 @@ _client = AsyncAnthropic(api_key=settings.anthropic_api_key, max_retries=4)
 VENUE_NAMES = {
     "gate_milano": "Gate Milano",
     "gate_sardinia": "Gate Sardinia",
+    "milano_school_festival": "Milano School Festival",
 }
 
 VENUE_CONTACT_EMAIL = {
@@ -443,7 +444,10 @@ def build_system_blocks(venue: str, rag_context: str, current_datetime: str) -> 
     """
     venue_name = VENUE_NAMES.get(venue, venue)
     contact_email = VENUE_CONTACT_EMAIL.get(venue, "info@gatemilano.com")
-    if venue == "gate_sardinia":
+    if venue == "milano_school_festival":
+        from ai.school_festival import SYSTEM_STATIC
+        static_system = SYSTEM_STATIC
+    elif venue == "gate_sardinia":
         static_system = SYSTEM_STATIC_SARDINIA.format(
             venue_name=venue_name,
             contact_email=contact_email,
@@ -462,7 +466,7 @@ def build_system_blocks(venue: str, rag_context: str, current_datetime: str) -> 
         current_datetime=current_datetime,
         rag_context=rag_context or "Nessuna informazione specifica disponibile al momento.",
     )
-    notice = night_notice() if venue != "gate_sardinia" else ""
+    notice = night_notice() if venue == "gate_milano" else ""
     if notice:
         dynamic_system = f"{dynamic_system}\n\n{notice}"
     corrections_text = corrections.get_rules_text(venue)
@@ -565,6 +569,11 @@ async def generate_response(
     current_datetime = format_current_datetime()
     contact_email = VENUE_CONTACT_EMAIL.get(venue, "info@gatemilano.com")
     system = build_system_blocks(venue, rag_context, current_datetime)
+    error_reply = (
+        f"{API_ERROR_FALLBACK_PREFIX}. Riprova tra poco o chiedi assistenza allo staff qui in DM."
+        if venue == "milano_school_festival" else
+        f"{API_ERROR_FALLBACK_PREFIX}. Per assistenza contatta {contact_email}."
+    )
     # Lingua del messaggio: la "REGOLA PRIORITARIA" nel prompt non basta da sola (caso
     # reale IG 5/9, domande in inglese sul set di Kobosil con risposte in italiano). Una
     # riga esplicita in CODA al blocco dinamico — cioè subito prima del messaggio — la
@@ -582,6 +591,9 @@ async def generate_response(
     # foto in chat. Una foto può arrivare senza testo: in quel caso resta solo la nota.
     if image_block is not None:
         note = image_note or _STORY_IMAGE_NOTE
+        if venue == "milano_school_festival" and image_note is None:
+            from ai.school_festival import STORY_IMAGE_NOTE
+            note = STORY_IMAGE_NOTE
         note_text = f"{note}\n\n{user_message}" if user_message.strip() else note
         user_content = [image_block, {"type": "text", "text": note_text}]
     else:
@@ -636,16 +648,10 @@ async def generate_response(
             # cortesia che una risposta vuota al cliente.
             _last_api_error = f"risposta senza testo (stop_reason={response.stop_reason})"
             logger.error("Risposta senza blocco di testo: %s", _last_api_error)
-            return (
-                f"Mi dispiace, al momento non riesco a rispondere. "
-                f"Per assistenza contatta {contact_email}."
-            )
+            return error_reply
         _last_api_error = None  # successo → azzera l'ultimo errore
         return _strip_markdown(text)
     except Exception as e:
         logger.error("Errore Claude API: %s", e)
         _last_api_error = f"{type(e).__name__}: {str(e)[:300]}"
-        return (
-            f"Mi dispiace, al momento non riesco a rispondere. "
-            f"Per assistenza contatta {contact_email}."
-        )
+        return error_reply

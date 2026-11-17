@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     ig_gatemilano_token: str = ""
     ig_gatesardinia_id: str = "24588954374135134"
     ig_gatesardinia_token: str = ""
+    # @milano.school.festival: ID Instagram Login e token PROPRI del profilo.
+    # Vuoti = account non abilitato. Non riutilizzare le credenziali Gate.
+    ig_schoolfestival_id: str = ""
+    ig_schoolfestival_token: str = ""
 
     # Xceed
     xceed_api_key: str = ""

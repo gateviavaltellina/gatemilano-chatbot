@@ -33,6 +33,7 @@ from notifications.drinklist import (
 )
 from notifications.debug_trace import record as _trace
 from instagram.client import send_ig_message, react_to_message
+from instagram.accounts import account_venues, venue_for_account, _MILANO_IDS, _SARDINIA_IDS
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -52,17 +53,15 @@ def _mark_processed(msg_id: str) -> bool:
 
 
 # --- Account → venue mapping ---
-_SARDINIA_IDS = {"24588954374135134", "17841452139166980"}
-_MILANO_IDS = {"35517015101275600", "17841405933946552"}
+def _venue_for_account(ig_account_id: str) -> str | None:
+    return venue_for_account(ig_account_id)
 
 
-def _venue_for_account(ig_account_id: str) -> str:
-    if ig_account_id in _SARDINIA_IDS:
-        return "gate_sardinia"
-    if ig_account_id in _MILANO_IDS:
-        return "gate_milano"
-    logger.warning("IG account ID sconosciuto: %s — default gate_milano", ig_account_id)
-    return "gate_milano"
+def _staff_key(ig_account_id: str, sender_id: str) -> str:
+    # Mantiene compatibilità con takeover Gate persistiti; festival isolato.
+    if _venue_for_account(ig_account_id) == "milano_school_festival":
+        return f"ig:{ig_account_id}:{sender_id}"
+    return f"ig:{sender_id[:12]}"
 
 
 # --- Conversation state ---
@@ -139,7 +138,10 @@ async def receive_ig_webhook(request: Request, background_tasks: BackgroundTasks
                 sender_id = (event.get("sender") or {}).get("id") or ""
                 if not sender_id:
                     continue
-                all_bot_ids = _SARDINIA_IDS | _MILANO_IDS
+                all_bot_ids = account_venues()
+                if ig_account_id not in all_bot_ids:
+                    logger.warning("IG account sconosciuto ignorato: %s", ig_account_id)
+                    continue
                 if sender_id in all_bot_ids:
                     # Anti-loop: DM in arrivo da un account del GRUPPO (es. staff che
                     # scrive a @gatesardinia da @gatemilano) → ignorato di proposito.
@@ -217,13 +219,15 @@ async def process_ig_message(ig_account_id: str, sender_id: str, text: str,
                              is_story_reply: bool = False, story_image_url: str | None = None,
                              chat_image_url: str | None = None,
                              chat_audio_url: str | None = None) -> None:
+    if not _venue_for_account(ig_account_id):
+        return
     try:
         await _process_ig_message(ig_account_id, sender_id, text, is_story_reply,
                                   story_image_url, chat_image_url, chat_audio_url)
     except Exception:
         logger.exception("IG: errore processando il messaggio di %s — fallback + alert staff", sender_id)
         venue = _venue_for_account(ig_account_id)
-        phone = f"ig:{sender_id[:12]}"
+        phone = _staff_key(ig_account_id, sender_id)
         context = {"ig_account_id": ig_account_id, "sender_id": sender_id}
         sent = await send_ig_message(ig_account_id, sender_id, _ERROR_FALLBACK_REPLY)
         await notify_conversation(
@@ -252,7 +256,7 @@ async def _process_ig_message(ig_account_id: str, sender_id: str, text: str,
                               chat_audio_url: str | None = None) -> None:
     venue = _venue_for_account(ig_account_id)
     conv = _get_conversation(ig_account_id, sender_id)
-    phone = f"ig:{sender_id[:12]}"
+    phone = _staff_key(ig_account_id, sender_id)
     context = {"ig_account_id": ig_account_id, "sender_id": sender_id}
     display = text or ("[🎤 vocale]" if chat_audio_url else "[📷 foto]")
     _trace("ig", sender_id, display, "ricevuto", venue=venue, account=ig_account_id)
@@ -298,7 +302,13 @@ async def _process_ig_message(ig_account_id: str, sender_id: str, text: str,
     elif story_image_url:
         image_block = await fetch_image_block(story_image_url)
     if is_story_reply and image_block is None:
-        rag_context = f"{_STORY_REPLY_HINT}\n\n---\n\n{rag_context}"
+        story_hint = _STORY_REPLY_HINT
+        if venue == "milano_school_festival":
+            story_hint = (
+                "L'utente risponde a una storia non visibile. Se il riferimento è ambiguo, "
+                "chiedi cosa mostra la storia. Non dedurre età, promozioni o altre regole."
+            )
+        rag_context = f"{story_hint}\n\n---\n\n{rag_context}"
 
     # In history testuale l'immagine non ci sta: resta un segnaposto, così i turni
     # successivi sanno che è stata mandata una foto.
@@ -357,8 +367,10 @@ async def process_ig_non_text(ig_account_id: str, sender_id: str) -> None:
     """Allegato IG senza testo (foto/vocale/condivisione): risponde a parole
     invece di lasciare l'utente nel vuoto."""
     venue = _venue_for_account(ig_account_id)
+    if not venue:
+        return
     conv = _get_conversation(ig_account_id, sender_id)
-    phone = f"ig:{sender_id[:12]}"
+    phone = _staff_key(ig_account_id, sender_id)
     context = {"ig_account_id": ig_account_id, "sender_id": sender_id}
     if is_human_takeover(phone):
         await notify_human_message(phone, venue, "[allegato]", context)
@@ -372,7 +384,9 @@ async def process_ig_story_mention(ig_account_id: str, sender_id: str, msg_id: s
     """Menzione o post che cita @gatemilano nella storia → mettiamo un like ❤️
     invece di un messaggio di testo (più naturale e meno invadente)."""
     venue = _venue_for_account(ig_account_id)
-    phone = f"ig:{sender_id[:12]}"
+    if not venue:
+        return
+    phone = _staff_key(ig_account_id, sender_id)
     context = {"ig_account_id": ig_account_id, "sender_id": sender_id}
     if is_human_takeover(phone):
         await notify_human_message(phone, venue, "[menzione storia]", context)
@@ -385,7 +399,9 @@ async def process_ig_reaction(ig_account_id: str, sender_id: str, msg_id: str) -
     """L'utente ha reagito a una nostra storia/messaggio → reagiamo a nostra volta
     con un ❤️, senza inviare testo."""
     venue = _venue_for_account(ig_account_id)
-    phone = f"ig:{sender_id[:12]}"
+    if not venue:
+        return
+    phone = _staff_key(ig_account_id, sender_id)
     context = {"ig_account_id": ig_account_id, "sender_id": sender_id}
     if is_human_takeover(phone):
         await notify_human_message(phone, venue, "[reaction storia]", context)

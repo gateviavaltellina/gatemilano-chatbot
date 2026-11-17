@@ -1,12 +1,10 @@
 import httpx
 import logging
 from config import settings
+from instagram.accounts import _MILANO_IDS, _SARDINIA_IDS, venue_for_account
 
 logger = logging.getLogger(__name__)
 
-
-_MILANO_IDS = {"35517015101275600", "17841405933946552"}
-_SARDINIA_IDS = {"24588954374135134", "17841452139166980"}
 
 # ID Instagram business "inviabile" via Graph API (graph.facebook.com): l'endpoint
 # di invio /{id}/messages richiede l'IG business account id (17841...), NON gli id
@@ -19,11 +17,8 @@ _SARDINIA_SEND_ID = "17841452139166980"
 def _token_for_account(ig_account_id: str) -> str:
     # Legge dal token_store (token rinnovato più recente), non da settings diretto.
     from instagram import token_store
-    if ig_account_id in _MILANO_IDS:
-        return token_store.get("gate_milano")
-    if ig_account_id in _SARDINIA_IDS:
-        return token_store.get("gate_sardinia")
-    return ""
+    venue = venue_for_account(ig_account_id)
+    return token_store.get(venue) if venue else ""
 
 
 def _send_id_for_account(ig_account_id: str) -> str:

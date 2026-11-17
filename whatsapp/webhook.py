@@ -132,6 +132,7 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
     # Instagram DM (shared webhook endpoint)
     if body.get("object") == "instagram":
         from instagram.webhook import process_ig_message, process_ig_non_text
+        from instagram.accounts import account_venues
         for entry in body.get("entry", []):
             ig_account_id = entry.get("id", "")
             for messaging in entry.get("messaging", []):
@@ -142,7 +143,10 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -
                     msg_id = msg.get("mid") or ""
                     sender_id = (messaging.get("sender") or {}).get("id") or ""
                     text = (msg.get("text") or "").strip()
-                    ig_bot_ids = {settings.ig_gatemilano_id, settings.ig_gatesardinia_id}
+                    ig_bot_ids = account_venues()
+                    ig_account_id = (messaging.get("recipient") or {}).get("id") or entry.get("id", "")
+                    if ig_account_id not in ig_bot_ids:
+                        continue
                     if not sender_id or not msg_id or sender_id in ig_bot_ids or msg.get("is_echo"):
                         continue
                     if not _mark_processed(msg_id):

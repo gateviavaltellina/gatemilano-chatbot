@@ -3,6 +3,29 @@
 Guida operativa unica per Gate Milano + Gate Sardinia (Instagram DM + WhatsApp).
 Pensata per lo staff: cosa è configurato, dove, e cosa fare quando qualcosa si rompe.
 
+### Milano School Festival — solo Xmas Edition 22/12/2026
+
+Profilo dedicato `@milano.school.festival`: risponde ai propri DM usando il proprio
+ID/token, con la scheda `rag/knowledge/milano_school_festival.md`. Nessun lookup
+del calendario Gate o invio di listini Gate. Prezzi annunciati e disponibilità
+in vendita sono distinti; i dettagli mancanti richiedono conferma dello staff.
+Dopo la notte dell'evento il contesto smette di promuovere acquisti.
+
+Configurazione in Railway:
+- `IG_SCHOOLFESTIVAL_ID`: ID Instagram Login del profilo autorizzato.
+- `IG_SCHOOLFESTIVAL_TOKEN`: token Instagram Login dello stesso profilo.
+- Mantieni `IG_API_URL=https://graph.instagram.com/v22.0`.
+- Collega il profilo nell'app Meta esistente, callback `/webhook/instagram`,
+  campo `messages`, verifica con `WA_VERIFY_TOKEN`; non cambiare i callback Gate.
+- Rinnovo, persistenza su `PERSIST_DIR` e controllo salute includono il festival.
+- Relay e takeover staff restano nel canale IG, etichettati Milano School Festival.
+
+Prima di attivare, verificare via `/me` che il token appartenga proprio a
+`milano.school.festival` e che l'ID configurato corrisponda all'ID Instagram Login.
+ID/token vuoti non abilitano l'account. Gli account sconosciuti sono ignorati,
+senza fallback su Gate Milano. Per il collaudo finale inviare un DM da un profilo
+esterno (non Gate, esclusi dall'anti-loop) e verificare la risposta dal festival.
+
 ---
 
 ## 1. Panoramica

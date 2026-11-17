@@ -31,6 +31,9 @@ def _targets() -> list[tuple[str, str, str]]:
         out.append(("Instagram @gatemilano", f"{settings.ig_api_url}/me", ig_mi))
     if ig_sa:
         out.append(("Instagram @gatesardinia", f"{settings.ig_api_url}/me", ig_sa))
+    ig_school = token_store.get("milano_school_festival")
+    if ig_school:
+        out.append(("Instagram @milano.school.festival", f"{settings.ig_api_url}/me", ig_school))
     if settings.wa_access_token:
         out.append(("WhatsApp Cloud API",
                     f"{settings.wa_api_url}/{settings.wa_phone_number_id}", settings.wa_access_token))

@@ -10,6 +10,13 @@ logger = logging.getLogger(__name__)
 VENUE_EMOJI = {
     "gate_milano": "🏙️",
     "gate_sardinia": "🏖️",
+    "milano_school_festival": "🎓",
+}
+
+VENUE_NAMES = {
+    "gate_milano": "Gate Milano",
+    "gate_sardinia": "Gate Sardinia",
+    "milano_school_festival": "Milano School Festival",
 }
 
 
@@ -49,7 +56,7 @@ async def notify_conversation(phone: str, venue: str, user_msg: str, bot_reply: 
     is_ig = phone.startswith("ig:")
     emoji = VENUE_EMOJI.get(venue or "", "❓")
     source = "📸 IG" if is_ig else "💬 WA"
-    venue_label = {"gate_milano": "Gate Milano", "gate_sardinia": "Gate Sardinia"}.get(venue or "", "Venue sconosciuto")
+    venue_label = VENUE_NAMES.get(venue or "", "Venue sconosciuto")
     masked = _mask_phone(phone)
     # delivered=False: l'API (IG/WA) ha RIFIUTATO l'invio — il cliente non ha
     # ricevuto la risposta. Senza allarme, su Discord sembrerebbe tutto ok e il
@@ -105,7 +112,7 @@ async def notify_human_message(phone: str, venue: str, user_msg: str, context: d
     if not settings.discord_webhook_url and not settings.discord_ig_webhook_url:
         return
     emoji = VENUE_EMOJI.get(venue or "", "❓")
-    venue_label = {"gate_milano": "Gate Milano", "gate_sardinia": "Gate Sardinia"}.get(venue or "", "Venue sconosciuto")
+    venue_label = VENUE_NAMES.get(venue or "", "Venue sconosciuto")
     masked = _mask_phone(phone)
     payload = {
         "embeds": [
@@ -135,7 +142,7 @@ async def notify_escalation(
     is_ig = phone.startswith("ig:")
     emoji = VENUE_EMOJI.get(venue or "", "❓")
     source = "📸 IG" if is_ig else "💬 WA"
-    venue_label = {"gate_milano": "Gate Milano", "gate_sardinia": "Gate Sardinia"}.get(venue or "", "Venue sconosciuto")
+    venue_label = VENUE_NAMES.get(venue or "", "Venue sconosciuto")
     masked = _mask_phone(phone)
     cats = " · ".join(categories) if categories else "tema sensibile"
     payload = {

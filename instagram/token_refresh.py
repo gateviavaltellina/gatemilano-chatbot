@@ -35,7 +35,7 @@ async def _refresh_one(token: str) -> str | None:
 
 
 async def refresh_all() -> dict[str, bool]:
-    """Rinnova entrambi i token IG e li persiste. Ritorna {venue: rinnovato?}.
+    """Rinnova i token IG configurati e li persiste. Ritorna {venue: rinnovato?}.
 
     Nessun alert Discord da qui: un singolo rinnovo mancato NON è un problema (il
     token resta valido settimane, e il job gira ~8 volte prima della scadenza — basta
