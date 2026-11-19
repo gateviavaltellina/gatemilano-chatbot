@@ -263,6 +263,30 @@ def _next_day_of_month(now_date, day: int):
     return None
 
 
+# Feste nominate a parole → giorno della serata. Caso reale IG 19/11: "capodanno" non
+# diventava una data, il bot vedeva solo i prossimi 14 giorni e diceva che a Capodanno
+# non c'era niente — col Perreo XL New Year's Eve del 31/12 già in vendita.
+_HOLIDAYS = {
+    (12, 31): r"capodanno|san silvestro|new ?year'?s?( eve)?|nye|veglione|ultimo dell'anno|nochevieja|silvester",
+    (10, 31): r"halloween",
+    (12, 25): r"natale|christmas|navidad",
+    (12, 26): r"santo stefano|boxing day",
+    (1, 6): r"epifania|befana",
+    (8, 15): r"ferragosto",
+}
+
+
+def _holiday_dates(lower: str, now_date: _date) -> list[str]:
+    out = []
+    for (month, day), pattern in _HOLIDAYS.items():
+        if re.search(rf"\b({pattern})\b", lower):
+            # Come le date senza anno: una festa appena passata resta quella (es.
+            # "rimborso di halloween" il 2/11), altrimenti la prossima.
+            d = _resolve_yearless(_date(now_date.year, month, day), now_date)
+            out.append(d.strftime("%Y-%m-%d"))
+    return out
+
+
 def extract_query_dates(text: str, now: datetime | None = None, explicit_only: bool = False) -> list[str]:
     """explicit_only=True: solo date ESPLICITE (numeriche o "31 luglio"), niente
     termini relativi (stasera/domani/weekend/giorni della settimana). Serve quando il
@@ -273,6 +297,8 @@ def extract_query_dates(text: str, now: datetime | None = None, explicit_only: b
     # Giorni "nudi": restano fuori da explicit_only, come gli altri termini
     # relativi — un "il 23" ripescato dalla storia non e' una data esplicita.
     bare_days: list[str] = []
+    # Le feste valgono anche come date "esplicite" (anche ripescate dalla chat).
+    dates.extend(_holiday_dates(lower, now.date()))
 
     if not explicit_only:
         if any(t in lower for t in _TODAY_TERMS):
