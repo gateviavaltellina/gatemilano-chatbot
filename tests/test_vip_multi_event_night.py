@@ -130,6 +130,16 @@ async def test_riepilogo_conta_i_tavoli_acquistabili():
     # con il numero di tavoli acquistabili.
     assert "evento: Carl Cox Invites Loco Dice" in out
     assert "Perreo XL: 2 tavoli acquistabili online" in out
+    # Il link deve esserci già: niente conferma o secondo turno per ottenerlo.
+    assert "mappa-vip?name=Perreo+XL&date=2026-09-19" in out
+    assert "chiediglielo" not in out
+
+
+async def test_evento_nominato_con_accenti_seleziona_il_blocco_giusto():
+    _seed("hector", "Biscotto: Héctor Oaks", "2026-09-19")
+    out = await cb._vip_lookup("gate_milano", "2026-09-19", "gate-milano",
+                               "tavoli per hector oaks")
+    assert "evento: Biscotto: Héctor Oaks" in out.split("ALTRE SERATE")[0]
 
 
 async def test_nome_corto_aggancia_la_serata():

@@ -1,7 +1,6 @@
 """Shared RAG context builder for WhatsApp and Instagram webhooks."""
 from __future__ import annotations
 import logging
-import re
 
 from rag.event_store import (
     get_upcoming_events_compact,
@@ -10,10 +9,8 @@ from rag.event_store import (
     get_events_for_month_compact,
     get_vip_candidates,
     find_event_dates_by_name,
+    event_name_match_score,
     has_active_event,
-    _name_tokens,
-    _NAME_STOPWORDS,
-    _norm_name,
     get_events_around_compact,
     get_calendar_horizon,
 )
@@ -75,7 +72,6 @@ async def _vip_lookup(venue: str, date_str: str | None, channel: str,
     altrimenti uno con tavoli acquistabili) e una RIGA DI RIEPILOGO per ogni altro
     evento della stessa data, così il bot sa che esistono e non può negarli.
     """
-    lower = (text or "").lower()
     found: list[tuple[str, str]] = []  # (nome evento, blocco)
     for name, date_iso, ticket_url, sanity_id in get_vip_candidates(venue, date_str):
         if venue == "gate_milano":
@@ -91,48 +87,38 @@ async def _vip_lookup(venue: str, date_str: str | None, channel: str,
     if not found:
         return ""
 
-    def _is_named(name: str) -> bool:
-        """L'evento è citato nel messaggio del cliente?
-
-        Soglia a 3 lettere (non 4 come nel match generico): i nomi corti sono proprio
-        quelli su cui serve — "Raw" è una serata vera e con la soglia a 4 non veniva
-        mai agganciata. E match su CONFINE DI PAROLA, non sottostringa, altrimenti
-        "raw" scatterebbe dentro "drawn".
-        """
-        tokens = {t for t in _norm_name(name).split()
-                  if len(t) >= 3} - _NAME_STOPWORDS
-        return any(re.search(rf"\b{re.escape(t)}\b", lower) for t in tokens)
-
-    main = next((f for f in found if _is_named(f[0])), None)
-    if main is None and history_text:
-        # Follow-up che non nomina la serata ("siamo in sette"): si riaggancia l'evento
-        # della chat recente. Caso reale IG 19/11: "voglio un tavolo per perreo" →
-        # "siamo in sette", il blocco completo era di un'altra serata, il bot non aveva
-        # i link del Perreo e mandava a scrivere a info@.
-        lower = history_text
-        main = next((f for f in found if _is_named(f[0])), None)
-    if main is None:
-        main = next((f for f in found if "Prenota: http" in f[1]), found[0])
+    match_text = text
+    if not any(event_name_match_score(text, f[0]) for f in found):
+        match_text = history_text
+    main = max(found, key=lambda f: event_name_match_score(match_text, f[0]))
+    if not event_name_match_score(match_text, main[0]):
+        main = next((f for f in found if "Prenota: http" in f[1]
+                     or "PRENOTA E PAGA ONLINE" in f[1]), found[0])
 
     others = [f for f in found if f is not main]
     if not others:
         return main[1]
 
-    lines = [main[1], "", "ALTRE SERATE DELLA STESSA DATA — hanno TAVOLI PROPRI:"]
+    heading = "ALTRE SERATE DELLA STESSA DATA" if date_str else "ALTRE SERATE IN CALENDARIO"
+    lines = [main[1], "", f"{heading} — link e disponibilità separati:"]
     for name, block in others:
         libere = block.count("→ Prenota: http")
         if libere:
             lines.append(
-                f"- {name}: {libere} tavoli acquistabili online. Se il cliente è "
-                f"interessato a questa serata, chiediglielo e ti passo i link."
+                f"- {name}: {libere} tavoli acquistabili online."
             )
         else:
-            lines.append(f"- {name}: tavoli presenti, nessuno acquistabile online ora.")
+            # Zero checkout individuali non significa zero disponibilità:
+            # Revolut vende sulla mappa; un errore API non equivale a sold out.
+            status = next((l for l in block.splitlines() if l.startswith("TAVOLI VIP")), "")
+            lines.append(f"- {name}: {status}")
+        lines.extend(f"  {line}" for line in block.splitlines()
+                     if line.startswith("MAPPA TAVOLI 3D") or "PRENOTA E PAGA ONLINE" in line)
     lines.append(
         "⚠️ NON dire MAI che una di queste serate è senza tavoli o che i tavoli non "
-        "sono a listino: i loro tavoli esistono, qui sopra c'è solo il riepilogo. Se "
-        "il cliente chiede proprio quella serata, dillo e chiedi conferma invece di "
-        "negare."
+        "sono a listino solo perché qui c'è un riepilogo. MANDA SUBITO il link della "
+        "serata richiesta, con la sua data; non chiedere conferma per inviarlo. "
+        "Non trasferire prezzi o disponibilità tra eventi diversi."
     )
     return "\n".join(lines)
 

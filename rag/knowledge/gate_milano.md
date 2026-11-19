@@ -132,7 +132,7 @@ Antonio (responsabile guardaroba) è il **riferimento unico** per tutti gli ogge
 ## Tavoli VIP — Perreo XL
 
 I tavoli VIP sono disponibili per le serate Perreo XL (Main Room) e anche per altri eventi (concerti, serate non-Perreo) quando la mappa tavoli della serata li prevede.
-REGOLA SOVRANA: se nel contesto di QUALSIASI evento — anche non-Perreo, anche un concerto — compare un blocco "TAVOLI VIP DISPONIBILI" con prezzi e link "Prenota:", allora i tavoli ESISTONO per quell'evento. Proponili SUBITO coi prezzi e i link del contesto e NON dire MAI "non ci sono tavoli per questo evento". Solo se NON c'è nessun blocco tavoli né backstage nel contesto, di' che per quella serata non risultano tavoli online (e per gruppi/eventi privati indirizza a george@gatemilano.com).
+REGOLA SOVRANA: se nel contesto di QUALSIASI evento — anche non-Perreo, anche un concerto — compare un blocco "TAVOLI VIP DISPONIBILI" con prezzi e link "Prenota:", allora i tavoli ESISTONO per quell'evento. Proponili SUBITO coi prezzi e i link del contesto e NON dire MAI "non ci sono tavoli per questo evento". Se manca il listino live, invia comunque la MAPPA TAVOLI 3D della serata per verificare prezzi e disponibilità: non dedurre che i tavoli non esistano.
 Il biglietto d'ingresso è INCLUSO nel tavolo — nessun costo aggiuntivo.
 Il minimo è consumazione (bottiglie e drink dalla drinklist VIP). Mixers inclusi.
 
@@ -161,8 +161,13 @@ Tavolo Console per 13 persone = €500 + (3 × €50) = **€650**
 
 Online si prenota **solo il tavolo**, col suo link (minimo di spesa). Il supplemento delle persone extra si paga **all'ingresso, la sera stessa** (staff 19/11). Il bot manda SUBITO il link del tavolo e dice che le persone in più pagano il supplemento alla porta: niente email per prenotare.
 
-### Flusso prenotazione
-Il bot chiede solo ciò che manca tra serata e numero di persone → quota il minimo → manda SUBITO il link di prenotazione del tavolo dal contesto (booking-plugin.xceed.me o mappa della serata). Il cliente prenota e paga da solo dal link: il bot NON raccoglie dati, NON "gira la richiesta" allo staff e NON manda a scrivere a info@ per prenotare. Se il link del tavolo non è nel contesto ma c'è il link Xceed dell'evento, dà quello indicando "scegli Bottle Service". MAI promettere un link futuro ("a breve ti arriverà il link"): se non c'è un link ora, non prometterlo.
+### Flusso prenotazione — link immediato per ogni evento
+Alla prima domanda sui tavoli, anche solo informativa, il bot fornisce **SUBITO la MAPPA TAVOLI 3D dell’evento**, con nome e data. Non aspettare zona, numero persone o budget: si sceglie e si prenota sul sito. Questi dettagli servono solo dopo, per consigliare il tavolo e calcolare eventuali extra.
+- Se l’utente ha scelto un tavolo con un link "Prenota:" nel contesto, aggiungi anche quel checkout diretto.
+- Se manca la serata/data o ci sono più date possibili, chiedi solo quale; puoi mostrare i link dei candidati con nome e data. Non mandare il link di un'altra data come se fosse quello richiesto.
+- Con la mappa disponibile NON rimandare all’email e NON chiedere "vuoi il link?". La mappa consente di scegliere il tavolo e, quando la vendita è aperta, completare l'acquisto.
+- Il link biglietti Xceed si usa per i tavoli solo quando il contesto conferma un prodotto Bottle Service. Non darlo per scontato.
+- Se i dati live non sono verificabili, dai la mappa senza inventare prezzi, disponibilità o esaurimento. Nessuna promessa di un link futuro.
 
 ### Piantina tavoli
 Quando l'utente chiede la mappa/piantina dei tavoli (o sta scegliendo la zona), invia il LINK della MAPPA INTERATTIVA della serata richiesta: è nel contesto come "MAPPA TAVOLI 3D (data): <url>". È la mappa 3D di prenotazione del locale per quella data, con disponibilità in tempo reale e link di acquisto per ogni tavolo.
@@ -170,7 +175,7 @@ NON inviare più immagini/PDF Dropbox per la mappa tavoli.
 Se nel contesto non c'è il link mappa (es. data non specificata o nessun tavolo per quella serata), chiedi per quale data/serata serve la mappa.
 
 ### Pagamento e conferma
-- 100% anticipato tramite link Xceed dedicato al tavolo
+- 100% anticipato online sulla mappa della serata o tramite checkout dedicato al tavolo, se presente
 - Senza pagamento la prenotazione non è confermata
 - Cancellazioni: nessun rimborso. Il credito si sposta su un'altra data entro fine stagione (giugno)
 
@@ -295,13 +300,13 @@ Configurazione dedicata, diversa dal Perreo XL:
 I tavoli **F15, F16, F17** sono frontali al DJ booth. F12–F14 sul lato sinistro, F18–F20 sul lato destro.
 
 ### Piantina Backstage
-Per gli eventi backstage NON esiste (ancora) un link piantina dedicato da inviare: **NON inventare né promettere link**. Se nel contesto della serata c'è la "MAPPA TAVOLI 3D", usa quella; altrimenti descrivi le zone a parole (Balcony B1–B5 vista dall'alto; Floor F12–F20 intorno al DJ booth, F15–F17 frontali) e per la scelta del tavolo rimanda al link di prenotazione Xceed della serata.
+Anche per gli eventi backstage invia SUBITO la MAPPA TAVOLI 3D della serata presente nel contesto. Non inventare mappe o checkout se il contesto non li fornisce.
 
 ### Flusso prenotazione tavolo backstage
-Il bot raccoglie: data evento, zona preferita (Balcony / Floor), numero persone → quota il totale (€600 + eventuali extra) → fornisce SUBITO il link di prenotazione del tavolo se presente nel contesto (link Xceed / booking-plugin.xceed.me), altrimenti il link Xceed dell'evento indicando "scegli Bottle Service". MAI promettere un link futuro ("a breve ti arriverà il link").
+Stesso flusso immediato degli altri tavoli: **prima il link della MAPPA TAVOLI 3D della serata**, con nome e data; poi eventuali domande su zona e numero persone per consigliare e calcolare il totale dai prezzi reali. Se il tavolo scelto ha un checkout "Prenota:", aggiungilo. Non rimandare all'email quando il link è presente e non promettere link futuri.
 
 ### Pagamento e conferma
-- 100% anticipato tramite link Xceed dedicato al tavolo
+- 100% anticipato online sulla mappa della serata o tramite checkout dedicato al tavolo, se presente
 - Senza pagamento la prenotazione non è confermata
 - Cancellazioni: nessun rimborso. Il credito si sposta su un'altra data entro fine stagione (giugno)
 
@@ -520,12 +525,6 @@ I **giveaway ufficiali** di Gate Milano escono **SOLO** sul profilo Instagram uf
 Le foto e i video ufficiali delle serate vengono pubblicati sui nostri canali social (Instagram **@gatemilano**). Per il **contatto del fotografo** di una serata specifica, per richiedere una foto o per chiederne la **rimozione**: scrivere a **marketing@gatemilano.com** indicando la **data della serata**.
 - Per domande su una serata **già passata** (foto, fotografo, com'era...): NON dire mai che quella sera "non risultava nulla in programma" — le serate passate non sono in archivio ma si sono svolte.
 
-## "Lo Zio" 🕶️
-Se qualcuno chiede de **"lo zio"** (o del boss/capo del Gate — è la stessa persona: Andrea Scirocco), per noi è semplicemente **LO ZIO**: niente cariche né titoli.
-- **OGNI VOLTA che chiedono dello zio, di' SEMPRE** (tono scherzoso e affettuoso) che lo zio è **un tipo brillante e di grande carisma**, uno che **si salva sempre al 90esimo + recupero** ⚽.
-- Contatto diretto (telefono/WhatsApp): **+39 340 564 0389** — **SI PUÒ dare** a chi chiede dello zio: condivisione autorizzata esplicitamente dallo staff (deroga alla prudenza generale sui numeri di telefono, che resta valida per ogni ALTRO numero non in knowledge base).
-- Errore reale da non ripetere: il bot rispondeva "non so chi sia lo zio" e "i numeri di telefono non li fornisco mai" — per lo zio vale la regola qui sopra.
-
 ## Social Media
 - Instagram: @gatemilano
 - Sito: gatemilano.it
@@ -533,7 +532,7 @@ Se qualcuno chiede de **"lo zio"** (o del boss/capo del Gate — è la stessa pe
 ## Contatti per Tipo di Richiesta
 | Richiesta | Contatto |
 |-----------|----------|
-| Info generali, tavoli VIP, omaggio accompagnatore | info@gatemilano.com |
+| Info generali, assistenza tavoli VIP (prenotazione tramite mappa), omaggio accompagnatore | info@gatemilano.com |
 | Oggetti smarriti | Antonio, WhatsApp +39 389 640 6077 |
 | Concerti e live event | live@gatemilano.com |
 | Eventi aziendali e corporate | corporate@gatemilano.com · George: george@gatemilano.com / WhatsApp +39 329 169 6882 |

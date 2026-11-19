@@ -294,6 +294,15 @@ def extract_query_dates(text: str, now: datetime | None = None, explicit_only: b
     now = business_now(now)
     lower = text.lower()
     dates = []
+    # Le date ISO compaiono anche nei link mappa già inviati in chat. Senza questo
+    # pass "2026-12-04" veniva letto come 12 aprile dal parser dd/mm sottostante.
+    iso_pattern = r"\b\d{4}-\d{2}-\d{2}\b"
+    for match in re.finditer(iso_pattern, lower):
+        try:
+            dates.append(_date.fromisoformat(match.group()).isoformat())
+        except ValueError:
+            pass
+    lower = re.sub(iso_pattern, " ", lower)
     # Giorni "nudi": restano fuori da explicit_only, come gli altri termini
     # relativi — un "il 23" ripescato dalla storia non e' una data esplicita.
     bare_days: list[str] = []

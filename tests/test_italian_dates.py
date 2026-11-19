@@ -60,3 +60,9 @@ def test_xceed_data_line_has_weekday():
     doc, _ = _build_event_document({"name": "Test", "id": "t1", "startingTime": ts}, "Gate Milano", {})
     data_line = next(l for l in doc.split("\n") if l.startswith("Data:"))
     assert "sabato 18 luglio 2026" in data_line
+def test_iso_dates_in_messages_and_booking_links_do_not_swap_day_month():
+    from rag.date_utils import extract_query_dates
+    for day in ("2026-11-28", "2026-12-04", "2027-01-05", "2027-03-05"):
+        for text in (f"tavoli del {day}", f"https://gatemilano.it/mappa-vip?name=Perreo&date={day}"):
+            assert extract_query_dates(text, explicit_only=True) == [day]
+    assert extract_query_dates("tavoli del 2026-02-30", explicit_only=True) == []

@@ -155,7 +155,8 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
     L'endpoint risolve l'evento Xceed, applica il channel gate-milano e restituisce
     i tavoli sanificati (codice, zona, prezzo, coperti, stato, checkoutUrl) — stessa
     fonte della mappa di prenotazione. Niente XCEED_API_KEY qui.
-    Ritorna il blocco "TAVOLI VIP DISPONIBILI" per il RAG, o "" se nessun tavolo.
+    Ritorna disponibilità e link mappa per il RAG; con dati mancanti conserva il
+    link e dichiara la disponibilità non verificata. Vuoto solo senza nome/data.
     """
     date_iso = (date_str or "")[:10]
     if not event_name or not date_iso:
@@ -166,36 +167,38 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
     if cached and time.time() - cached["ts"] < _CACHE_TTL:
         return cached["text"]
 
+    map_url = f"{settings.site_base_url.rstrip('/')}/mappa-vip?{urlencode({'name': event_name, 'date': date_iso})}"
+    map_line = f"MAPPA TAVOLI 3D ({date_iso}): {map_url}"
+    unavailable = (
+        f"{map_line}\nTAVOLI VIP — evento: {event_name} ({date_iso}): prezzi e "
+        "disponibilità non verificabili in questo momento. MANDA SUBITO il link "
+        "della mappa per verificare; NON garantire disponibilità o acquisto, NON "
+        "dire mai che sono esauriti e NON sostituire prezzi o zone con il listino "
+        "standard. NON affermare che i tavoli ci sono o si possono prenotare: qui "
+        "non è confermato. Dichiara che la disponibilità va verificata sulla mappa; se lì "
+        "non risultano tavoli acquistabili, indica info@gatemilano.com per assistenza."
+    )
     url = f"{settings.site_base_url.rstrip('/')}/api/vip-availability"
     try:
         async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
             r = await client.get(url, params={"name": event_name, "date": date_iso})
             if r.status_code != 200:
                 logger.debug("VIP via sito: HTTP %s per %s %s", r.status_code, event_name, date_iso)
-                return ""
+                return unavailable
             data = r.json()
     except Exception as e:
         logger.debug("VIP via sito: errore per %s %s: %s", event_name, date_iso, e)
-        return ""
+        return unavailable
 
     # La MAPPA 3D esiste per OGNI serata: si costruisce da nome+data e non dipende
     # dall'elenco tavoli. Va quindi calcolata PRIMA di qualsiasi uscita anticipata.
     # Caso reale (WA 4/9, Perreo XL 26/9): l'endpoint tavoli non rispondeva e il bot
     # diceva "non ho ancora il link della mappa", che e' falso e fa perdere vendite.
-    map_url = f"{settings.site_base_url.rstrip('/')}/mappa-vip?{urlencode({'name': event_name, 'date': date_iso})}"
-    map_line = f"MAPPA TAVOLI 3D ({date_iso}): {map_url}"
-
     tables = data.get("tables", []) if isinstance(data, dict) else []
     if not tables:
         # Nessun tavolo dall'endpoint: NON e' "la mappa non c'e'". Diamo comunque il
         # link, che mostra tavoli e disponibilita' in tempo reale per quella serata.
-        text = (
-            f"{map_line}\n"
-            "TAVOLI VIP: elenco non disponibile in questo momento. MANDA COMUNQUE al "
-            "cliente il link della MAPPA qui sopra (vale per QUALSIASI serata e mostra "
-            "tavoli e disponibilita' aggiornate). NON dire mai che per questa serata la "
-            "mappa non esiste o non ce l'hai, e non dire che i tavoli sono esauriti."
-        )
+        text = unavailable
         _site_cache[key] = {"text": text, "ts": time.time()}
         return text
 
@@ -242,11 +245,11 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
     quick = {}
     for t in available:
         url = (t.get("checkoutUrl") or "").strip()
-        key = (t.get("zona") or "VIP", t.get("prezzo"), t.get("coperti"))
-        if url and key not in quick:
-            quick[key] = (t, url)
+        quick_key = (t.get("zona") or "VIP", t.get("prezzo"), t.get("coperti"))
+        if url and quick_key not in quick:
+            quick[quick_key] = (t, url)
     if quick:
-        lines.append("LINK PER PRENOTARE SUBITO (un tavolo per fascia — giralo appena sai serata e persone):")
+        lines.append("LINK PER PRENOTARE SUBITO (un tavolo per fascia; la mappa va inviata anche senza numero persone):")
         for (zona, prezzo, cop), (t, url) in sorted(quick.items(), key=lambda q: (q[0][1] or 0, q[0][0])):
             cop_str = f" fino a {cop} persone" if cop else ""
             lines.append(f"  · {zona} €{prezzo}{cop_str} ({t.get('codice', '')}): {url}")

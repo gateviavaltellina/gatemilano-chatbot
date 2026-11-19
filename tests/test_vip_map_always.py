@@ -67,6 +67,8 @@ async def test_mappa_presente_anche_senza_tavoli(monkeypatch):
     # e deve vietare esplicitamente le due frasi sbagliate viste in chat
     assert "NON dire mai" in out
     assert "esauriti" in out
+    assert "non verificabili" in out
+    assert "NON garantire" in out
 
 
 async def test_mappa_presente_con_tavoli(monkeypatch):
@@ -88,9 +90,11 @@ async def test_niente_mappa_senza_nome_o_data(monkeypatch):
     assert await vt.get_vip_tables_via_site("Perreo XL", "") == ""
 
 
-async def test_http_non_200_non_inventa_la_mappa(monkeypatch):
-    # Se il sito è davvero giù usciamo vuoti: il lookup prosegue sugli altri candidati
-    # invece di promettere una mappa che non abbiamo potuto verificare.
+async def test_http_non_200_preserva_link_senza_inventare_disponibilita(monkeypatch):
+    # Evento noto in calendario: il link noto non dipende dall'API disponibilità.
     Fake, _ = _client_factory(lambda url, params: _json_response({}, status=500))
     monkeypatch.setattr(vt.httpx, "AsyncClient", Fake)
-    assert await vt.get_vip_tables_via_site("Perreo XL", "2026-09-26") == ""
+    out = await vt.get_vip_tables_via_site("Perreo XL", "2026-09-26")
+    assert "mappa-vip?name=Perreo+XL&date=2026-09-26" in out
+    assert "non verificabili" in out
+    assert "TAVOLI VIP DISPONIBILI" not in out

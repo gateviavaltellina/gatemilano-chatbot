@@ -86,10 +86,32 @@ def test_finds_short_allowlisted_artist_gue():
     assert find_event_dates_by_name("gate_sardinia", "vorrei un tavolo per gue") == [expected]
 
 
-def test_short_non_allowlisted_token_still_ignored():
-    # nome corto NON in allowlist resta filtrato (no falsi positivi su parole brevi)
+def test_short_published_event_is_recognized():
+    # Un nome presente in calendario non deve richiedere un'allowlist manuale.
     _seed("gate_sardinia", "Sun", 19)
-    assert find_event_dates_by_name("gate_sardinia", "sun") == []
+    assert find_event_dates_by_name("gate_sardinia", "sun")
+
+
+def test_short_artist_and_accented_name_are_recognized():
+    _seed("gate_milano", "PLASMA: BLK.", 60, artists=["BLK."])
+    _seed("gate_milano", "Biscotto: Héctor Oaks", 20)
+    assert find_event_dates_by_name("gate_milano", "tavoli per BLK")
+    assert find_event_dates_by_name("gate_milano", "tavoli per hector oaks")
+    assert find_event_dates_by_name("gate_milano", "black Friday") == []
+
+
+def test_specific_edition_wins_over_weekly_event():
+    _seed("gate_milano", "Perreo XL", 2)
+    _seed("gate_milano", "Perreo XL", 9)
+    _seed("gate_milano", "Perreo XL - New Year's Eve", 45)
+    result = find_event_dates_by_name("gate_milano", "tavoli Perreo XL - New Year's Eve")
+    assert len(result) == 1
+    assert result[0] not in find_event_dates_by_name("gate_milano", "Perreo XL")
+
+
+def test_published_event_beyond_default_horizon_is_recognized():
+    _seed("gate_milano", "Future Headliner", 400)
+    assert find_event_dates_by_name("gate_milano", "tavoli Future Headliner")
 
 
 def test_truncated_nickname_resolves_artist():

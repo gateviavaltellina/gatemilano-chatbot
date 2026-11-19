@@ -341,6 +341,8 @@ _NAME_STOPWORDS = {
     # risposto che a metà ottobre non c'era nulla in programma.
     "milan", "milaan", "sesto", "giovanni", "italia", "italy",
     "weekend", "week", "settimana", "giorno", "giorni", "date", "datta",
+    "the", "and", "for", "with", "all", "long", "per", "con", "che", "una",
+    "del", "dei", "gli", "non", "ora", "you", "any", "can", "are", "vip",
 }
 
 # Nomi artista CORTI (<4 lettere, normalizzati: minuscolo, senza accenti) di forte
@@ -402,23 +404,41 @@ def _has_name_match(query_tokens: set[str], name_tokens: set[str]) -> bool:
     return False
 
 
-def find_event_dates_by_name(venue: str, text: str, days: int = 300, limit: int = 2) -> list[str]:
+def event_name_match_score(text: str, name: str, artists: list[str] | None = None) -> int:
+    """Prefer specific titles/artists to shared series names; exact short names work.
+
+    Only compare short tokens on word boundaries, never fuzzily (BLK != black).
+    The same ranking is used for date resolution and the table detail block.
+    """
+    query = _norm_name(text)
+    query_tokens = {t for t in query.split() if len(t) >= 3} - _NAME_STOPWORDS
+    labels = [name, *(artists or [])]
+    normalized = [_norm_name(label) for label in labels]
+    name_tokens = {t for label in normalized for t in label.split() if len(t) >= 3} - _NAME_STOPWORDS
+    exact = query_tokens & name_tokens
+    if exact:
+        full_label = any(
+            label and re.search(rf"\b{re.escape(label)}\b", query)
+            and set(label.split()) & exact for label in normalized
+        )
+        return len(exact) * 10 + int(full_label)
+    return int(_has_name_match(query_tokens, name_tokens))
+
+
+def find_event_dates_by_name(venue: str, text: str, days: int | None = None, limit: int = 2) -> list[str]:
     """Risolve un evento dal nome/lineup citato nel messaggio (es. un artista) quando
     l'utente NON ha dato una data esplicita. Cerca su tutta la stagione (`days` giorni)
-    gli eventi il cui titolo condivide almeno un token significativo (>=4 lettere) col
-    messaggio, e ritorna fino a `limit` date YYYY-MM-DD in ordine cronologico.
+    gli eventi per titolo o lineup, inclusi nomi corti esatti (>=3 lettere), e
+    ritorna fino a `limit` date dei match migliori in ordine cronologico.
 
     Serve a far trovare al bot eventi oltre la finestra "prossimi giorni" (es. chiedere
     di un artista che suona tra mesi) e ad alimentare il lookup tavoli per quella serata.
-    Finestra ampia (300gg ~ 10 mesi) perché Gate Milano programma la stagione con largo
-    anticipo: un cliente che chiede di un headliner a 4 mesi deve comunque trovarlo.
+    Per default cerca tutti gli eventi futuri pubblicati, senza un limite temporale.
+    I match più specifici precedono quelli su una sola parola della serie.
     """
-    tokens = _name_tokens(text) - _NAME_STOPWORDS
-    if not tokens:
-        return []
     today_ts = _today_start_utc()
-    end_ts = today_ts + days * 86400
-    matched: list[tuple[int, str]] = []
+    end_ts = today_ts + days * 86400 if days is not None else float("inf")
+    matched: list[tuple[int, int, str]] = []
     for e in _get(venue):
         m = e["metadata"]
         if m.get("type") != "event":
@@ -430,17 +450,16 @@ def find_event_dates_by_name(venue: str, text: str, days: int = 300, limit: int 
         # NON nel titolo (es. Sardinia 10/7: titolo "Davide T", in lineup anche
         # Kamelia/Dfifonte/Asci). Senza questo, chi chiede di quegli artisti non
         # troverebbe la serata.
-        searchable = m.get("event_name", "")
-        artists = m.get("artists")
-        if artists:
-            searchable += " " + " ".join(artists)
-        name_tokens = _name_tokens(searchable)
-        if _has_name_match(tokens, name_tokens):
+        score = event_name_match_score(text, m.get("event_name", ""), m.get("artists"))
+        if score:
             di = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
-            matched.append((ts, di))
-    matched.sort(key=lambda x: x[0])
+            matched.append((score, ts, di))
+    matched.sort(key=lambda x: (-x[0], x[1]))
     out: list[str] = []
-    for _, di in matched:
+    best = matched[0][0] if matched else 0
+    for score, _, di in matched:
+        if score < best:
+            break
         if di not in out:
             out.append(di)
         if len(out) >= limit:
