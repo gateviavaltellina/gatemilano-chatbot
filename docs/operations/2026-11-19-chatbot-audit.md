@@ -23,6 +23,6 @@ L'API ammette messaggi user consecutivi: non occorre eliminarne uno per alternar
 
 ## Limiti osservati
 
-- Nel caso «e domani invece?» il modello può ancora citare inutilmente la serata precedente, pur ricevendo la data corretta e fornendo il link corretto per domani. La qualità del testo va monitorata; la risoluzione dei dati è coperta dai test.
+- CASO APERTO: con «e domani invece?» il modello può ancora proporre ANCHE il link della vecchia data, oltre a quello corretto per domani, pur ricevendo la selezione giusta. Un ulteriore controllo dei link in uscita è necessario per garantire che non proponga checkout fuori dalla data scelta. La sola correzione della risoluzione dati e le istruzioni nel prompt non eliminano affidabilmente questo errore.
 - Readiness attende la conclusione del primo tentativo di sync; non garantisce che i provider esterni rispondano sempre con dati completi.
 - Rimangono i 9 eventi senza listino tavoli verificabile dal sito, documentati nella [verifica tavoli](2026-11-19-gate-milano-tables.md). Non sono stati inventati prezzi o creato inventario.
