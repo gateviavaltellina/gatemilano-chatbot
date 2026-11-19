@@ -5,6 +5,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, BackgroundTasks, HTTPException, Request, Depends
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
@@ -173,7 +174,9 @@ async def _init_background():
     # APScheduler lo leggeva come ora di Roma, cioè 2 ore nel passato → misfire
     # scartato: su Railway il sync di startup NON PARTIVA MAI e il bot restava
     # senza eventi fino al primo cron utile.
-    asyncio.create_task(sync_all_venues())
+    # Railway must keep the previous deployment serving while the new process
+    # populates its in-memory calendar. An empty partial calendar is not ready.
+    await sync_all_venues()
     asyncio.create_task(start_discord_bot())
     _ready = True
     logger.info("Bot pronto. In ascolto su porta %d", settings.port)
@@ -234,7 +237,10 @@ _GIT_SHA = _git_sha()
 
 @app.get("/health")
 async def health():
-    return {"status": "ok" if _ready else "starting", "model": settings.model, "version": _GIT_SHA}
+    return JSONResponse(
+        {"status": "ok" if _ready else "starting", "model": settings.model, "version": _GIT_SHA},
+        status_code=200 if _ready else 503,
+    )
 
 
 @app.post("/sync/xceed")

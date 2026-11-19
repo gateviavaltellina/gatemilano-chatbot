@@ -306,8 +306,9 @@ def extract_query_dates(text: str, now: datetime | None = None, explicit_only: b
     # Giorni "nudi": restano fuori da explicit_only, come gli altri termini
     # relativi — un "il 23" ripescato dalla storia non e' una data esplicita.
     bare_days: list[str] = []
-    # Le feste valgono anche come date "esplicite" (anche ripescate dalla chat).
-    dates.extend(_holiday_dates(lower, now.date()))
+    # Una festa è una data implicita: non deve precedere una data scritta per
+    # esteso ("Natale il 24 dicembre", "Halloween del 31/10/2027").
+    holiday_dates = _holiday_dates(lower, now.date())
 
     if not explicit_only:
         if any(t in lower for t in _TODAY_TERMS):
@@ -442,6 +443,9 @@ def extract_query_dates(text: str, now: datetime | None = None, explicit_only: b
         if not year_raw:
             d = _resolve_yearless(d, now.date())
         dates.append(d.strftime("%Y-%m-%d"))
+
+    if not dates:
+        dates.extend(holiday_dates)
 
     # Il giorno "nudo" è il segnale più debole: vale solo se nessun pass più preciso
     # (mese a parole, typo sul mese, data numerica) ha prodotto una data. Così

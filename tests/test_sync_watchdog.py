@@ -54,3 +54,45 @@ async def test_watchdog_noop_when_populated(monkeypatch):
 
     await m.sync_watchdog()
     assert calls == []
+
+
+async def test_startup_is_not_ready_before_calendar_sync_finishes(monkeypatch):
+    import asyncio
+    from types import SimpleNamespace
+
+    started, release = asyncio.Event(), asyncio.Event()
+
+    async def slow_sync():
+        started.set()
+        await release.wait()
+
+    async def no_discord():
+        pass
+
+    monkeypatch.setattr(m, "_ready", False)
+    monkeypatch.setattr(m, "sync_all_venues", slow_sync)
+    monkeypatch.setattr(m, "start_discord_bot", no_discord)
+    monkeypatch.setattr(m.persistence, "load_state", lambda: False)
+    monkeypatch.setattr(m, "scheduler", SimpleNamespace(
+        add_job=lambda *a, **k: None, start=lambda: None, get_jobs=lambda: []))
+    task = asyncio.create_task(m._init_background())
+    try:
+        await asyncio.wait_for(started.wait(), timeout=1)
+        assert not m._ready
+    finally:
+        release.set()
+        await task
+        await asyncio.sleep(0)
+    assert m._ready
+
+
+def test_health_does_not_route_traffic_to_starting_container(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    client = TestClient(m.app)
+    monkeypatch.setattr(m, "_ready", False)
+    r = client.get("/health")
+    assert r.status_code == 503
+    assert r.json()["status"] == "starting"
+    monkeypatch.setattr(m, "_ready", True)
+    assert client.get("/health").status_code == 200

@@ -535,11 +535,11 @@ async def fetch_image_block(url: str, headers: dict | None = None) -> dict | Non
 
 
 def _sanitize_history(history: list[dict]) -> list[dict]:
-    """Ripulisce la history prima della chiamata API. Una history malformata
-    (messaggi con contenuto vuoto o due turni consecutivi dello stesso ruolo) fa
-    tornare all'API un 400 NON ritentabile → il cliente riceve "non riesco a
-    rispondere". Qui scartiamo i vuoti, fondiamo i ruoli consecutivi e togliamo un
-    eventuale 'user' finale (aggiungiamo noi il nuovo user dopo: due user di fila = 400)."""
+    """Discard malformed/empty messages and merge consecutive history turns.
+
+    Never drop an unanswered user turn. The Messages API accepts consecutive
+    user messages, so generate_response can append the latest message normally.
+    """
     clean: list[dict] = []
     for m in history or []:
         role = m.get("role")
@@ -553,8 +553,6 @@ def _sanitize_history(history: list[dict]) -> list[dict]:
             clean[-1] = {"role": role, "content": clean[-1]["content"] + "\n" + content}
         else:
             clean.append({"role": role, "content": content})
-    while clean and clean[-1]["role"] == "user":
-        clean.pop()
     return clean
 
 

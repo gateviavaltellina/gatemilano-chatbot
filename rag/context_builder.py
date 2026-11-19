@@ -53,6 +53,70 @@ _OTHER_VENUE_ALIASES = {
 _VENUE_CHANNEL = {"gate_milano": "gate-milano", "gate_sardinia": "gate-sardinia"}
 
 
+def _explicit_venue(text: str) -> str | None:
+    mentioned = [venue for venue, aliases in _OTHER_VENUE_ALIASES.items()
+                 if any(alias in text.lower() for alias in aliases)]
+    return mentioned[0] if len(mentioned) == 1 else None
+
+
+def _named_topic(venue: str, text: str) -> tuple[list[str], str]:
+    requested = _explicit_venue(text)
+    target = requested or venue
+    dates = find_event_dates_by_name(target, text)
+    if not dates and not requested:
+        other = _OTHER_VENUE[target]
+        other_dates = find_event_dates_by_name(other, text)
+        if other_dates:
+            return other_dates, other
+    return dates, target
+
+
+def _history_topic(venue: str, history: list[dict]) -> tuple[str, list[str], str]:
+    """Use the latest customer selection, not every date/name ever mentioned.
+
+    Assistant suggestions are a fallback only. Relative dates in old messages
+    cannot be reinterpreted as if they had been sent today.
+    """
+    recent = history[-12:]
+    for role in ("user", "assistant"):
+        for index in range(len(recent) - 1, -1, -1):
+            message = recent[index]
+            if message.get("role") != role:
+                continue
+            text = message.get("content", "")
+            dates = extract_query_dates(text, explicit_only=True)
+            named, target = _named_topic(venue, text)
+            if role == "user" and not dates and extract_query_dates(text):
+                # A historical "tomorrow" was resolved when the bot replied.
+                # Reuse that concrete date, not today's interpretation and not
+                # the older selection preceding this customer's change.
+                for reply in recent[index + 1:]:
+                    if reply.get("role") != "assistant":
+                        continue
+                    reply_text = reply.get("content", "")
+                    reply_dates = extract_query_dates(reply_text, explicit_only=True)
+                    if len(reply_dates) == 1:
+                        _, reply_venue = _named_topic(target, reply_text)
+                        return reply_text, reply_dates, reply_venue
+            if dates or named or _explicit_venue(text):
+                # "Anzi il 28 novembre" retains the previous event name for the
+                # table ranking, but never the old date.
+                topic = text
+                if dates and not named:
+                    for older in reversed(recent[:index]):
+                        if older.get("role") != "user":
+                            continue
+                        old_text = older.get("content", "")
+                        old_dates, old_target = _named_topic(target, old_text)
+                        if old_dates:
+                            topic += " " + old_text
+                            if not _explicit_venue(text):
+                                target = old_target
+                            break
+                return topic, dates or named, target
+    return "", [], venue
+
+
 async def _vip_lookup(venue: str, date_str: str | None, channel: str,
                       text: str = "", history_text: str = "") -> str:
     """Disponibilità tavoli per una venue, per la data richiesta (o i prossimi eventi).
@@ -137,105 +201,48 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     lower_text = text.lower()
     other_venue = _OTHER_VENUE.get(venue, "gate_milano")
     other_venue_name = _OTHER_VENUE_NAME.get(venue, "Gate Milano")
-    channel = _VENUE_CHANNEL.get(venue, "gate-milano")
 
     # Testo degli ultimi 6 messaggi (user + bot) — serve sia per il topic VIP sia per
     # ripescare l'evento di cui si sta parlando quando il follow-up non lo nomina.
     history_text = " ".join(
         m.get("content", "") for m in (history or [])[-6:]
     ).lower()
-    # Finestra più ampia solo per RIAGGANCIARE l'evento (anche dell'altra sede) nei
-    # follow-up: un "e c'è dress code?" può arrivare vari turni dopo che l'evento è
-    # stato nominato. Senza questa, il bot perde il contesto cross-venue e mescola le
-    # policy delle due sedi (caso reale: dress code chiesto sul canale Milano per una
-    # serata di Gate Sardinia).
-    history_text_wide = " ".join(
-        m.get("content", "") for m in (history or [])[-12:]
-    ).lower()
-    # L'utente nomina esplicitamente l'ALTRA sede (nel messaggio o nella chat recente)?
-    # Se sì, iniettiamo la sua KB anche senza un evento specifico, così il bot può
-    # rispondere a domande generali su quella sede (età, prezzi, dress code, contatti)
-    # invece di rimandare al sito. Caso reale: "info su gate sardinia, età minima e
-    # prezzo" arrivato sul canale Milano.
-    _other_aliases = _OTHER_VENUE_ALIASES.get(other_venue, ())
-    other_venue_mentioned = any(a in lower_text for a in _other_aliases) or \
-        any(a in history_text for a in _other_aliases)
-
+    history_topic, history_dates, history_venue = _history_topic(venue, history or [])
+    requested_venue = _explicit_venue(text)
+    name_dates, target_venue = _named_topic(requested_venue or history_venue, text)
+    # Keep venue selection even if another branch has an event on the same day.
+    other_venue_mentioned = target_venue == other_venue
     explicit_dates = extract_query_dates(text)
-    # Risolvi SEMPRE anche l'evento citato per nome/artista, non solo come fallback
-    # quando manca la data. Caso reale (Perreo XL "questo sabato"): l'utente dà una
-    # data relativa che cade sul giorno X, ma l'evento in Sanity è indicizzato su un
-    # giorno adiacente (orario di inizio a cavallo di mezzanotte → date_ts spostato di
-    # un giorno, vedi sanity_sync._build_document). Con la sola data non troveremmo
-    # l'evento e il bot risponderebbe "non ho i dettagli" pur avendone in Sanity.
-    name_dates = find_event_dates_by_name(venue, text)
-    # Cross-venue per nome: se l'artista/evento non è di QUESTA venue, prova l'ALTRA
-    # (caso reale: "Guè"/"Melons"/"Rondodasosa" citati sul canale Milano ma in
-    # cartellone a Gate Sardinia). Così scattano evento e tavoli dell'altra location.
-    if not name_dates:
-        name_dates = find_event_dates_by_name(other_venue, text)
-    # Follow-up che NON nomina l'evento ma ne eredita il topic dalla chat: recupera
-    # l'evento dai messaggi recenti (caso reale: turno prima "stasera Perreo XL a Gate
-    # Sardinia", poi "quanto costa l'ingresso?" — senza questo il bot perde l'evento e
-    # risponde "non ho i dettagli sui prezzi" pur avendoli in contesto un attimo prima).
-    name_from_text = bool(name_dates)
-    if not name_dates and history_text_wide:
-        name_dates = (find_event_dates_by_name(venue, history_text_wide)
-                      or find_event_dates_by_name(other_venue, history_text_wide))
-    # Le date risolte per nome vengono PRIMA: sono la data esatta in cui l'evento è
-    # archiviato, mentre una data relativa ("questo sabato") è solo l'approssimazione
-    # dell'utente e può cadere su un giorno adiacente. query_dates[0] guida anche il
-    # lookup tavoli VIP, che va fatto sul giorno giusto.
-    # Se il cliente ha scritto una data PRECISA ("24 ottobre", "23/10"), quella vince
-    # su qualsiasi data dedotta dal nome dell'evento. Gli eventi settimanali rendevano
-    # la regola precedente dannosa: caso reale (WhatsApp 7/10) "un tavolo alla serata
-    # Perreo del 24 ottobre" → il nome "Perreo" risolveva ai PROSSIMI Perreo XL (10 e
-    # 17 ottobre), quelle date finivano in testa e il lookup tavoli andava a prendere
-    # il 10. Il bot, vedendo tavoli di un'altra data, rispondeva giustamente di non
-    # avere la mappa del 24 e mandava il cliente a scrivere un'email: 30 tavoli liberi
-    # con i link pronti, e una prenotazione persa.
-    #
-    # La priorità al nome resta dove serviva davvero: sulle date RELATIVE ("questo
-    # sabato"), dove l'utente approssima e l'evento può essere archiviato sul giorno
-    # adiacente per via del rollover notturno.
+    # Current date/event beats history. Relative terms in old messages are ignored.
     strict_dates = extract_query_dates(text, explicit_only=True)
-    # Follow-up che non ripete la data: "Sì farei zona balcony" dopo che la serata è
-    # già stata nominata turni prima. Caso reale (WhatsApp 8/10, Perreo XL del 31/10):
-    # il nome "Perreo" ripescato dalla chat risolveva ai PROSSIMI Perreo (settimanali)
-    # e il lookup tavoli finiva sulla serata sbagliata — il bot rispondeva di non avere
-    # la mappa del 31, con 5 tavoli Balcony liberi da €600 e i link pronti.
-    # La data della chat vale SOLO se il messaggio attuale non porta né una data propria
-    # né il nome di un evento: se il cliente cambia serata, comanda quello che scrive ora.
-    if not strict_dates and not name_from_text and history_text_wide:
-        strict_dates = extract_query_dates(history_text_wide, explicit_only=True)
     if strict_dates:
-        query_dates = list(dict.fromkeys(strict_dates + name_dates + explicit_dates))
-    else:
+        query_dates = strict_dates
+    elif name_dates:
+        # Preserve the named-event fallback for approximate relative dates.
         query_dates = list(dict.fromkeys(name_dates + explicit_dates))
-    # Follow-up che eredita dalla chat solo la DATA (nessun nome evento): es. "la
-    # serata del 31/07/26" turni prima, poi "quindi è +16?". Caso reale: senza questo
-    # l'evento di quella data non entrava nel contesto e il bot rispondeva "non ho il
-    # dettaglio certo" pur avendo la policy. Dalla storia si ripescano SOLO date
-    # esplicite (numeriche o "31 luglio"): mai i termini relativi, uno "stasera"
-    # detto ieri non è oggi.
-    if not query_dates and history_text_wide:
-        query_dates = extract_query_dates(history_text_wide, explicit_only=True)
+    elif explicit_dates:
+        query_dates = explicit_dates
+    else:
+        query_dates = history_dates
 
     # 1. VIP context — when VIP keywords in current message OR recent history.
     vip_context = ""
     if any(t in lower_text for t in _VIP_TRIGGERS) or any(t in history_text for t in _VIP_TRIGGERS):
-        vip_context = await _vip_lookup(venue, query_dates[0] if query_dates else None, channel, text,
-                                        history_text)
-        # Cross-venue: il cliente scrive a una venue ma chiede di un evento dell'ALTRA
-        # (caso reale: "tavoli del 5 luglio a Gate Sardinia" sul numero di Milano). Se
-        # qui non troviamo tavoli e c'è una data richiesta con un evento nell'altra
-        # venue, prendiamo i SUOI tavoli ETICHETTANDO la provenienza, così il bot
-        # risponde con i dati giusti senza spacciarli per questa venue.
-        if not vip_context and query_dates:
-            other_channel = _VENUE_CHANNEL.get(other_venue, "gate-milano")
-            other_vip = await _vip_lookup(other_venue, query_dates[0], other_channel, text)
-            if other_vip:
-                vip_context = f"[TAVOLI A {other_venue_name.upper()} — venue diversa]\n{other_vip}"
+        lookup_date = query_dates[0] if query_dates else None
+        vip_context = await _vip_lookup(target_venue, lookup_date,
+                                        _VENUE_CHANNEL[target_venue], text, history_topic)
+        # An unqualified date can refer to the other branch, but never fall back
+        # merely because the selected event has no tables or its API failed.
+        if (not vip_context and lookup_date and not requested_venue and not name_dates
+                and not get_events_for_date(target_venue, lookup_date)):
+            fallback_venue = _OTHER_VENUE[target_venue]
+            fallback = await _vip_lookup(fallback_venue, lookup_date,
+                                         _VENUE_CHANNEL[fallback_venue], text, history_topic)
+            if fallback:
+                vip_context, target_venue = fallback, fallback_venue
+        if vip_context and target_venue == other_venue:
+            vip_context = f"[TAVOLI A {other_venue_name.upper()} — venue diversa]\n{vip_context}"
+            other_venue_mentioned = True
 
     # 2. Full event details for specifically queried dates
     date_parts = []
@@ -361,7 +368,18 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # programmazione arriva fino a metà settembre" con eventi confermati fino a dicembre.
     horizon = get_calendar_horizon(venue)
 
-    parts = [p for p in [vip_context, *date_parts, upcoming, horizon] if p]
+    focus = ""
+    if history and query_dates:
+        focus = (
+            f"DATE DI RIFERIMENTO DELLA RICHIESTA ATTUALE: {', '.join(query_dates)}. "
+            f"Sede richiesta: {target_venue.replace('_', ' ').title()}. "
+            "Questa selezione segue l'ultimo messaggio del cliente e prevale sulle "
+            "vecchie date o serate nella chat: NON riproporre la data precedente "
+            "e NON chiedere di riconfermarla. Usa i link e i prezzi della selezione "
+            "attuale qui forniti. Se il cliente prosegue una richiesta tavoli "
+            "cambiando data, continua con i tavoli e invia subito il link corretto."
+        )
+    parts = [p for p in [vip_context, *date_parts, upcoming, horizon, focus] if p]
 
     # 4. Cross-venue: se c'è un evento dell'ALTRA venue, inietta anche le SUE info e
     # policy (età, dress code, rimborsi, tavoli…). Senza questo il bot risolve l'evento
