@@ -236,3 +236,19 @@ async def test_se_il_cliente_cambia_serata_comanda_il_messaggio_nuovo():
     _, dates = await cb.build_rag_context(
         "gate_milano", "e per kobosil invece?", history=hist)
     assert dates[0] == "2026-09-25"
+
+
+async def test_follow_up_senza_nome_riaggancia_la_serata_della_chat(monkeypatch):
+    """Caso reale IG 19/11: "voglio un tavolo per perreo" → "siamo in sette".
+
+    Senza data, tra i candidati c'era prima una serata in Club Room con link: il blocco
+    completo era il suo, il bot non aveva i link del Perreo e mandava a info@.
+    """
+    _seed("ip", "Intersection Purple", "2026-09-18")
+
+    async def _site(name, date_iso):
+        return f"TAVOLI VIP DISPONIBILI — evento: {name} ({date_iso}):\n- X1: €300 → Prenota: https://x/{name[:3]}"
+    monkeypatch.setattr(cb, "get_vip_tables_via_site", _site)
+    out = await cb._vip_lookup("gate_milano", None, "gate-milano", "siamo in sette",
+                               history_text="voglio un tavolo per perreo")
+    assert out.startswith("TAVOLI VIP DISPONIBILI — evento: Perreo XL")

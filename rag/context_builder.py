@@ -57,7 +57,7 @@ _VENUE_CHANNEL = {"gate_milano": "gate-milano", "gate_sardinia": "gate-sardinia"
 
 
 async def _vip_lookup(venue: str, date_str: str | None, channel: str,
-                      text: str = "") -> str:
+                      text: str = "", history_text: str = "") -> str:
     """Disponibilità tavoli per una venue, per la data richiesta (o i prossimi eventi).
 
     Una serata ha quasi sempre PIÙ eventi (Main Room + Club Room, o un off-site in
@@ -104,6 +104,13 @@ async def _vip_lookup(venue: str, date_str: str | None, channel: str,
         return any(re.search(rf"\b{re.escape(t)}\b", lower) for t in tokens)
 
     main = next((f for f in found if _is_named(f[0])), None)
+    if main is None and history_text:
+        # Follow-up che non nomina la serata ("siamo in sette"): si riaggancia l'evento
+        # della chat recente. Caso reale IG 19/11: "voglio un tavolo per perreo" →
+        # "siamo in sette", il blocco completo era di un'altra serata, il bot non aveva
+        # i link del Perreo e mandava a scrivere a info@.
+        lower = history_text
+        main = next((f for f in found if _is_named(f[0])), None)
     if main is None:
         main = next((f for f in found if "Prenota: http" in f[1]), found[0])
 
@@ -231,7 +238,8 @@ async def build_rag_context(venue: str, text: str, history: list[dict] | None = 
     # 1. VIP context — when VIP keywords in current message OR recent history.
     vip_context = ""
     if any(t in lower_text for t in _VIP_TRIGGERS) or any(t in history_text for t in _VIP_TRIGGERS):
-        vip_context = await _vip_lookup(venue, query_dates[0] if query_dates else None, channel, text)
+        vip_context = await _vip_lookup(venue, query_dates[0] if query_dates else None, channel, text,
+                                        history_text)
         # Cross-venue: il cliente scrive a una venue ma chiede di un evento dell'ALTRA
         # (caso reale: "tavoli del 5 luglio a Gate Sardinia" sul numero di Milano). Se
         # qui non troviamo tavoli e c'è una data richiesta con un evento nell'altra

@@ -86,8 +86,8 @@ async def test_serata_standard_supplementi_a_listino():
     _C._payload = {"tables": [_tz("VIP FACE", "F1", 600, 10), _tz("VIP FACE", "F6", 300, 8),
                               _tz("VIP BALCONY", "B1", 300, 8)]}
     out = await vt.get_vip_tables_via_site("PERREO XL", "2026-11-07")
-    assert "VIP FACE €300, fino a 8 persone, persona extra €35 — F6" in out
-    assert "VIP FACE €600, fino a 10 persone, persona extra €50 — F1" in out
+    assert "VIP FACE €300, fino a 8 persone, persona extra €35 (si paga all'ingresso) — F6" in out
+    assert "VIP FACE €600, fino a 10 persone, persona extra €50 (si paga all'ingresso) — F1" in out
     assert "Minimo più basso stasera: €300" in out
     assert "PREZZI SPECIALI" not in out
 
@@ -100,6 +100,6 @@ async def test_checkout_sul_sito_manda_la_mappa_non_info():
     out = await vt.get_vip_tables_via_site("ADRIÁN MILLS - ALL NIGHT LONG", "2027-02-27")
     assert "sede: Alcatraz Milano" in out
     assert "PRENOTA E PAGA ONLINE sulla mappa: https://gatemilano.it/mappa-vip?" in out
-    assert "TAVOLI €400, fino a 10 persone, persona extra €40" in out
+    assert "TAVOLI €400, fino a 10 persone, persona extra €40 (si paga all'ingresso)" in out
     row = [l for l in out.splitlines() if l.startswith("- TAVOLI B1")][0]
     assert "prenotabile sulla mappa" in row and "info@" not in row
