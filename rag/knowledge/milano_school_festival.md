@@ -15,6 +15,8 @@ Profilo Instagram: https://www.instagram.com/milano.school.festival/
 - Biglietteria DICE, link ufficiale pubblicato nella bio Instagram del festival:
   https://dice.fm/event/ryewrq-milano-school-festival-xmas-edition-pucho-22nd-dec-alcatraz-milano-milano-tickets?lng=it
 - Info e prenotazioni: +39 342 519 8414, contatto pubblico nella bio del profilo.
+- Tavoli: per informazioni e prenotazioni chiamare l'infoline Alcatraz al
+  02 6901 6352. Usare questo numero per tutte le richieste sui tavoli.
 - Guardaroba a pagamento per giacche, zaini e bagagli; importo non verificato.
 - Accesso alla location senza barriere architettoniche.
 
@@ -27,13 +29,20 @@ Profilo Instagram: https://www.instagram.com/milano.school.festival/
 - Non sono disponibilità live: non garantire una release ancora acquistabile.
 - Il VIP è un biglietto; non implica tavolo, bottiglia o bottle service.
 
+## Ingresso in porta
+
+- €20 con un drink incluso, confermato dallo staff per questa edizione.
+- È il prezzo in porta, distinto dalle release in prevendita. Non garantire
+  disponibilità o ingresso senza una conferma aggiornata.
+
 ## Dettagli non ancora verificati per questa edizione
 
 Documenti richiesti ed eventuali deroghe, dress code, ora di fine e set time,
-tavoli, rientro, prezzi del bar/guardaroba, rimborsi e oggetti smarriti.
+prezzi e condizioni dei tavoli, rientro, prezzi del bar/guardaroba, rimborsi e oggetti smarriti.
 Per questi dettagli chiedere conferma allo staff qui in DM o al contatto
-ufficiale per info/prenotazioni. Non affermare che i tavoli non esistano:
-le condizioni non sono ancora verificate. Non usare regole di altre edizioni
+ufficiale per info/prenotazioni; per i tavoli indirizzare sempre all'infoline
+Alcatraz 02 6901 6352. Non affermare che i tavoli non esistano:
+prezzi e condizioni vanno richiesti all'infoline. Non usare regole di altre edizioni
 o dei club Gate.
 
 ## Provenienza (per manutenzione, non da esporre in chat)
@@ -43,4 +52,6 @@ email organizzativa George → Alcatraz del 14/10/2026, oggetto
 «Milano School Festival 22.12.2026 – annuncio domani ore 18:00».
 Bio Instagram verificata il 17/11/2026 per link DICE e telefono pubblico.
 Scheda DICE verificata il 17/11/2026 per età minima 16+ e apertura porte 22:00.
+Ingresso in porta (€20 con un drink) e infoline Alcatraz per i tavoli
+(02 6901 6352) confermati direttamente dallo staff il 19/11/2026.
 Non esporre email interne, riferimenti tecnici o materiale riservato al cliente.
