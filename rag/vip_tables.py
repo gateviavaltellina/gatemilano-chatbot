@@ -237,6 +237,19 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
     if venue and venue not in ("Main Room", "Club Room"):
         header += f" — sede: {venue}"
     lines = [header, *_milano_price_summary(available or closed)]
+    # Un link pronto per fascia (zona/prezzo/coperti): il bot lo gira appena sa serata e
+    # persone, invece di cercarlo in 30 righe (caso reale IG 19/11: "scrivi a info@").
+    quick = {}
+    for t in available:
+        url = (t.get("checkoutUrl") or "").strip()
+        key = (t.get("zona") or "VIP", t.get("prezzo"), t.get("coperti"))
+        if url and key not in quick:
+            quick[key] = (t, url)
+    if quick:
+        lines.append("LINK PER PRENOTARE SUBITO (un tavolo per fascia — giralo appena sai serata e persone):")
+        for (zona, prezzo, cop), (t, url) in sorted(quick.items(), key=lambda q: (q[0][1] or 0, q[0][0])):
+            cop_str = f" fino a {cop} persone" if cop else ""
+            lines.append(f"  · {zona} €{prezzo}{cop_str} ({t.get('codice', '')}): {url}")
     if site_checkout and available:
         lines.append(f"  PRENOTA E PAGA ONLINE sulla mappa: {map_url} (si sceglie il tavolo e si "
                      "paga lì; il pagamento conferma la prenotazione)")

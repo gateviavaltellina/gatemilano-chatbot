@@ -59,3 +59,30 @@
       - "Deve dare il link biglietti dell'evento e invitare a riprovare da lì"
       - "Deve suggerire, se non funziona, di aspettare qualche minuto e riprovare"
       - "Non deve limitarsi a rimandare a support@xceed.me"
+
+- id: reg-tavolo-link-subito-anche-dopo-errore
+  category: regression
+  venue: gate_milano
+  history:
+    - role: user
+      content: "Voglio un tavolo per perreo"
+    - role: assistant
+      content: "Per Perreo XL i tavoli sono: VIP Table €300 per 6 persone o Console Table €500 per 8 persone. Quante persone siete?"
+    - role: user
+      content: "Siamo in sette"
+    - role: assistant
+      content: "Per prenotarlo scrivi a info@gatemilano.com indicando data (21/11) e numero di persone."
+  user_message: "Voglio comprarlo ora"
+  rag_context: |
+    TAVOLI VIP DISPONIBILI — evento: Perreo XL (2026-11-21):
+    PREZZI DI QUESTA SERATA (minimo di spesa, ingresso incluso — valgono SOLO questi):
+      · VIP FACE €300, fino a 8 persone, persona extra €35 (si paga all'ingresso) — F6, F7
+    LINK PER PRENOTARE SUBITO (un tavolo per fascia — giralo appena sai serata e persone):
+      · VIP FACE €300 fino a 8 persone (F6): https://booking-plugin.xceed.me/gate-milano/offer/f6
+  rubric:
+    must:
+      - "Deve dare il link del tavolo https://booking-plugin.xceed.me/gate-milano/offer/f6"
+      - "Deve correggere le informazioni sbagliate date prima (niente email per prenotare, tavolo fino a 8)"
+      - "Non deve dire che gira la richiesta allo staff o che lo staff ricontatterà il cliente"
+  assertions:
+    forbidden_substrings: ["info@gatemilano.com"]

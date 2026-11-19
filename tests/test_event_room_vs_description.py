@@ -26,3 +26,12 @@ def test_regola_sala_nel_prompt():
 def test_regola_problemi_acquisto_gira_link_evento():
     static = cc.build_system_blocks("gate_milano", "", "oggi")[0]["text"]
     assert "PROBLEMI DURANTE L'ACQUISTO" in static and "aspettare qualche minuto" in static
+
+
+def test_regole_prenotazione_tavoli_niente_email_niente_azioni_finte():
+    """Caso reale IG 19/11: "scrivi a info@", "giro la richiesta, lo staff ti ricontatta"."""
+    static = cc.build_system_blocks("gate_milano", "", "oggi")[0]["text"]
+    assert "Per prenotare: info@gatemilano.com" not in static
+    assert "NON PUOI fare azioni fuori dalla chat" in static
+    assert "SE TI SEI SBAGLIATO PRIMA" in static
+    assert "LINK PER PRENOTARE SUBITO" in static
