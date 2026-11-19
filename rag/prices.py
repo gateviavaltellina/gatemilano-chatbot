@@ -42,5 +42,5 @@ def build_prices_text() -> str:
             f"€{t['extra_per_person']} per ogni persona extra"
         )
     lines.append("  Ingresso INCLUSO nel tavolo. Il minimo è di bottiglie (non drink singoli).")
-    lines.append("  Persone extra oltre il base: preferibile comunicarle in prenotazione (così il tavolo è preparato per il numero giusto); in alternativa il supplemento si paga al momento all'arrivo. Entrambe le vie valide.")
+    lines.append("  Persone extra oltre il base: online si prenota il tavolo col link (minimo di spesa); il supplemento delle persone extra si paga ALL'INGRESSO, la sera stessa (staff 19/11).")
     return "\n".join(lines)

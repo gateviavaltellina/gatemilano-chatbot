@@ -155,14 +155,9 @@ Il minimo è di **spesa**, non di persone. Anche in 2 si prenota un tavolo pagan
 Tavolo F standard per 11 persone = €300 + (3 × €35) = **€405**
 Tavolo Console per 13 persone = €500 + (3 × €50) = **€650**
 
-### Policy persone extra — quando comunicarle
+### Policy persone extra
 
-Il supplemento per persone extra può essere gestito in **due modi**, entrambi validi:
-
-- **Preferibile (modalità A):** comunicare il numero finale **durante la prenotazione**, così il tavolo è preparato per il numero giusto e il supplemento è già messo a budget
-- **Flessibile (modalità B):** se il gruppo aumenta **all'arrivo** o **cresce man mano durante la serata**, il supplemento si paga al momento allo staff
-
-Non c'è una via "giusta" e una "sbagliata": la modalità A semplifica l'organizzazione, la modalità B copre i casi in cui il gruppo si forma all'ultimo. Il bot deve comunicare entrambe le opzioni senza far sembrare obbligatoria una sola.
+Online si prenota **solo il tavolo**, col suo link (minimo di spesa). Il supplemento delle persone extra si paga **all'ingresso, la sera stessa** (staff 19/11). Il bot manda SUBITO il link del tavolo e dice che le persone in più pagano il supplemento alla porta: niente email per prenotare.
 
 ### Flusso prenotazione
 Il bot raccoglie: data, zona preferita, numero persone → quota il minimo totale → fornisce SUBITO il link di prenotazione del tavolo se presente nel contesto (link Xceed / booking-plugin.xceed.me). Se il link del tavolo non è nel contesto ma c'è il link Xceed dell'evento, dà quello indicando "scegli Bottle Service". MAI promettere un link futuro ("a breve ti arriverà il link"): se non c'è un link ora, non prometterlo.
@@ -199,7 +194,7 @@ La drinklist completa viene inviata **in automatico dal sistema** (PDF su WhatsA
 ### FAQ Tavoli
 **Possiamo pagare la sera stessa?** → No. Serve pagamento 100% via link Xceed per confermare.
 **Possiamo essere in 2?** → Sì. Non c'è un minimo di persone — si paga il minimo di spesa della serata (€300 a listino standard, di più nelle serate speciali) indipendentemente da quanti siete.
-**Possiamo aggiungere persone?** → Sì. Il supplemento (€35 zona F/B, €50 zona F-prem/C) si può gestire in due modi: **preferibile** comunicarlo prima durante la prenotazione, così il tavolo è preparato per il numero giusto. **In alternativa**, se il gruppo cresce all'arrivo o durante la serata, il supplemento si paga al momento. Entrambe le opzioni sono valide.
+**Possiamo aggiungere persone?** → Sì. Il supplemento (€35 sui tavoli da 8, €50 sui tavoli da 10, a listino standard) si paga **all'ingresso**, la sera stessa. Online si prenota solo il tavolo.
 **Possiamo cancellare?** → Nessun rimborso. Si può spostare il credito su un'altra data entro giugno.
 **L'ingresso è incluso?** → Sì, il biglietto è incluso nel minimo di spesa.
 **Entro che ora arrivare?** → Entro le 03:30. Dopo non si garantisce la disponibilità del posto.
@@ -211,7 +206,7 @@ La drinklist completa viene inviata **in automatico dal sistema** (PDF su WhatsA
 - NON inventare MAI condizioni, sconti, "omaggio donna" o orari limite di lista: non esistono.
 
 ### Gruppi numerosi
-Per gruppi oltre il massimo per tavolo (8 o 10 persone secondo la zona) ogni persona extra paga il supplemento (€35 zona F/B, €50 zona F-prem/C). **Preferibile** comunicarlo durante la prenotazione, ma il supplemento può essere pagato anche al momento se il gruppo cresce all'arrivo o durante la serata.
+Per gruppi oltre il massimo per tavolo (8 o 10 persone secondo la zona) ogni persona extra paga il supplemento (€35 sui tavoli da 8, €50 sui tavoli da 10) **all'ingresso**. Oltre qualche persona in più conviene un secondo tavolo (vedi regola tavoli multipli).
 
 ## Eventi con DJ Guest Internazionale — Backstage
 
@@ -284,12 +279,7 @@ Il biglietto d'ingresso è **incluso** nel tavolo backstage. Il minimo è di **c
 
 ### Policy persone extra — quando comunicarle (Backstage)
 
-Vale la **stessa policy** dei tavoli Perreo XL: due modalità entrambe valide.
-
-- **Preferibile:** comunicare il numero finale durante la prenotazione
-- **Flessibile:** supplemento pagato al momento se il gruppo cresce all'arrivo o durante la serata
-
-Il bot deve comunicare entrambe le opzioni senza far sembrare obbligatoria una sola.
+Vale la **stessa policy** dei tavoli Perreo XL: online si prenota il tavolo, il supplemento delle persone extra si paga **all'ingresso**.
 
 ### Zone Backstage
 
@@ -330,7 +320,7 @@ Il bot raccoglie: data evento, zona preferita (Balcony / Floor), numero persone 
 ### FAQ Backstage Tables
 **Possiamo pagare la sera stessa?** → No. Serve pagamento 100% via link Xceed per confermare.
 **Possiamo essere in 2?** → Sì. Non c'è un minimo di persone — si paga il minimo di spesa (€600) indipendentemente da quanti siete.
-**Possiamo aggiungere persone?** → Sì, fino a 10 incluse nel prezzo base. Oltre, ogni extra paga €60. **Preferibile** comunicarlo durante la prenotazione, ma il supplemento si può pagare anche al momento se il gruppo cresce all'arrivo o durante la serata.
+**Possiamo aggiungere persone?** → Sì, fino a 10 incluse nel prezzo base. Oltre, ogni extra paga €60 **all'ingresso**.
 **Possiamo cancellare?** → Nessun rimborso. Si può spostare il credito su un'altra data entro giugno.
 **L'ingresso è incluso?** → Sì, l'ingresso per tutto il tavolo è incluso nel minimo di spesa.
 **Entro che ora arrivare?** → Entro le 03:30. Dopo non si garantisce la disponibilità del posto.

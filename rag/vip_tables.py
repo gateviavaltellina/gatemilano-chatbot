@@ -292,7 +292,7 @@ def _milano_price_summary(tables: list) -> list[str]:
     for (zona, prezzo, cop), ts in sorted(groups.items(), key=lambda g: (g[0][0], -(g[0][1] or 0))):
         extra = None if special else _MILANO_STANDARD.get((prezzo, cop))
         cop_str = f", fino a {cop} persone" if cop else ""
-        extra_str = (f", persona extra €{extra}" if extra
+        extra_str = (f", persona extra €{extra} (si paga all'ingresso)" if extra
                      else ", persona extra: supplemento NON a listino")
         lines.append(f"  · {zona} €{prezzo}{cop_str}{extra_str} — {_codes(ts)}")
     prices = sorted({t.get("prezzo") for t in tables if t.get("prezzo") is not None})
