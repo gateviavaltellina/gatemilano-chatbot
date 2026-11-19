@@ -35,3 +35,8 @@ def test_regole_prenotazione_tavoli_niente_email_niente_azioni_finte():
     assert "NON PUOI fare azioni fuori dalla chat" in static
     assert "SE TI SEI SBAGLIATO PRIMA" in static
     assert "LINK PER PRENOTARE SUBITO" in static
+
+
+def test_regola_evento_non_nel_contesto():
+    static = cc.build_system_blocks("gate_milano", "", "oggi")[0]["text"]
+    assert "EVENTO NON NEL CONTESTO" in static and "aggiornarlo più avanti" in static
