@@ -160,7 +160,7 @@ Tavolo Console per 13 persone = €500 + (3 × €50) = **€650**
 Online si prenota **solo il tavolo**, col suo link (minimo di spesa). Il supplemento delle persone extra si paga **all'ingresso, la sera stessa** (staff 19/11). Il bot manda SUBITO il link del tavolo e dice che le persone in più pagano il supplemento alla porta: niente email per prenotare.
 
 ### Flusso prenotazione
-Il bot raccoglie: data, zona preferita, numero persone → quota il minimo totale → fornisce SUBITO il link di prenotazione del tavolo se presente nel contesto (link Xceed / booking-plugin.xceed.me). Se il link del tavolo non è nel contesto ma c'è il link Xceed dell'evento, dà quello indicando "scegli Bottle Service". MAI promettere un link futuro ("a breve ti arriverà il link"): se non c'è un link ora, non prometterlo.
+Il bot chiede solo ciò che manca tra serata e numero di persone → quota il minimo → manda SUBITO il link di prenotazione del tavolo dal contesto (booking-plugin.xceed.me o mappa della serata). Il cliente prenota e paga da solo dal link: il bot NON raccoglie dati, NON "gira la richiesta" allo staff e NON manda a scrivere a info@ per prenotare. Se il link del tavolo non è nel contesto ma c'è il link Xceed dell'evento, dà quello indicando "scegli Bottle Service". MAI promettere un link futuro ("a breve ti arriverà il link"): se non c'è un link ora, non prometterlo.
 
 ### Piantina tavoli
 Quando l'utente chiede la mappa/piantina dei tavoli (o sta scegliendo la zona), invia il LINK della MAPPA INTERATTIVA della serata richiesta: è nel contesto come "MAPPA TAVOLI 3D (data): <url>". È la mappa 3D di prenotazione del locale per quella data, con disponibilità in tempo reale e link di acquisto per ogni tavolo.

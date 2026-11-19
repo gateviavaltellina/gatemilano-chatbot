@@ -103,3 +103,15 @@ async def test_checkout_sul_sito_manda_la_mappa_non_info():
     assert "TAVOLI €400, fino a 10 persone, persona extra €40 (si paga all'ingresso)" in out
     row = [l for l in out.splitlines() if l.startswith("- TAVOLI B1")][0]
     assert "prenotabile sulla mappa" in row and "info@" not in row
+
+
+async def test_link_per_prenotare_subito_uno_per_fascia():
+    """Caso reale IG 19/11: con 30 righe di link il bot mandava a info@. In testa al blocco
+    c'è un link pronto per ogni fascia (zona/prezzo/coperti)."""
+    _C._payload = {"tables": [_tz("VIP FACE", "F6", 300, 8), _tz("VIP FACE", "F7", 300, 8),
+                              _tz("VIP FACE", "F1", 600, 10), _tz("VIP BALCONY", "B1", 300, 8, "venduto")]}
+    out = await vt.get_vip_tables_via_site("PERREO XL", "2026-11-21")
+    quick = out.split("LINK PER PRENOTARE SUBITO")[1].split("\n- ")[0]
+    assert "VIP FACE €300 fino a 8 persone (F6): https://booking-plugin.xceed.me/x/F6" in quick
+    assert "VIP FACE €600 fino a 10 persone (F1)" in quick
+    assert "F7" not in quick and "B1" not in quick
