@@ -1,0 +1,31 @@
+- id: vip-screenshot-stale-capacity-seven
+  category: vip_tables
+  venue: gate_milano
+  history: &stale_table_history
+    - {role: user, content: "Tavoli Perreo XL del {{TODAY+2}}"}
+    - {role: assistant, content: "VIP Table: minimo €300 per 6 persone. In 7 pagate €335. Per prenotare scrivi a info@gatemilano.com."}
+  user_message: "Siamo in sette"
+  rag_context: &current_table_data |
+    TAVOLI VIP DISPONIBILI — Perreo XL {{TODAY+2}}
+    PREZZI DI QUESTA SERATA:
+    VIP FACE F6: €300, fino a 8 persone, ingresso incluso.
+    Persona extra €35, solo oltre gli 8 coperti inclusi.
+    Prenota: https://booking-plugin.xceed.me/gate-milano/offer/f89d807a-55da-4207-9bce-adcd7bd70dc0
+  rubric: &table_rubric
+    must:
+      - "Indicare €300 di minimo, ingresso incluso e nessun supplemento per questo gruppo."
+      - "Includere il link Prenota del contesto e usare i dati attuali nonostante la risposta errata in cronologia."
+    must_not:
+      - "Non confermare capienza di 6 persone, totale €335 o prenotazione via email."
+  assertions: &table_assertions
+    forbidden_substrings: ["info@gatemilano.com", "€335"]
+    forbidden_markdown: true
+
+- id: vip-screenshot-stale-capacity-six
+  category: vip_tables
+  venue: gate_milano
+  history: *stale_table_history
+  user_message: "Siamo in sei"
+  rag_context: *current_table_data
+  rubric: *table_rubric
+  assertions: *table_assertions
