@@ -77,7 +77,8 @@ async def test_serata_speciale_prezzi_e_niente_listino():
                               _tz("VIP FACE", "F6", 600, 10, "venduto")]}
     out = await vt.get_vip_tables_via_site("PERREO XL", "2026-10-31")
     assert "PREZZI DI QUESTA SERATA" in out
-    assert "VIP FACE €600, fino a 10 persone, persona extra: supplemento NON a listino — F9, F10" in out
+    assert "VIP FACE €600, fino a 10 persone, persona extra €60 (si paga all'ingresso) — F9, F10" in out
+    assert "VIP FACE €900, fino a 10 persone, persona extra €90" in out
     assert "Minimo più basso stasera: €600" in out
     assert "PREZZI SPECIALI" in out
 
@@ -87,7 +88,7 @@ async def test_serata_standard_supplementi_a_listino():
                               _tz("VIP BALCONY", "B1", 300, 8)]}
     out = await vt.get_vip_tables_via_site("PERREO XL", "2026-11-07")
     assert "VIP FACE €300, fino a 8 persone, persona extra €35 (si paga all'ingresso) — F6" in out
-    assert "VIP FACE €600, fino a 10 persone, persona extra €50 (si paga all'ingresso) — F1" in out
+    assert "VIP FACE €600, fino a 10 persone, persona extra €60 (si paga all'ingresso) — F1" in out
     assert "Minimo più basso stasera: €300" in out
     assert "PREZZI SPECIALI" not in out
 
@@ -115,3 +116,11 @@ async def test_link_per_prenotare_subito_uno_per_fascia():
     assert "VIP FACE €300 fino a 8 persone (F6): https://booking-plugin.xceed.me/x/F6" in quick
     assert "VIP FACE €600 fino a 10 persone (F1)" in quick
     assert "F7" not in quick and "B1" not in quick
+
+
+
+@pytest.mark.parametrize("prezzo,coperti,extra", [
+    (300, 8, 35), (500, 10, 50), (600, 10, 60), (600, 12, 50), (400, 10, 40), (900, 10, 90)])
+def test_supplemento_e_minimo_diviso_coperti(prezzo, coperti, extra):
+    """Staff 19/11: la cifra extra è sempre il minimo diviso le persone (arrotondato a €5)."""
+    assert vt.extra_per_person(prezzo, coperti) == extra

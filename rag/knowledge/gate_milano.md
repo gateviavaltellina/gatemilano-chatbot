@@ -143,13 +143,15 @@ Il minimo è consumazione (bottiglie e drink dalla drinklist VIP). Mixers inclus
 | Zona | Tavoli | Descrizione | Minimo spesa | Max. persone | Extra pax |
 |------|--------|-------------|--------------|--------------|-----------|
 | F standard | F6–F22 | Face Area, floor principale | €300 | 8 | €35/persona |
-| F premium | F1–F5 | Face Area, prima fila | €600 | 10 | €50/persona |
+| F premium | F1–F5 | Face Area, prima fila | €600 | 10 | €60/persona |
 | B — Balcony | B1–B5 | Vista palco | €300 | 8 | €35/persona |
 | C — Console | C1–C3 | Vicino al DJ | €500 | 10 | €50/persona |
 
 Il minimo è di **spesa**, non di persone. Anche in 2 si prenota un tavolo pagando il minimo della serata (€300 a listino standard).
 
-⚠️ **Serate a prezzi speciali** (es. Halloween 31/10: Face €600–900 e Balcony €600, tutti da 10 persone): prezzi e coperti sono quelli del blocco "PREZZI DI QUESTA SERATA" nel contesto, NON questa tabella. Il supplemento per le persone extra in quelle serate non è a listino: non inventarlo.
+⚠️ **Serate a prezzi speciali** (es. Halloween 31/10: Face €600–900 e Balcony €600, tutti da 10 persone): prezzi e coperti sono quelli del blocco "PREZZI DI QUESTA SERATA" nel contesto, NON questa tabella. Il supplemento per persona extra segue sempre la stessa regola.
+
+**Supplemento persona extra = minimo del tavolo ÷ coperti, arrotondato per difetto a €5** (staff 19/11): €300 da 8 → €35 · €500 da 10 → €50 · €600 da 10 → €60 · €600 da 12 → €50 · €400 da 10 → €40.
 
 **Calcolo persone extra:**
 Tavolo F standard per 11 persone = €300 + (3 × €35) = **€405**
@@ -194,7 +196,7 @@ La drinklist completa viene inviata **in automatico dal sistema** (PDF su WhatsA
 ### FAQ Tavoli
 **Possiamo pagare la sera stessa?** → No. Serve pagamento 100% via link Xceed per confermare.
 **Possiamo essere in 2?** → Sì. Non c'è un minimo di persone — si paga il minimo di spesa della serata (€300 a listino standard, di più nelle serate speciali) indipendentemente da quanti siete.
-**Possiamo aggiungere persone?** → Sì. Il supplemento (€35 sui tavoli da 8, €50 sui tavoli da 10, a listino standard) si paga **all'ingresso**, la sera stessa. Online si prenota solo il tavolo.
+**Possiamo aggiungere persone?** → Sì. Il supplemento (minimo ÷ coperti: es. €35 sul tavolo da €300 per 8, €50 su quello da €500 per 10) si paga **all'ingresso**, la sera stessa. Online si prenota solo il tavolo.
 **Possiamo cancellare?** → Nessun rimborso. Si può spostare il credito su un'altra data entro giugno.
 **L'ingresso è incluso?** → Sì, il biglietto è incluso nel minimo di spesa.
 **Entro che ora arrivare?** → Entro le 03:30. Dopo non si garantisce la disponibilità del posto.
@@ -206,7 +208,7 @@ La drinklist completa viene inviata **in automatico dal sistema** (PDF su WhatsA
 - NON inventare MAI condizioni, sconti, "omaggio donna" o orari limite di lista: non esistono.
 
 ### Gruppi numerosi
-Per gruppi oltre il massimo per tavolo (8 o 10 persone secondo la zona) ogni persona extra paga il supplemento (€35 sui tavoli da 8, €50 sui tavoli da 10) **all'ingresso**. Oltre qualche persona in più conviene un secondo tavolo (vedi regola tavoli multipli).
+Per gruppi oltre il massimo per tavolo (8 o 10 persone secondo la zona) ogni persona extra paga il supplemento (minimo del tavolo ÷ coperti, es. €35 sul tavolo da €300 per 8) **all'ingresso**. Oltre qualche persona in più conviene un secondo tavolo (vedi regola tavoli multipli).
 
 ## Eventi con DJ Guest Internazionale — Backstage
 
