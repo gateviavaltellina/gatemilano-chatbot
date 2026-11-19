@@ -11,7 +11,7 @@ PERREO_TABLES = {
         "label": "VIP Face premium (F1-F5)",
         "min_spend": 600,
         "max_people": 10,
-        "extra_per_person": 50,
+        "extra_per_person": 60,
     },
     "b_balcony": {
         "label": "VIP Balcony (B1-B5)",

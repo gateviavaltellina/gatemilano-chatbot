@@ -277,11 +277,21 @@ async def get_vip_tables_via_site(event_name: str, date_str: str) -> str:
     return text
 
 
-# Listino standard dei tavoli Milano: (minimo, coperti) → supplemento per persona extra.
-# Serate speciali (es. Halloween 31/10: Face €600–900 da 10, Balcony €600 da 10) hanno
-# prezzi diversi: il bot citava il listino ("anche in 2 pagate €300", "max 8", "+€35").
-# (400, 10): tavoli dell'Alcatraz per gli eventi Gate (Adrián Mills 27/2/2027, staff 7/11).
-_MILANO_STANDARD = {(300, 8): 35, (400, 10): 40, (500, 10): 50, (600, 10): 50}
+# Listino standard dei tavoli Milano (minimo, coperti). Serate speciali (es. Halloween
+# 31/10: Face €600–900 da 10, Balcony €600 da 10) hanno prezzi diversi: il bot citava il
+# listino ("anche in 2 pagate €300", "max 8", "+€35").
+_MILANO_STANDARD = {(300, 8), (500, 10), (600, 10)}
+
+
+def extra_per_person(prezzo, coperti) -> int | None:
+    """Supplemento per persona extra = minimo del tavolo diviso i coperti, arrotondato
+    per difetto a €5 (staff 19/11): €300/8 → €35, €500/10 → €50, €600/12 → €50,
+    €600/10 → €60, €400/10 → €40."""
+    try:
+        quota = float(prezzo) / int(coperti)
+    except (TypeError, ValueError, ZeroDivisionError):
+        return None
+    return int(quota // 5 * 5) or None
 
 
 def _codes(tables: list) -> str:
@@ -291,22 +301,19 @@ def _codes(tables: list) -> str:
 
 
 def _milano_price_summary(tables: list) -> list[str]:
-    """Prezzi e coperti DI QUESTA SERATA per zona, in testa al blocco, con il supplemento
-    solo se la combinazione è quella del listino standard."""
+    """Prezzi, coperti e supplemento per persona extra DI QUESTA SERATA, per zona."""
     if not tables:
         return []
     groups: dict[tuple, list] = {}
     for t in tables:
         groups.setdefault((t.get("zona") or "VIP", t.get("prezzo"), t.get("coperti")), []).append(t)
     lines = ["PREZZI DI QUESTA SERATA (minimo di spesa, ingresso incluso — valgono SOLO questi):"]
-    # Basta una zona fuori listino perché la serata sia "speciale": allora nessun
-    # supplemento è a listino, nemmeno dove la coppia prezzo/coperti coincide.
     special = any((prezzo, cop) not in _MILANO_STANDARD for _, prezzo, cop in groups)
     for (zona, prezzo, cop), ts in sorted(groups.items(), key=lambda g: (g[0][0], -(g[0][1] or 0))):
-        extra = None if special else _MILANO_STANDARD.get((prezzo, cop))
+        extra = extra_per_person(prezzo, cop)
         cop_str = f", fino a {cop} persone" if cop else ""
         extra_str = (f", persona extra €{extra} (si paga all'ingresso)" if extra
-                     else ", persona extra: supplemento NON a listino")
+                     else ", persona extra: supplemento da chiedere allo staff")
         lines.append(f"  · {zona} €{prezzo}{cop_str}{extra_str} — {_codes(ts)}")
     prices = sorted({t.get("prezzo") for t in tables if t.get("prezzo") is not None})
     if prices:
@@ -314,8 +321,7 @@ def _milano_price_summary(tables: list) -> list[str]:
     if special:
         lines.append(
             "  ⚠️ Serata a PREZZI SPECIALI: NON usare il listino standard (€300, max 8, "
-            "€35/€50). Per le persone extra di' che c'è un supplemento a persona e che "
-            "l'importo lo conferma lo staff (info@gatemilano.com): NON inventarlo.")
+            "€35): prezzi, coperti e supplementi sono SOLO quelli qui sopra.")
     return lines
 
 
