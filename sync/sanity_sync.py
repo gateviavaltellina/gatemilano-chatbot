@@ -715,6 +715,7 @@ def _build_document(event: dict, venue_label: str, xceed: dict = None) -> tuple[
         "date": date_str,
         "date_ts": date_ts,
         "venue": venue_label,
+        "event_location": room,
         # id pubblicato anche per le bozze ("drafts.<id>" → "<id>"): usato per i
         # link /tavoli?event=<id> e per il dedup col documento post-publish.
         "sanity_id": (event.get("_id") or "").removeprefix("drafts."),

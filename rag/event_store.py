@@ -430,6 +430,7 @@ def find_event_dates_by_name(venue: str, text: str, days: int | None = None, lim
     l'utente NON ha dato una data esplicita. Cerca su tutta la stagione (`days` giorni)
     gli eventi per titolo o lineup, inclusi nomi corti esatti (>=3 lettere), e
     ritorna fino a `limit` date dei match migliori in ordine cronologico.
+    Una location o un mese esplicitamente citati distinguono le edizioni della serie.
 
     Serve a far trovare al bot eventi oltre la finestra "prossimi giorni" (es. chiedere
     di un artista che suona tra mesi) e ad alimentare il lookup tavoli per quella serata.
@@ -438,20 +439,40 @@ def find_event_dates_by_name(venue: str, text: str, days: int | None = None, lim
     """
     today_ts = _today_start_utc()
     end_ts = today_ts + days * 86400 if days is not None else float("inf")
+    from rag.date_utils import extract_query_months
+    months = set(extract_query_months(text))
+    query_tokens = set(_norm_name(text.replace("'", " ").replace("’", " ")).split())
+    location_noise = _NAME_STOPWORDS | {"milano", "milan", "room", "sala", "main", "club"}
+
+    def location_matches(meta):
+        tokens = {t for t in _norm_name(meta.get("event_location", "")).split()
+                  if len(t) >= 3} - location_noise
+        return bool(tokens & query_tokens)
+
+    candidates = []
+    for event in _get(venue):
+        meta = event["metadata"]
+        ts = meta.get("date_ts", 0)
+        if meta.get("type") != "event" or not today_ts <= ts <= end_ts:
+            continue
+        day = datetime.fromtimestamp(ts, tz=timezone.utc)
+        if months and (day.year, day.month) not in months:
+            continue
+        candidates.append(event)
+    # A named host venue disambiguates recurring editions held elsewhere.
+    located = [e for e in candidates if location_matches(e["metadata"])]
+    if located:
+        candidates = located
     matched: list[tuple[int, int, str]] = []
-    for e in _get(venue):
+    for e in candidates:
         m = e["metadata"]
-        if m.get("type") != "event":
-            continue
         ts = m.get("date_ts", 0)
-        if not (today_ts <= ts <= end_ts):
-            continue
         # Cerca su titolo + lineup: un artista può essere in `artists` (Sanity) ma
         # NON nel titolo (es. Sardinia 10/7: titolo "Davide T", in lineup anche
         # Kamelia/Dfifonte/Asci). Senza questo, chi chiede di quegli artisti non
         # troverebbe la serata.
         score = event_name_match_score(text, m.get("event_name", ""), m.get("artists"))
-        if score:
+        if score or located:
             di = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
             matched.append((score, ts, di))
     matched.sort(key=lambda x: (-x[0], x[1]))

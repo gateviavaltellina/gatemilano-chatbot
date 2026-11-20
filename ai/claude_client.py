@@ -223,7 +223,6 @@ BIGLIETTI ALLA PORTA — PERREO XL (override della regola generica cassa):
   Dopo l'1:00 → €15 donna / €20 uomo (senza consumazione)
 - Comunica i prezzi chiaramente, poi spingi comunque verso l'online: "Online conviene di più e ti assicuri il posto"
 - Esempio risposta (traccia in ITALIANO: se il cliente scrive in un'altra lingua, riformulala in quella lingua invece di copiarla): "Alla porta per Perreo XL: entro l'1 €10 donna / €15 uomo, dopo l'1 €15 donna / €20 uomo (senza consumazione). Online conviene di più — prendilo qui: [link]"
-- ⚠️ ECCEZIONE HALLOWEEN — Perreo XL di sabato 31/10/2026: i prezzi alla porta NON sono ancora stati decisi (staff 28/10). Per QUELLA serata NON dare cifre alla porta (né i €10/€15/€20 qui sopra né altre): di' che il prezzo alla porta non è ancora definito e invita a comprare ONLINE ora, col link della serata. Esempio: "Per Halloween il prezzo alla porta non è ancora stato definito: ti conviene prenderlo online, così hai il posto assicurato — eccolo: [link]".
 """
 
 # Template STATICO dedicato a Gate Sardinia. Venue outdoor estivo (3 lug – 30 ago),
@@ -488,6 +487,29 @@ DOMANDE SU ALTRI LOCALI — RISPOSTA BREVE E PROPOSTA NOSTRA:
   policy della pagina per prenotazioni, assistenza e oggetti smarriti.
 - Non inserire promozioni nelle richieste di aiuto urgente, sicurezza,
   assistenza su acquisti già effettuati o oggetti smarriti.
+
+DATI DI VENDITA E PREZZI PASSATI:
+- Non comunicare dati interni di vendita: quantità vendute, incassi, andamento,
+  confronti, percentuali o report. Non menzionare dashboard, pannelli, sistemi
+  interni o Xceed nel rispondere a richieste di questi dati, neppure per dire
+  che non vi hai accesso. Rispondi brevemente «Non condividiamo dati di vendita»
+  e passa a UNA nostra proposta futura pertinente, con link verificato se c'è.
+  In questa risposta usa il nostro sito ufficiale presente nel contesto,
+  anziché URL che contengono il nome della piattaforma di vendita; niente
+  riferimenti a Xceed nemmeno nei link. Per le normali richieste di acquisto
+  restano validi i link diretti di biglietteria.
+  Non inventare numeri o urgenza commerciale. Questa è un'altra eccezione
+  esplicita alla regola di non aggiungere offerte non richieste.
+- Se chiedono prezzi, minimi tavoli, promozioni o listini di eventi PASSATI
+  (anche Halloween), non riportarli, nemmeno se presenti nella knowledge base
+  o nella cronologia. Di' «Non forniamo i prezzi delle serate passate» e proponi
+  una prossima serata pertinente con i suoi dati attuali verificati.
+- Restano consentite le informazioni pubbliche per acquistare eventi futuri:
+  prezzi attuali, link di biglietteria e disponibilità pubblicata, senza numeri
+  interni di vendita. Non nascondere o alterare gli URL verificati di acquisto.
+- Per assistenza su un acquisto già effettuato, rimborsi o contestazioni,
+  applica le policy e dai il contatto corretto senza upselling: non ripubblicare
+  vecchi listini e non impedire al cliente di parlare della propria ricevuta.
 """
 
 
@@ -608,6 +630,29 @@ def _sanitize_history(history: list[dict]) -> list[dict]:
     return clean
 
 
+def _sales_redirect_links(reply: str, user_message: str, venue: str) -> str:
+    """Keep provider names out of the upsell for explicit internal-sales questions.
+
+    Normal buying, availability and support questions retain their direct links.
+    The model handles the sales-data policy; this closes the observed URL leak.
+    """
+    query = user_message.lower()
+    internal = re.search(
+        r"\b(?:incass\w*|fatturat\w*|dashboard|revenue)\b|"
+        r"\b(?:dati|numeri|report|andamento|statistiche)\b.{0,30}\bvendit\w*|"
+        r"\bquant\w*\b.{0,60}\bvendut\w*|\bsales\s+(?:data|figures|report)\b|"
+        r"\bhow many\b.{0,60}\bsold\b", query,
+    )
+    sites = {
+        "gate_milano": "https://gatemilano.it",
+        "gate_sardinia": "https://gatesardinia.it",
+        "milano_school_festival": "https://www.instagram.com/milano.school.festival/",
+    }
+    if not internal or venue not in sites:
+        return reply
+    return re.sub(r"https?://[^\s<>]*xceed[^\s<>]*", sites[venue], reply, flags=re.IGNORECASE)
+
+
 async def generate_response(
     venue: str,
     user_message: str,
@@ -708,7 +753,7 @@ async def generate_response(
             logger.error("Risposta senza blocco di testo: %s", _last_api_error)
             return error_reply
         _last_api_error = None  # successo → azzera l'ultimo errore
-        return _strip_markdown(text)
+        return _sales_redirect_links(_strip_markdown(text), user_message, venue)
     except Exception as e:
         logger.error("Errore Claude API: %s", e)
         _last_api_error = f"{type(e).__name__}: {str(e)[:300]}"

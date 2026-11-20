@@ -11,7 +11,7 @@ Gate ha controllo completo su: ticketing, dress code, accessibilità, sicurezza,
 Su questi eventi il bot può rispondere con autorità su **qualsiasi** aspetto (operativo, infrastrutturale, logistico).
 
 ### Ruolo 2 — Gate "società organizzatrice" (eventi in venue terze)
-Eventi che Gate **organizza in venue di terzi** (es. Carl Cox al Carroponte, eventuali eventi all'Alcatraz, ecc.).
+Eventi che Gate **organizza in venue di terzi** (es. Carl Cox al Carroponte, Perreo XL e Adrián Mills all'Alcatraz).
 Gate cura **la produzione**: artisti, line-up, ticketing, marketing, branding, policy commerciali (es. omaggi accompagnatore).
 Gate **non cura**: infrastruttura fisica della venue, personale in loco (è della venue ospitante), layout, ingressi, percorsi accessibili interni.
 
@@ -62,7 +62,6 @@ Il calendario eventi è sincronizzato: quando nel contesto compare un blocco "PR
 ## Biglietti
 - Acquisto online su Xceed (xceed.me)
 - **Cassa la sera stessa: SÌ**, si può comprare il biglietto direttamente all'ingresso (salvo sold out) — ma **in cassa il prezzo è più alto** rispetto all'online: consiglia SEMPRE di acquistare in anticipo su Xceed (non citare cifre precise per la cassa: non sono pubblicate)
-- **Halloween — Perreo XL sabato 31/10/2026:** biglietti online **ESAURITI** (staff 30/10): online restano **solo i tavoli VIP**. Alla cassa qualche biglietto ci sarà, fino a esaurimento, a **€30 sia uomo sia donna** (staff 31/10; non valgono i €10/€15/€20 del Perreo): non garantire l'ingresso alla porta; per essere sicuri proponi i tavoli.
 - Acquisto consigliato in anticipo per prezzi migliori
 - eTicket digitale da mostrare su smartphone — non serve stampare nulla
 - Il biglietto è valido per la sala specifica (Main Room o Club Room) — ogni sala ha il suo ingresso dedicato
@@ -149,7 +148,7 @@ Il minimo è consumazione (bottiglie e drink dalla drinklist VIP). Mixers inclus
 
 Il minimo è di **spesa**, non di persone. Anche in 2 si prenota un tavolo pagando il minimo della serata (€300 a listino standard).
 
-⚠️ **Serate a prezzi speciali** (es. Halloween 31/10: Face €600–900 e Balcony €600, tutti da 10 persone): prezzi e coperti sono quelli del blocco "PREZZI DI QUESTA SERATA" nel contesto, NON questa tabella. Il supplemento per persona extra segue sempre la stessa regola.
+⚠️ **Serate a prezzi speciali**: prezzi e coperti sono quelli del blocco "PREZZI DI QUESTA SERATA" nel contesto, NON questa tabella. Il supplemento per persona extra segue sempre la stessa regola.
 
 **Supplemento persona extra = minimo del tavolo ÷ coperti, arrotondato per difetto a €5** (staff 19/11): €300 da 8 → €35 · €500 da 10 → €50 · €600 da 10 → €60 · €600 da 12 → €50 · €400 da 10 → €40.
 
@@ -227,6 +226,13 @@ Per gli eventi con DJ guest internazionale (es. Claptone, Disciples, ecc.) la co
 - Prezzi e disponibilità: quelli del blocco tavoli della serata (al 7/11: 10 tavoli B1–B10, €400 di minimo, fino a 10 persone). Si scelgono e si pagano sulla **mappa tavoli** della serata (pulsante "BOOK TABLE" sulla pagina evento: https://www.gatemilano.it/events/adrian-mills-all-night-long-2027-02-27).
 - Persone oltre le 10 per tavolo: **supplemento €40 a persona** (staff 7/11). Gruppi più grandi: un tavolo + extra (es. 15 persone = €400 + 5 × €40 = €600) oppure più tavoli (20 persone → 2 tavoli, €800).
 - Biglietti singoli: su TicketSMS, link nella scheda evento.
+
+### PERREO XL — XXXXXXXXL Edition all'Alcatraz (sabato 19/12/2026) — evento Gate
+- È un evento **nostro**, confermato dallo staff: edizione natalizia reggaeton e urban all'Alcatraz Milano, Via Valtellina 25, dalle 23:00 alle 05:00, ingresso 18+.
+- Non confonderlo con le edizioni Perreo al Gate di Via Valtellina 21 né con Milano School Festival del 22 dicembre. Le regole e l'infoline del School Festival NON valgono per questo Perreo.
+- Pagina ufficiale: https://www.gatemilano.it/events/perreo-xl-xxxxxxxxl-edition-alcatraz-2026-12-19
+- Biglietti: usa il link della scheda evento. Tavoli: usa la mappa e il listino specifico del 19 dicembre nel contesto; non applicare automaticamente prezzi, capienze o configurazioni dei tavoli al Gate o di Adrián Mills.
+- Per informazioni e vendita non trattare Alcatraz come un concorrente e non rispondere «non ho informazioni su quel locale». È la location ospitante del nostro evento.
 
 ### Tavoli VIP/Backstage per CARL COX al Carroponte (19/9) — pagina dedicata 🎛️
 I tavoli per Carl Cox **ESISTONO e si COMPRANO direttamente dal sito**, dalla pagina dedicata: **https://www.gatemilano.it/carlcox/tavoli** — mappa 3D del Carroponte, si sceglie il tavolo (prezzi visibili lì) e si completa l'acquisto online.

@@ -20,6 +20,27 @@ def setup_function(_):
     event_store._store.clear()
 
 
+def test_offsite_location_disambiguates_recurring_series(monkeypatch):
+    from datetime import datetime, timezone
+    from rag import date_utils
+    monkeypatch.setattr(date_utils, "business_now", lambda now=None: datetime(2026, 11, 20, 12, tzinfo=timezone.utc))
+    from sync.sanity_sync import _build_document
+    for title, day, location in [
+        ("Perreo XL", "2026-11-21", "Main Room"),
+        ("Perreo XL", "2026-12-05", "Main Room"),
+        ("Perreo XL - XXXXXXXXL Edition - Reggaeton and Urban", "2026-12-19", "Alcatraz Milano"),
+        ("ADRIÁN MILLS - ALL NIGHT LONG", "2027-02-27", "Alcatraz Milano"),
+    ]:
+        event = {"_id": day, "title": title, "date": day, "venue": location}
+        doc, meta = _build_document(event, "Gate Milano")
+        event_store.upsert_event("gate_milano", day, doc, meta)
+    assert find_event_dates_by_name("gate_milano", "Perreo Alcatraz") == ["2026-12-19"]
+    assert find_event_dates_by_name("gate_milano", "Perreo dicembre Alcatraz") == ["2026-12-19"]
+    assert find_event_dates_by_name("gate_milano", "che eventi avete all'Alcatraz?") == ["2026-12-19", "2027-02-27"]
+    assert find_event_dates_by_name("gate_milano", "Perreo a dicembre") == ["2026-12-05", "2026-12-19"]
+    assert find_event_dates_by_name("gate_milano", "Adrian Mills a febbraio") == ["2027-02-27"]
+
+
 def test_finds_artist_beyond_window():
     _seed("gate_sardinia", "Rondodasosa", 42)
     _seed("gate_sardinia", "Perreo XL", 13)
