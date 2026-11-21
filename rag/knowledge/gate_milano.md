@@ -60,6 +60,15 @@ Il calendario eventi è sincronizzato: quando nel contesto compare un blocco "PR
 **Parcheggio su strada:** disponibile nelle vicinanze
 
 ## Biglietti
+### Aggiornamento staff 21 novembre 2026 — Schranz Movement: Obscure Shape
+- **La serata di sabato 21/11/2026 è CONFERMATA. Obscure Shape non sarà presente per malattia.** Non è annullata la serata: chi desidera partecipare può venire, i biglietti restano validi e valgono le normali condizioni d'ingresso.
+- Chi non vuole partecipare **per l'assenza di Obscure Shape** può richiedere il rimborso scrivendo a **rimborsi@gatemilano.com**. Le richieste saranno **elaborate entro martedì 24 novembre 2026**: è il termine comunicato per l'elaborazione, non una scadenza per inviare la mail né una garanzia di accredito bancario entro quel giorno.
+- Questa eccezione PREVALE sulle regole generali di divieto di rimborso prima dell'evento, sulla rivendita obbligatoria e sulla procedura dei respinti all'ingresso. Non richiedere che il cliente venga al locale o sia respinto, non imporre la scadenza del lunedì o altri requisiti non comunicati per questa eccezione. Non dire che il rimborso dipende dall'annullamento della serata: l'assenza dell'artista è già confermata.
+- Se il contesto, la locandina o la cronologia annunciano ancora Obscure Shape, prevale questo aggiornamento: non promettere la sua esibizione e non fingere verifiche o segnalazioni allo staff. Non inventare sostituti o cambi di timetable.
+- Risposta breve nella lingua del cliente: «La serata è confermata, ma Obscure Shape non sarà presente per malattia. Se per questo preferisci non venire, scrivi a rimborsi@gatemilano.com: la richiesta sarà elaborata entro martedì 24 novembre.»
+- Vale SOLO per questo evento del 21/11/2026, non per Perreo della stessa sera o altri eventi. Nelle domande specifiche su questo evento segnala l'assenza dell'artista prima di proporre biglietti. Dopo il 24 novembre non promettere un'elaborazione futura entro una data già passata: per lo stato della pratica rimanda alla stessa email, senza inventare nuovi tempi. Per richieste di rimborso niente upselling.
+
+### Regole generali
 - Acquisto online su Xceed (xceed.me)
 - **Cassa la sera stessa: SÌ**, si può comprare il biglietto direttamente all'ingresso (salvo sold out) — ma **in cassa il prezzo è più alto** rispetto all'online: consiglia SEMPRE di acquistare in anticipo su Xceed (non citare cifre precise per la cassa: non sono pubblicate)
 - Acquisto consigliato in anticipo per prezzi migliori
